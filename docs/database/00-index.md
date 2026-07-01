@@ -1,6 +1,6 @@
 # Database Design Index
 
-Phase 1 database design documents:
+Phase 2 database implementation documents:
 
 1. [Database Overview](01-database-overview.md)
 2. [ER Diagram](02-er-diagram.md)
@@ -18,5 +18,15 @@ Phase 1 database design documents:
 14. [Data Retention Policy](14-data-retention-policy.md)
 15. [Future Partitioning Strategy](15-future-partitioning-strategy.md)
 16. [Performance Strategy](16-performance-strategy.md)
+17. [Database Status](DATABASE_STATUS.md)
+18. [Database Changelog](CHANGELOG.md)
 
-These documents define the intended database foundation before migrations are changed or expanded.
+Executable database assets:
+
+- `supabase/migrations/202607010001_foundation_schema.sql`
+- `supabase/migrations/202607010002_lifecycle_constraints_and_indexes.sql`
+- `supabase/migrations/202607010003_storage_buckets_and_policies.sql`
+- `supabase/seed/dev_seed.sql`
+- `supabase/tests/database_validation.sql`
+
+These documents define and track the implemented database foundation for the marketplace.
