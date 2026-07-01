@@ -1,5 +1,13 @@
 # Database Changelog
 
+## 2026-07-01 - Production hardening
+
+- Added production grants and schema creation lockdown.
+- Forced RLS on all application tables.
+- Restricted direct function execution and set safer function search paths.
+- Expanded validation SQL for production hardening checks.
+- Added a direct SQL runner for migration, seed, and validation execution.
+
 ## 2026-07-01
 
 - Added Phase 2 lifecycle and constraint hardening migration.

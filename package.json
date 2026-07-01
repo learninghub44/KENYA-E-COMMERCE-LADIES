@@ -1,0 +1,19 @@
+{
+  "name": "kenya-e-commerce-ladies",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --outDir dist-test && node --test \"dist-test/**/*.test.js\"",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.3",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.34",
+    "typescript": "^5.8.3"
+  }
+}

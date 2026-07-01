@@ -1,0 +1,8 @@
+packages:
+  - "auth"
+  - "security"
+  - "lib/*"
+  - "middleware"
+  - "types"
+allowBuilds:
+  esbuild: set this to true or false
