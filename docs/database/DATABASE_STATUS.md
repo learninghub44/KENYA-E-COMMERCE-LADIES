@@ -25,7 +25,16 @@ Required buckets are implemented: `product-images`, `seller-documents`, `kyc-doc
 
 ## Validation Status
 
-Static review completed in this workspace. Local execution was not completed because this environment does not include a running Supabase database. Run:
+Production hardening migration `202607010004_production_hardening.sql` was applied through the supplied Supabase connection pooler on 2026-07-01. Post-apply validation passed:
+
+- RLS enabled on all public tables.
+- Forced RLS enabled on all public tables.
+- No browser-facing `CREATE` grant on the `public` schema.
+- Trigger-only functions are not directly executable by browser-facing roles.
+- Critical index check found 5 of 5 expected indexes.
+- Storage bucket check found 8 of 8 expected buckets.
+
+For a full local reset, run:
 
 ```bash
 supabase db reset

@@ -62,7 +62,7 @@ Every public table has RLS enabled and forced. Policies use self-owned access, b
 
 ## Known Limitations
 
-- Migrations were statically reviewed here but not executed against a live Supabase instance in this workspace because no database URL was available.
+- Production hardening migration `202607010004_production_hardening.sql` was applied through the supplied Supabase connection pooler on 2026-07-01 and passed RLS, grant, index, and storage validation checks.
 - No auth users are seeded because `auth.users` and signup flows belong to Agent 2.
 - Legacy buckets `seller-assets` and `private-documents` may exist after the initial migration; new code should use the explicit Phase 2 buckets.
 - Large-table partitioning is documented as a future measured optimization, not enabled now.
