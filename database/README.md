@@ -6,7 +6,7 @@ This directory documents the database surface owned by Agent 01. The executable 
 
 ## Scope
 
-The foundation migration creates PostgreSQL structures only:
+The foundation migrations create PostgreSQL structures only:
 
 - Core identity support tables that reference Supabase Auth users.
 - Seller, KYC, catalog, product media, variants, inventory, attributes, and collections.
@@ -16,7 +16,7 @@ The foundation migration creates PostgreSQL structures only:
 - Notifications, reports, store followers, audit logs, activity logs, feature flags, and analytics events.
 - Shipping profiles, shipping zones, coupons, promotions, banners, CMS pages, FAQs, and contact requests.
 - Public read views for catalog and seller storefront data.
-- Supabase storage buckets and object policies for product images, seller assets, and private documents.
+- Supabase storage buckets and object policies for product images, seller documents, KYC documents, store logos, store banners, user avatars, promotional banners, and CMS assets.
 
 No application routes, UI, authentication client code, seller dashboard code, marketplace API code, or business workflow implementation is included.
 
@@ -61,18 +61,25 @@ Large tables such as `orders`, `messages`, and `analytics_events` are not partit
 
 The migration creates storage buckets when the Supabase `storage` schema is available:
 
-- `product-images`: public image assets, 10 MB max.
-- `seller-assets`: public seller branding assets, 10 MB max.
-- `private-documents`: private KYC/supporting documents, 20 MB max.
+- `product-images`: public product image assets, 10 MB max.
+- `seller-documents`: private seller operational documents, 20 MB max.
+- `kyc-documents`: private KYC documents, 20 MB max.
+- `store-logos`: public seller logos, 5 MB max.
+- `store-banners`: public seller banners, 10 MB max.
+- `user-avatars`: public user avatars, 5 MB max.
+- `promotional-banners`: public staff-managed promotional assets, 10 MB max.
+- `cms-assets`: public staff-managed CMS assets, 10 MB max.
 
 Product images should still go through Cloudinary in application workflows. The bucket definitions exist as database/storage support and a safe fallback surface.
 
 ## Verification
 
-This workspace does not currently have `psql` or the Supabase CLI installed, so the migration was not executed locally in this environment. Before merge, run it in a Supabase-enabled environment:
+Before merge, run the migrations and seed in a Supabase-enabled environment:
 
 ```bash
 supabase db reset
+psql "$DATABASE_URL" -f supabase/seed/dev_seed.sql
+psql "$DATABASE_URL" -f supabase/tests/database_validation.sql
 ```
 
 Then generate database types for the application once the TypeScript package scaffold exists:

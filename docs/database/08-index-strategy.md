@@ -28,6 +28,15 @@ Unbounded list endpoints must use cursor pagination. Indexes should match the cu
 - Notifications: `created_at desc`, scoped by user and status.
 - Analytics events: `occurred_at desc`, scoped by event name or entity.
 
+Phase 2 adds explicit seek indexes for high-volume paths:
+
+- `idx_products_seller_active_pagination`
+- `idx_orders_buyer_status_pagination`
+- `idx_orders_seller_payment_fulfillment`
+- `idx_messages_conversation_seek`
+- `idx_analytics_events_time`
+- `idx_notifications_unread`
+
 ## Unique Indexes and Constraints
 
 Use unique constraints or unique indexes for:
