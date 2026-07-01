@@ -1,0 +1,20 @@
+# Chief Software Architect owns root standards and docs
+/docs/                          @agent-0-architect
+/*.md                           @agent-0-architect
+/turbo.json                     @agent-0-architect
+/pnpm-workspace.yaml             @agent-0-architect
+
+# Module ownership — apps/web/features
+/apps/web/features/auth/         @agent-2-auth-security
+/apps/web/features/sellers/      @agent-3-seller-platform
+/apps/web/features/catalog/      @agent-4-marketplace
+/apps/web/features/orders/       @agent-5-orders
+/apps/web/features/messaging/    @agent-6-messaging
+/apps/web/features/admin/        @agent-7-admin-platform
+
+/packages/design-system/         @agent-8-design-system
+/apps/web/app/                   @agent-9-frontend
+/packages/integrations/          @agent-10-api-integration
+/tests/e2e/                      @agent-11-qa
+/supabase/migrations/            @agent-1-database-infra
+/.github/workflows/              @agent-13-devops
