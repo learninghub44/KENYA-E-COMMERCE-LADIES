@@ -3,6 +3,9 @@
 This directory documents the database surface owned by Agent 01. The executable schema lives in:
 
 - `supabase/migrations/202607010001_foundation_schema.sql`
+- `supabase/migrations/202607010002_lifecycle_constraints_and_indexes.sql`
+- `supabase/migrations/202607010003_storage_buckets_and_policies.sql`
+- `supabase/migrations/202607010004_production_hardening.sql`
 
 ## Scope
 
@@ -17,12 +20,13 @@ The foundation migrations create PostgreSQL structures only:
 - Shipping profiles, shipping zones, coupons, promotions, banners, CMS pages, FAQs, and contact requests.
 - Public read views for catalog and seller storefront data.
 - Supabase storage buckets and object policies for product images, seller documents, KYC documents, store logos, store banners, user avatars, promotional banners, and CMS assets.
+- Production grants, forced RLS, schema creation lockdown, and direct function execution limits.
 
 No application routes, UI, authentication client code, seller dashboard code, marketplace API code, or business workflow implementation is included.
 
 ## RLS Model
 
-Every table created by the foundation migration has row level security enabled in the same migration.
+Every table created by the foundation migration has row level security enabled in the same migration. The production hardening migration also forces RLS on application tables so table-owner access remains policy-bound.
 
 The migration defines these database helper functions for policy reuse:
 
@@ -80,6 +84,12 @@ Before merge, run the migrations and seed in a Supabase-enabled environment:
 supabase db reset
 psql "$DATABASE_URL" -f supabase/seed/dev_seed.sql
 psql "$DATABASE_URL" -f supabase/tests/database_validation.sql
+```
+
+Or apply the SQL files directly with `psql`:
+
+```bash
+DATABASE_URL="postgresql://..." node scripts/run-supabase-sql.js --seed --validate
 ```
 
 Then generate database types for the application once the TypeScript package scaffold exists:

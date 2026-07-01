@@ -7,8 +7,9 @@ Status: Phase 2 implementation complete for Agent 01 database foundation.
 - `supabase/migrations/202607010001_foundation_schema.sql` creates the normalized marketplace schema, enums, foreign keys, defaults, triggers, views, indexes, RLS policies, and initial country data.
 - `supabase/migrations/202607010002_lifecycle_constraints_and_indexes.sql` adds soft-delete columns where records are commonly retired instead of physically removed, hardens price/order/time-window constraints, and adds high-volume pagination indexes.
 - `supabase/migrations/202607010003_storage_buckets_and_policies.sql` creates the required Supabase Storage bucket model and least-privilege object policies.
+- `supabase/migrations/202607010004_production_hardening.sql` locks down public schema creation, makes role grants explicit, forces RLS on application tables, hardens function search paths, and limits direct function execution.
 - `supabase/seed/dev_seed.sql` provides repeatable minimal development data without creating auth users.
-- `supabase/tests/database_validation.sql` provides post-reset validation queries for RLS coverage, storage setup, and critical indexes.
+- `supabase/tests/database_validation.sql` provides post-reset validation queries for RLS coverage, forced RLS, schema lockdown, storage setup, and critical indexes.
 
 ## Table Coverage
 
@@ -16,7 +17,7 @@ The schema includes identity support, roles, countries, sellers, seller members,
 
 ## RLS Coverage
 
-RLS is enabled on every public table created by the foundation migration. Policies follow explicit ownership: self, buyer, seller member, staff, or public published/active read access.
+RLS is enabled and forced on every public table created by the foundation migration. Policies follow explicit ownership: self, buyer, seller member, staff, or public published/active read access.
 
 ## Storage Coverage
 
@@ -30,6 +31,12 @@ Static review completed in this workspace. Local execution was not completed bec
 supabase db reset
 psql "$DATABASE_URL" -f supabase/seed/dev_seed.sql
 psql "$DATABASE_URL" -f supabase/tests/database_validation.sql
+```
+
+Direct SQL application is also supported:
+
+```bash
+DATABASE_URL="postgresql://..." node scripts/run-supabase-sql.js --seed --validate
 ```
 
 ## Agent 2 Dependency

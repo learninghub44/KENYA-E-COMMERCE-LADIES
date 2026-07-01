@@ -2,7 +2,7 @@
 
 ## What Was Built
 
-Agent 01 built the Supabase database foundation for the marketplace: normalized PostgreSQL tables, constraints, foreign keys, indexes, triggers, reporting/read views, RLS policies, storage buckets, storage object policies, seed data, validation SQL, and database documentation.
+Agent 01 built the Supabase database foundation for the marketplace: normalized PostgreSQL tables, constraints, foreign keys, indexes, triggers, reporting/read views, RLS policies, storage buckets, storage object policies, production grants, forced RLS, seed data, validation SQL, and database documentation.
 
 ## Database Decisions
 
@@ -14,16 +14,20 @@ Agent 01 built the Supabase database foundation for the marketplace: normalized 
 - Historical order items store product snapshots so product edits do not mutate order history.
 - Soft deletes are added to lifecycle records that are commonly retired or hidden.
 - Physical deletes remain appropriate for join rows, cart items, wishlist items, and other replaceable child records.
+- Browser-facing roles cannot create objects in `public`; table grants are explicit for `anon`, `authenticated`, and `service_role`.
+- Trigger-only functions are not directly executable by browser-facing roles; policy helper functions keep narrow execute grants.
 
 ## Files Created or Updated
 
 - `supabase/migrations/202607010001_foundation_schema.sql`
 - `supabase/migrations/202607010002_lifecycle_constraints_and_indexes.sql`
 - `supabase/migrations/202607010003_storage_buckets_and_policies.sql`
+- `supabase/migrations/202607010004_production_hardening.sql`
 - `supabase/seed/dev_seed.sql`
 - `supabase/policies/README.md`
 - `supabase/functions/README.md`
 - `supabase/tests/database_validation.sql`
+- `scripts/run-supabase-sql.js`
 - `database/README.md`
 - `docs/database/00-index.md`
 - `docs/database/08-index-strategy.md`
@@ -43,7 +47,7 @@ The foundation includes 40 public tables: `countries`, `profiles`, `user_roles`,
 
 ## RLS Summary
 
-Every public table has RLS enabled. Policies use self-owned access, buyer/order participation, seller membership, staff roles, or public active/published reads. Storage policies use path prefixes and the same seller/staff ownership helpers.
+Every public table has RLS enabled and forced. Policies use self-owned access, buyer/order participation, seller membership, staff roles, or public active/published reads. Storage policies use path prefixes and the same seller/staff ownership helpers.
 
 ## Storage Buckets
 
@@ -58,14 +62,14 @@ Every public table has RLS enabled. Policies use self-owned access, buyer/order 
 
 ## Known Limitations
 
-- Migrations were statically reviewed here but not executed against a local Supabase instance in this workspace.
+- Migrations were statically reviewed here but not executed against a live Supabase instance in this workspace because no database URL was available.
 - No auth users are seeded because `auth.users` and signup flows belong to Agent 2.
 - Legacy buckets `seller-assets` and `private-documents` may exist after the initial migration; new code should use the explicit Phase 2 buckets.
 - Large-table partitioning is documented as a future measured optimization, not enabled now.
 
 ## Recommendations
 
-- Run `supabase db reset`, then `supabase/seed/dev_seed.sql`, then `supabase/tests/database_validation.sql` before opening the PR.
+- Run `supabase db reset`, then `supabase/seed/dev_seed.sql`, then `supabase/tests/database_validation.sql` before opening the PR, or run `DATABASE_URL="postgresql://..." node scripts/run-supabase-sql.js --seed --validate`.
 - Generate typed database bindings after the application package scaffold exists.
 - Add integration tests for RLS once Agent 2 creates auth bootstrap users.
 - Revisit partitioning for `messages`, `orders`, `analytics_events`, and `audit_logs` when production volume justifies it.
