@@ -78,9 +78,8 @@ describe('Export Service', () => {
       };
 
       const result = exportToCSV(data);
-      const lines = result.split('\n');
 
-      assert.strictEqual(lines[1], 'John,"Line 1\nLine 2"');
+      assert.ok(result.includes('John,"Line 1\nLine 2"'));
     });
 
     it('should handle empty rows', () => {

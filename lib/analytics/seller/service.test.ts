@@ -110,6 +110,9 @@ describe('Date Range Utilities', () => {
 // ============================================================================
 
 describe('Seller Analytics Service', () => {
+  const sellerId = '123e4567-e89b-12d3-a456-426614174000';
+  const otherSellerId = '123e4567-e89b-12d3-a456-426614174001';
+
   const mockAnalyticsRepository = {
     getDashboard: mock.fn(async () => ({
       overview: {
@@ -177,7 +180,7 @@ describe('Seller Analytics Service', () => {
   describe('getDashboard', () => {
     it('should return dashboard data with valid request', async () => {
       const result = await service.getDashboard('user-123', {
-        sellerId: 'seller-123',
+        sellerId,
         dateRange: 'last_30_days',
       });
 
@@ -202,7 +205,7 @@ describe('Seller Analytics Service', () => {
       mockPermissionChecker.canViewSellerAnalytics.mock.mockImplementationOnce(async () => false);
       
       const result = await service.getDashboard('user-123', {
-        sellerId: 'seller-456',
+        sellerId: otherSellerId,
         dateRange: 'last_30_days',
       });
 
@@ -216,7 +219,7 @@ describe('Seller Analytics Service', () => {
   describe('getRevenueAnalytics', () => {
     it('should return revenue analytics with valid request', async () => {
       const result = await service.getRevenueAnalytics('user-123', {
-        sellerId: 'seller-123',
+        sellerId,
         startDate: '2024-01-01',
         endDate: '2024-01-31',
         groupBy: 'day',
@@ -239,7 +242,7 @@ describe('Seller Analytics Service', () => {
   describe('getProductAnalytics', () => {
     it('should return product analytics with valid request', async () => {
       const result = await service.getProductAnalytics('user-123', {
-        sellerId: 'seller-123',
+        sellerId,
         limit: 50,
       });
 
@@ -248,7 +251,7 @@ describe('Seller Analytics Service', () => {
 
     it('should use default limit', async () => {
       const result = await service.getProductAnalytics('user-123', {
-        sellerId: 'seller-123',
+        sellerId,
       });
 
       assert.strictEqual(result.ok, true);
@@ -258,7 +261,7 @@ describe('Seller Analytics Service', () => {
   describe('getCustomerAnalytics', () => {
     it('should return customer analytics with valid request', async () => {
       const result = await service.getCustomerAnalytics('user-123', {
-        sellerId: 'seller-123',
+        sellerId,
         startDate: '2024-01-01',
         endDate: '2024-01-31',
         limit: 50,
@@ -270,7 +273,7 @@ describe('Seller Analytics Service', () => {
 
   describe('getInventoryAnalytics', () => {
     it('should return inventory analytics with valid request', async () => {
-      const result = await service.getInventoryAnalytics('user-123', 'seller-123');
+      const result = await service.getInventoryAnalytics('user-123', sellerId);
 
       assert.strictEqual(result.ok, true);
       if (result.ok) {
@@ -281,7 +284,7 @@ describe('Seller Analytics Service', () => {
     it('should return forbidden when permission denied', async () => {
       mockPermissionChecker.canViewSellerAnalytics.mock.mockImplementationOnce(async () => false);
       
-      const result = await service.getInventoryAnalytics('user-123', 'seller-456');
+      const result = await service.getInventoryAnalytics('user-123', otherSellerId);
 
       assert.strictEqual(result.ok, false);
       if (!result.ok) {
@@ -292,7 +295,7 @@ describe('Seller Analytics Service', () => {
 
   describe('getRatingAnalytics', () => {
     it('should return not found when no rating data', async () => {
-      const result = await service.getRatingAnalytics('user-123', 'seller-123');
+      const result = await service.getRatingAnalytics('user-123', sellerId);
 
       assert.strictEqual(result.ok, false);
       if (!result.ok) {
@@ -306,7 +309,7 @@ describe('Seller Analytics Service', () => {
         permissionChecker: mockPermissionChecker as any,
       });
 
-      const result = await serviceWithoutRating.getRatingAnalytics('user-123', 'seller-123');
+      const result = await serviceWithoutRating.getRatingAnalytics('user-123', sellerId);
 
       assert.strictEqual(result.ok, false);
       if (!result.ok) {
@@ -317,7 +320,7 @@ describe('Seller Analytics Service', () => {
 
   describe('getSearchAnalytics', () => {
     it('should return search analytics when repository available', async () => {
-      const result = await service.getSearchAnalytics('user-123', 'seller-123', '2024-01-01', '2024-01-31');
+      const result = await service.getSearchAnalytics('user-123', sellerId, '2024-01-01', '2024-01-31');
 
       assert.strictEqual(result.ok, true);
     });
@@ -328,7 +331,7 @@ describe('Seller Analytics Service', () => {
         permissionChecker: mockPermissionChecker,
       });
 
-      const result = await serviceWithoutSearch.getSearchAnalytics('user-123', 'seller-123', '2024-01-01', '2024-01-31');
+      const result = await serviceWithoutSearch.getSearchAnalytics('user-123', sellerId, '2024-01-01', '2024-01-31');
 
       assert.strictEqual(result.ok, false);
       if (!result.ok) {
@@ -339,7 +342,7 @@ describe('Seller Analytics Service', () => {
 
   describe('calculateDailyMetrics', () => {
     it('should calculate daily metrics successfully', async () => {
-      const result = await service.calculateDailyMetrics('seller-123', '2024-01-01');
+      const result = await service.calculateDailyMetrics(sellerId, '2024-01-01');
 
       assert.strictEqual(result.ok, true);
     });
