@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createCache } from "./cache.js";
+import { createCache } from "./cache";
 
 describe("cache", () => {
   it("stores and retrieves values", async () => {

@@ -1,4 +1,4 @@
-import { FileRecord, StorageMetrics } from "./types.js";
+import { FileRecord, StorageMetrics } from "./types";
 
 interface SupabaseResult {
   data: unknown;

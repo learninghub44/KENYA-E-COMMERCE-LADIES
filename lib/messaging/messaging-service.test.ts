@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createConversationService } from "./conversation-service.js";
-import { createMessageService } from "./message-service.js";
+import { createConversationService } from "./conversation-service";
+import { createMessageService } from "./message-service";
 import type {
   ConversationParticipantRole,
   ConversationRecord,
@@ -10,7 +10,7 @@ import type {
   MessageRecord,
   MessageRepository,
   PendingAttachment
-} from "./types.js";
+} from "./types";
 
 const buyerId = "11111111-1111-4111-8111-111111111111";
 const otherBuyerId = "99999999-9999-4999-8999-999999999999";

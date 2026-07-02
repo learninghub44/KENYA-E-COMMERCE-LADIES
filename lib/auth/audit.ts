@@ -1,4 +1,4 @@
-import type { AuthEvent, RequestContext } from "../../types/auth.js";
+import type { AuthEvent, RequestContext } from "../../types/auth";
 
 export type AuditRecord = {
   actorId: string | null;

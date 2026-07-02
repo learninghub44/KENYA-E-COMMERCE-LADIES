@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createCartService } from "../cart/index.js";
-import { createCheckoutService } from "../checkout/index.js";
+import { createCartService } from "../cart/index";
+import { createCheckoutService } from "../checkout/index";
 import {
   calculateOrderTotals,
   createOrderService,
@@ -17,7 +17,7 @@ import {
   type OrderRepository,
   type ProductReader,
   type PurchasableItem
-} from "./index.js";
+} from "./index";
 
 const buyerId = "11111111-1111-4111-8111-111111111111";
 const sellerA = "22222222-2222-4222-8222-222222222222";

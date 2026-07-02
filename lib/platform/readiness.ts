@@ -1,4 +1,4 @@
-import { HealthStatus, ReadinessCheck, ReadinessReport } from "./types.js";
+import { HealthStatus, ReadinessCheck, ReadinessReport } from "./types";
 
 export interface ReadinessDependencies {
   checks: ReadinessCheckProvider[];

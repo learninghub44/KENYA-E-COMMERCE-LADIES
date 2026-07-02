@@ -1,5 +1,5 @@
-import type { InventoryRecord, InventoryRepository, InventoryStatus, ProductRepository, ProductResult } from "./types.js";
-import { inventoryInputSchema } from "./schemas.js";
+import type { InventoryRecord, InventoryRepository, InventoryStatus, ProductRepository, ProductResult } from "./types";
+import { inventoryInputSchema } from "./schemas";
 
 export type InventoryServiceDependencies = {
   products: ProductRepository;

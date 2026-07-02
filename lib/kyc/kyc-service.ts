@@ -1,6 +1,6 @@
-import { normalizeSellerStatus } from "../seller/status.js";
-import { kycSubmissionSchema } from "./schemas.js";
-import type { KycEventPublisher, KycProvider, KycRepository, KycResult, KycVerificationRecord } from "./types.js";
+import { normalizeSellerStatus } from "../seller/status";
+import { kycSubmissionSchema } from "./schemas";
+import type { KycEventPublisher, KycProvider, KycRepository, KycResult, KycVerificationRecord } from "./types";
 
 export type KycServiceDependencies = {
   repository: KycRepository;

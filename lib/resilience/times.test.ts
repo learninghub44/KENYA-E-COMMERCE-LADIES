@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createTimeoutStrategy } from "./times.js";
+import { createTimeoutStrategy } from "./times";
 
 describe("timeout strategy", () => {
   it("resolves when function completes in time", async () => {

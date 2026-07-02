@@ -1,5 +1,5 @@
-import { ConfigService } from "./config.js";
-import { FeatureFlagEvaluation } from "./types.js";
+import { ConfigService } from "./config";
+import { FeatureFlagEvaluation } from "./types";
 
 export interface FeatureFlagTargeting {
   userIds?: string[];

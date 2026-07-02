@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_PASSWORD_POLICY, validatePassword } from "./password-policy.js";
+import { DEFAULT_PASSWORD_POLICY, validatePassword } from "./password-policy";
 
 export const emailSchema = z.string().trim().email().max(320);
 

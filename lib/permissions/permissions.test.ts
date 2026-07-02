@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { hasEveryPermission, hasPermission, normalizeRoles } from "./index.js";
+import { hasEveryPermission, hasPermission, normalizeRoles } from "./index";
 
 describe("permissions", () => {
   it("grants buyer account and seller registration permissions", () => {

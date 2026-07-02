@@ -1,5 +1,5 @@
-import { createCache } from "../../../../lib/platform/cache.js";
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
+import { createCache } from "../../../../lib/platform/cache";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
 
 export async function GET(request: Request) {
   const auth = authorizeRoute({ authLevel: "admin", roles: ["admin", "super_admin"] });

@@ -1,6 +1,6 @@
-import type { SellerResult, SellerStatus, SellerDashboard, SellerEventPublisher, SellerRecord, SellerRepository, SellerRoleRepository } from "./types.js";
-import { sellerApplicationSchema, slugifyStoreName, storeProfileSchema } from "./schemas.js";
-import { canTransitionSellerStatus, normalizeSellerStatus } from "./status.js";
+import type { SellerResult, SellerStatus, SellerDashboard, SellerEventPublisher, SellerRecord, SellerRepository, SellerRoleRepository } from "./types";
+import { sellerApplicationSchema, slugifyStoreName, storeProfileSchema } from "./schemas";
+import { canTransitionSellerStatus, normalizeSellerStatus } from "./status";
 
 export type SellerServiceDependencies = {
   sellers: SellerRepository;

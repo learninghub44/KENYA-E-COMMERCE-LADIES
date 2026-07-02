@@ -1,4 +1,4 @@
-import { MaintenanceType, MaintenanceWindow } from "./types.js";
+import { MaintenanceType, MaintenanceWindow } from "./types";
 
 interface SupabaseResult {
   data: unknown;

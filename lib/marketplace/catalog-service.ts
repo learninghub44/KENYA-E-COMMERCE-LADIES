@@ -9,7 +9,7 @@ import type {
   MarketplaceResult,
   ProductSummary,
   SearchPage
-} from "./types.js";
+} from "./types";
 
 export type CatalogServiceDependencies = {
   categories: CategoryRepository;

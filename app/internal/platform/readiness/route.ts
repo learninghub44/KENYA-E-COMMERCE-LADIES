@@ -1,5 +1,5 @@
-import { createReadinessService, createEnvReadinessCheck, createConnectivityReadinessCheck } from "../../../../lib/platform/readiness.js";
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
+import { createReadinessService, createEnvReadinessCheck, createConnectivityReadinessCheck } from "../../../../lib/platform/readiness";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
 
 export async function GET() {
   const auth = authorizeRoute({ authLevel: "admin", roles: ["admin", "super_admin"] });

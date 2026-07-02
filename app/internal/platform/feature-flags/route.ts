@@ -1,6 +1,6 @@
-import { createConfigService } from "../../../../lib/platform/config.js";
-import { createFeatureFlagService } from "../../../../lib/platform/feature-flags.js";
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
+import { createConfigService } from "../../../../lib/platform/config";
+import { createFeatureFlagService } from "../../../../lib/platform/feature-flags";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
 
 export async function GET(request: Request) {
   const auth = authorizeRoute({ authLevel: "admin", roles: ["admin", "super_admin"] });

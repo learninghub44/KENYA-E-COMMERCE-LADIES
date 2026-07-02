@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createAuthService, type AuthServiceDependencies } from "./auth-service.js";
+import { createAuthService, type AuthServiceDependencies } from "./auth-service";
 
 function createDeps(): AuthServiceDependencies & { events: string[]; roleStore: string[] } {
   const events: string[] = [];

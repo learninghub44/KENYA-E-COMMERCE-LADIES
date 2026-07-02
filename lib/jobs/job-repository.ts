@@ -1,4 +1,4 @@
-import { CreateJobInput, JobRecord, JobRepository, JobStatus } from "./types.js";
+import { CreateJobInput, JobRecord, JobRepository, JobStatus } from "./types";
 
 export interface JobsDbClient {
   from: (table: string) => {

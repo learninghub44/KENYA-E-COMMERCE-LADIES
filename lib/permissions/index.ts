@@ -1,6 +1,6 @@
-import type { Permission } from "../../types/permissions.js";
-import type { AppRole } from "../../types/roles.js";
-import { isAppRole, ROLE_PERMISSIONS } from "../roles/index.js";
+import type { Permission } from "../../types/permissions";
+import type { AppRole } from "../../types/roles";
+import { isAppRole, ROLE_PERMISSIONS } from "../roles/index";
 
 export function permissionsForRoles(roles: readonly AppRole[]): Set<Permission> {
   const permissions = new Set<Permission>();

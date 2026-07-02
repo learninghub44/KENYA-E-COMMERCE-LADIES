@@ -1,4 +1,4 @@
-import { RetryOptions, RetryResult } from "./types.js";
+import { RetryOptions, RetryResult } from "./types";
 
 export interface RetryStrategy {
   execute<T>(fn: () => Promise<T>): Promise<RetryResult<T>>;

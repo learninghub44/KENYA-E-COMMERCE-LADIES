@@ -1,4 +1,4 @@
-import { archiveConversationSchema, searchConversationsSchema, startConversationSchema } from "./schemas.js";
+import { archiveConversationSchema, searchConversationsSchema, startConversationSchema } from "./schemas";
 import type {
   ConversationParticipantRole,
   ConversationRecord,
@@ -6,7 +6,7 @@ import type {
   CursorPage,
   MessagingEventPublisher,
   MessagingResult
-} from "./types.js";
+} from "./types";
 
 export type ConversationServiceDependencies = {
   conversations: ConversationRepository;

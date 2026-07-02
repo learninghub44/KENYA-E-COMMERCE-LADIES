@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { DeleteInput, StorageProviderAdapter, UploadInput, UploadResult } from "./types.js";
+import { DeleteInput, StorageProviderAdapter, UploadInput, UploadResult } from "./types";
 
 function computeChecksum(buffer: Buffer): string {
   return createHash("sha256").update(buffer).digest("hex");

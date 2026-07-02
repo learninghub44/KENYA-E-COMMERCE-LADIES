@@ -1,5 +1,5 @@
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
-import type { JobRecord, JobStatus } from "../../../../lib/jobs/types.js";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
+import type { JobRecord, JobStatus } from "../../../../lib/jobs/types";
 
 interface JobsDbClient {
   from: (table: string) => {

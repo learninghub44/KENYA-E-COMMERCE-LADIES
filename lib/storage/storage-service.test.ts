@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createStorageService } from "./storage-service.js";
-import type { StorageProviderAdapter } from "./types.js";
+import { createStorageService } from "./storage-service";
+import type { StorageProviderAdapter } from "./types";
 
 function createMockAdapter(): StorageProviderAdapter {
   return {

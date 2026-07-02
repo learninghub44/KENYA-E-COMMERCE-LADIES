@@ -1,5 +1,5 @@
-import type { MarketplaceResult, ProductSummary, RecentlyViewedStore, WishlistRepository } from "./types.js";
-import { wishlistAddSchema, wishlistRemoveSchema } from "../products/schemas.js";
+import type { MarketplaceResult, ProductSummary, RecentlyViewedStore, WishlistRepository } from "./types";
+import { wishlistAddSchema, wishlistRemoveSchema } from "../products/schemas";
 
 export type WishlistServiceDependencies = {
   wishlists: WishlistRepository;

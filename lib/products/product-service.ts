@@ -12,9 +12,9 @@ import type {
   ProductVariantRepository,
   ProductWithRelations,
   SellerStatusReader
-} from "./types.js";
-import { productCreateSchema, productUpdateSchema, slugifyProductName } from "./schemas.js";
-import { assertProductStatusTransition, normalizeProductStatus, toStoredProductStatus } from "./status.js";
+} from "./types";
+import { productCreateSchema, productUpdateSchema, slugifyProductName } from "./schemas";
+import { assertProductStatusTransition, normalizeProductStatus, toStoredProductStatus } from "./status";
 
 export type ProductServiceDependencies = {
   products: ProductRepository;

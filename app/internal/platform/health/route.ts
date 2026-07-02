@@ -1,5 +1,5 @@
-import { createHealthService, createDatabaseHealthCheck, createStorageHealthCheck, createCacheHealthCheck, createQueueHealthCheck } from "../../../../lib/platform/health.js";
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
+import { createHealthService, createDatabaseHealthCheck, createStorageHealthCheck, createCacheHealthCheck, createQueueHealthCheck } from "../../../../lib/platform/health";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
 
 export async function GET() {
   const auth = authorizeRoute({ authLevel: "admin", roles: ["admin", "super_admin"] });

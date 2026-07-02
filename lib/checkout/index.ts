@@ -1,2 +1,2 @@
-export * from "./checkout-service.js";
-export type { CheckoutDraft, CheckoutResult } from "../orders/types.js";
+export * from "./checkout-service";
+export type { CheckoutDraft, CheckoutResult } from "../orders/types";

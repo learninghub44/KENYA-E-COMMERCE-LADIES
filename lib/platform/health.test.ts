@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createHealthService, createDatabaseHealthCheck, createCacheHealthCheck, createQueueHealthCheck, createStorageHealthCheck } from "./health.js";
+import { createHealthService, createDatabaseHealthCheck, createCacheHealthCheck, createQueueHealthCheck, createStorageHealthCheck } from "./health";
 
 describe("health service", () => {
   it("returns healthy when all checks pass", async () => {

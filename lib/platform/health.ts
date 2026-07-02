@@ -1,4 +1,4 @@
-import { HealthCheckResult, HealthReport, HealthStatus } from "./types.js";
+import { HealthCheckResult, HealthReport, HealthStatus } from "./types";
 
 export interface HealthCheck {
   name: string;

@@ -1,4 +1,4 @@
-import type { CartItemRecord, CouponRecord, DiscountLine } from "./types.js";
+import type { CartItemRecord, CouponRecord, DiscountLine } from "./types";
 
 export type CalculationInput = {
   items: Pick<CartItemRecord, "sellerId" | "quantity" | "unitPriceMinor" | "currency">[];

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createFileService } from "./files.js";
+import { createFileService } from "./files";
 
 function createMockClient() {
   const store = new Map<string, Record<string, unknown>>();
