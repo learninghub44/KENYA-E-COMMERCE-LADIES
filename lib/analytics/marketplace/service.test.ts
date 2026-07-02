@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  calculateGrowthRate,
   createMarketplaceAnalyticsService,
-  getMarketplaceDateWindow,
 } from "./service.js";
 import {
   AnalyticsDateWindow,
@@ -15,6 +13,8 @@ import {
   RevenueAnalytics,
   SellersAnalytics,
   UsersAnalytics,
+  calculateGrowthRate,
+  getMarketplaceDateWindow,
 } from "./types.js";
 
 const emptyRanking = { id: "id", name: "Name", count: 1, revenueMinor: 100, growthRate: 0, revenueShare: 100 };
