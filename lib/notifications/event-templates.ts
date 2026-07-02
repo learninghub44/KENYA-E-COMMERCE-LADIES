@@ -4,7 +4,7 @@ import type {
   NotificationCategory,
   PlatformEvent,
   PlatformEventType
-} from "./types.js";
+} from "./types";
 
 /**
  * Declarative mapping from an event to what it produces. Each entry says which category the

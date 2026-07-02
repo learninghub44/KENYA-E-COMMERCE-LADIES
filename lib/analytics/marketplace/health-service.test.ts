@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { calculateMarketplaceHealthScore } from "./health-service.js";
+import { calculateMarketplaceHealthScore } from "./health-service";
 
 describe("marketplace health score", () => {
   it("calculates a healthy score with good metrics", () => {

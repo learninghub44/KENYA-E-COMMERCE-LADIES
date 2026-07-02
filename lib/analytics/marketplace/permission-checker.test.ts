@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createMarketplaceAnalyticsPermissionChecker, SupabaseRoleClient } from "./permission-checker.js";
+import { createMarketplaceAnalyticsPermissionChecker, SupabaseRoleClient } from "./permission-checker";
 
 describe("marketplace analytics permission checker", () => {
   function createClient(mockData: Array<{ role: string }>): SupabaseRoleClient {

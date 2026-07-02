@@ -3,9 +3,10 @@ import { createEventService } from "../../../../lib/events/event-service";
 import { createEventRepository, EventsDbClient } from "../../../../lib/events/event-repository";
 import { createSupabaseClient } from "../../../../lib/supabase/server";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const supabase = createSupabaseClient();
+    const { id } = await params;
+    const supabase = await createSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const repository = createEventRepository(supabase as unknown as EventsDbClient);
     const service = createEventService({ repository });
 
-    const event = await service.getEvent(params.id);
+    const event = await service.getEvent(id);
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }

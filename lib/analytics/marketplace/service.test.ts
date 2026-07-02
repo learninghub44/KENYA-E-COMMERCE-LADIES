@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   createMarketplaceAnalyticsService,
-} from "./service.js";
+} from "./service";
 import {
   AnalyticsDateWindow,
   BrandsAnalytics,
@@ -15,7 +15,7 @@ import {
   UsersAnalytics,
   calculateGrowthRate,
   getMarketplaceDateWindow,
-} from "./types.js";
+} from "./types";
 
 const emptyRanking = { id: "id", name: "Name", count: 1, revenueMinor: 100, growthRate: 0, revenueShare: 100 };
 

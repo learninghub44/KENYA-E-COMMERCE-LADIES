@@ -1,4 +1,4 @@
-import { ExportRepository, ExportData } from './export-service.js';
+import { ExportRepository, ExportData } from './export-service';
 
 // ============================================================================
 // SUPABASE EXPORT REPOSITORY

@@ -1,5 +1,5 @@
-import type { AdminActor } from "../audit/types.js";
-import type { ProductReviewRecord, ReviewModerationInput, ReviewModerationResult, SellerReviewRecord } from "../reviews/types.js";
+import type { AdminActor } from "../audit/types";
+import type { ProductReviewRecord, ReviewModerationInput, ReviewModerationResult, SellerReviewRecord } from "../reviews/types";
 
 export type TrustReviewRepository = {
   findProductReview(reviewId: string): Promise<ProductReviewRecord | null>;

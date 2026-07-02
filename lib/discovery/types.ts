@@ -1,5 +1,5 @@
-import type { CursorPage } from "../audit/types.js";
-import type { SearchProduct, SearchResult } from "../search/types.js";
+import type { CursorPage } from "../audit/types";
+import type { SearchProduct, SearchResult } from "../search/types";
 
 export type DiscoveryRail =
   | "featured"

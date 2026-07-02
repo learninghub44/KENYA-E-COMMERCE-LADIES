@@ -11,7 +11,7 @@ import {
   RecordMetricInput,
   RecordStorageMetricsInput,
   StorageMetricRepository,
-} from "./types.js";
+} from "./types";
 
 export interface MetricsRepositoryClient {
   from: (table: string) => {

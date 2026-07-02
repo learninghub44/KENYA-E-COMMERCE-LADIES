@@ -224,7 +224,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Store className="h-6 w-6 text-primary" />
             <span className="text-lg font-bold">KEC Ladies</span>
           </div>
-          <SidebarNav onNavClick={() => document.body.click()} />
+          <SidebarNav collapsed={false} onNavClick={() => document.body.click()} />
         </SheetContent>
       </Sheet>
 

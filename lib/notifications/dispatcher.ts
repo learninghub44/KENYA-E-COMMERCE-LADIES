@@ -1,13 +1,13 @@
-import type { EventBus } from "./event-bus.js";
-import type { EmailService } from "./email-service.js";
-import { EVENT_TEMPLATES } from "./event-templates.js";
+import type { EventBus } from "./event-bus";
+import type { EmailService } from "./email-service";
+import { EVENT_TEMPLATES } from "./event-templates";
 import type {
   NotificationPreferenceRepository,
   NotificationPreferences,
   NotificationRepository,
   PlatformEvent,
   PlatformEventType
-} from "./types.js";
+} from "./types";
 
 export type DispatcherDependencies = {
   bus: EventBus;

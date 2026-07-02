@@ -1,5 +1,5 @@
-import { createEventSchema, CreateEventInput, CreateEventRequest, CursorPage, EventFilters, EventRepository, EventStatistics, InternalEvent } from "./types.js";
-import { EVENT_TYPES } from "./types.js";
+import { createEventSchema, CreateEventInput, CreateEventRequest, CursorPage, EventFilters, EventRepository, EventStatistics, InternalEvent } from "./types";
+import { EVENT_TYPES } from "./types";
 
 export interface EventServiceDependencies {
   repository: EventRepository;

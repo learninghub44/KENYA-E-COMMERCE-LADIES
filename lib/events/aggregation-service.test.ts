@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createAggregationService } from "./aggregation-service.js";
-import { EventRepository } from "./types.js";
+import { createAggregationService } from "./aggregation-service";
+import { EventRepository } from "./types";
 
 describe("aggregation service", () => {
   function createMockRepo(): EventRepository {

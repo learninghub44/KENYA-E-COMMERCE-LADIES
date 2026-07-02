@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createEventBus } from "./event-bus.js";
-import { registerNotificationHandlers } from "./dispatcher.js";
-import { createEmailService } from "./email-service.js";
-import { createBroadcastService } from "./broadcast-service.js";
+import { createEventBus } from "./event-bus";
+import { registerNotificationHandlers } from "./dispatcher";
+import { createEmailService } from "./email-service";
+import { createBroadcastService } from "./broadcast-service";
 import type {
   BroadcastRecord,
   BroadcastRepository,
@@ -18,8 +18,8 @@ import type {
   OutboundEmail,
   PlatformEvent,
   QueueEmailInput
-} from "./types.js";
-import type { AdminActor } from "../audit/types.js";
+} from "./types";
+import type { AdminActor } from "../audit/types";
 
 const admin: AdminActor = { userId: "admin-1", roles: ["admin"] };
 const buyer: AdminActor = { userId: "buyer-1", roles: ["buyer"] };

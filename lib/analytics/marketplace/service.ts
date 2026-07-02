@@ -17,7 +17,7 @@ import {
   getMarketplaceDateWindow,
   marketplaceAnalyticsRequestSchema,
   success,
-} from "./types.js";
+} from "./types";
 
 export type MarketplaceAnalyticsServiceDependencies = {
   repository: MarketplaceAnalyticsRepository;

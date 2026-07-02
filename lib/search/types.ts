@@ -1,4 +1,4 @@
-import type { CursorPage } from "../audit/types.js";
+import type { CursorPage } from "../audit/types";
 
 export type SearchResult<T> =
   | { ok: true; data: T }

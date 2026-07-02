@@ -8,6 +8,7 @@ interface SupabaseResult {
 interface EqChain extends Promise<SupabaseResult> {
   single: () => Promise<SupabaseResult>;
   eq: (col: string, val: unknown) => EqChain;
+  order: (col: string, opts: { ascending: boolean }) => { limit: (n: number) => Promise<SupabaseResult> };
 }
 
 interface SelectChain extends Promise<SupabaseResult> {

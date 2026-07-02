@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRecentlyViewedService, type RecentlyViewedRepository } from "./index.js";
-import type { SearchProduct } from "../search/index.js";
+import { createRecentlyViewedService, type RecentlyViewedRepository } from "./index";
+import type { SearchProduct } from "../search/index";
 
 test("records and lists recently viewed products for a user", async () => {
   const viewed: { userId: string; productId: string; viewedAt: string }[] = [];

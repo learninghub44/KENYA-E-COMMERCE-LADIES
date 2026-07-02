@@ -1,7 +1,7 @@
-import { assertPermission } from "../permissions/index.js";
-import type { AdminActor } from "../audit/types.js";
-import type { ProductReviewRecord, SellerReviewRecord } from "../reviews/types.js";
-import type { TrustResult, TrustServiceDependencies } from "./types.js";
+import { assertPermission } from "../permissions/index";
+import type { AdminActor } from "../audit/types";
+import type { ProductReviewRecord, SellerReviewRecord } from "../reviews/types";
+import type { TrustResult, TrustServiceDependencies } from "./types";
 
 function failure(code: string, message: string, status: number): TrustResult<never> {
   return { ok: false, code, message, status };

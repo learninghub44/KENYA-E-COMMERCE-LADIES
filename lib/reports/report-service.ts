@@ -1,6 +1,6 @@
-import { assertPermission } from "../permissions/index.js";
-import type { AdminActor } from "../audit/types.js";
-import type { CreateReportInput, ReportAuditWriter, ReportRepository, ReportResult, ReportSearchFilters, ReportRecord } from "./types.js";
+import { assertPermission } from "../permissions/index";
+import type { AdminActor } from "../audit/types";
+import type { CreateReportInput, ReportAuditWriter, ReportRepository, ReportResult, ReportSearchFilters, ReportRecord } from "./types";
 
 export type ReportServiceDependencies = {
   reports: ReportRepository;

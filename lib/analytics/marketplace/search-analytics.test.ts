@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { calculateGrowthRate, marketplaceAnalyticsRequestSchema } from "./types.js";
+import { calculateGrowthRate, marketplaceAnalyticsRequestSchema } from "./types";
 
 describe("search analytics", () => {
   it("calculates search growth rate", () => {

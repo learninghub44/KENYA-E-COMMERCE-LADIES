@@ -1,4 +1,4 @@
-import type { ProductSearchFilters, SearchProduct, SearchSort } from "./types.js";
+import type { ProductSearchFilters, SearchProduct, SearchSort } from "./types";
 
 function normalize(value: string): string {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");

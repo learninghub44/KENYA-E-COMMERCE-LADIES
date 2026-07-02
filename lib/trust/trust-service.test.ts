@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createTrustService } from "./index.js";
-import type { ProductReviewRecord } from "../reviews/index.js";
+import { createTrustService } from "./index";
+import type { ProductReviewRecord } from "../reviews/index";
 
 const review: ProductReviewRecord = {
   id: "review-1",

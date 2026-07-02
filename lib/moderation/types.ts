@@ -1,5 +1,5 @@
-import type { AdminActor, AdminResult, CursorPage } from "../audit/types.js";
-import type { ReportRecord } from "../reports/types.js";
+import type { AdminActor, AdminResult, CursorPage } from "../audit/types";
+import type { ReportRecord } from "../reports/types";
 
 export type ModerationQueueItem = {
   id: string;

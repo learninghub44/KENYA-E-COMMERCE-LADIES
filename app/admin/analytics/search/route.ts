@@ -6,7 +6,7 @@ import { createSupabaseClient } from "../../../../lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
 
     const params = Object.fromEntries(request.nextUrl.searchParams);
     const service = createMarketplaceAnalyticsService({
-      repository: createSupabaseMarketplaceAnalyticsRepository(supabase),
-      permissionChecker: createMarketplaceAnalyticsPermissionChecker(supabase),
+      repository: createSupabaseMarketplaceAnalyticsRepository(supabase as any),
+      permissionChecker: createMarketplaceAnalyticsPermissionChecker(supabase as any),
     });
 
     const result = await service.getSearchAnalytics(user.id, params);

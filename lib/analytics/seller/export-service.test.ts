@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { exportToCSV, exportToExcel, exportToPDF } from './export-service.js';
+import { exportToCSV, exportToExcel, exportToPDF } from './export-service';
 
 // ============================================================================
 // EXPORT SERVICE TESTS

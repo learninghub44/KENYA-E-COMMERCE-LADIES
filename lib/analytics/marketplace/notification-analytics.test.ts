@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { NotificationAnalytics } from "./types.js";
+import { NotificationAnalytics } from "./types";
 
 describe("notification analytics types", () => {
   it("constructs valid notification analytics", () => {

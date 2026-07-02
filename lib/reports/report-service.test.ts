@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createReportService, type ReportRecord, type ReportRepository } from "./index.js";
-import type { AdminActor } from "../audit/index.js";
+import { createReportService, type ReportRecord, type ReportRepository } from "./index";
+import type { AdminActor } from "../audit/index";
 
 const moderator: AdminActor = { userId: "mod-1", roles: ["moderator"] };
 const buyer: AdminActor = { userId: "buyer-1", roles: ["buyer"] };

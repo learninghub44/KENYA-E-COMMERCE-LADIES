@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { calculateOrderTotals } from "../orders/calculations";
 import { checkoutSchema, couponCodeSchema } from "../orders/schemas";
 import type {
@@ -38,7 +39,7 @@ function groupBySeller(items: CartItemRecord[]): Map<string, CartItemRecord[]> {
 }
 
 function defaultOrderNumber(): string {
-  return `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  return `ORD-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
 export function createCheckoutService(deps: CheckoutServiceDependencies) {

@@ -10,7 +10,7 @@ import {
   type SavedSearch,
   type SearchHistoryEntry,
   type SearchProduct
-} from "./index.js";
+} from "./index";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const otherUserId = "22222222-2222-4222-8222-222222222222";

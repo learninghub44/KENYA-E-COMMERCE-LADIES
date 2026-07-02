@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { EVENT_TYPES, createEventSchema, eventFiltersSchema } from "./types.js";
-import { createEventService } from "./event-service.js";
-import { EventRepository, InternalEvent } from "./types.js";
+import { EVENT_TYPES, createEventSchema, eventFiltersSchema } from "./types";
+import { createEventService } from "./event-service";
+import { EventRepository, InternalEvent } from "./types";
 
 describe("event service", () => {
   function createMockRepo(): EventRepository {

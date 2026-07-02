@@ -14,7 +14,7 @@ import {
   MarketplaceHealthScore,
   SellersAnalytics,
   UsersAnalytics,
-} from "./types.js";
+} from "./types";
 
 export interface SupabaseRpcClient {
   rpc: (name: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
