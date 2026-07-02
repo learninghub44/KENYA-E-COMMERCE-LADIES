@@ -7,7 +7,7 @@ import { Card, CardContent } from "../ui/card"
 import { Price } from "./price"
 import { Rating } from "./rating"
 
-interface Product {
+export interface Product {
   id: string
   name: string
   price: number

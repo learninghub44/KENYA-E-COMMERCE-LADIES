@@ -343,9 +343,7 @@ export default function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
                   <span>
-                    {SHIPPING_ESTIMATE === 0
-                      ? "Free"
-                      : `KES ${SHIPPING_ESTIMATE.toLocaleString()}`}
+                    {`KES ${SHIPPING_ESTIMATE.toLocaleString()}`}
                   </span>
                 </div>
                 <div className="flex justify-between">
