@@ -42,8 +42,7 @@ create table if not exists public.messages (
   deleted_at timestamptz,
   deleted_by uuid references public.profiles(id) on delete set null,
   metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  check (body is not null or exists (select 1))
+  created_at timestamptz not null default now()
 );
 
 create index if not exists idx_messages_conversation_created on public.messages(conversation_id, created_at desc);
