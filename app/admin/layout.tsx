@@ -230,7 +230,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex flex-1 flex-col">
         <AdminTopBar />
-        <main className="flex-1 p-6">
+        <main id="main-content" className="flex-1 p-6">
           {children}
         </main>
       </div>
