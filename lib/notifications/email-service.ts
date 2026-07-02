@@ -1,4 +1,4 @@
-import type { EmailRepository, EmailProvider, NotificationResult, OutboundEmail, QueueEmailInput } from "./types.js";
+import type { EmailRepository, EmailProvider, NotificationResult, OutboundEmail, QueueEmailInput } from "./types";
 
 export type EmailServiceDependencies = {
   emails: EmailRepository;

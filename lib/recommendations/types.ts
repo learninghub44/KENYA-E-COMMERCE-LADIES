@@ -1,4 +1,4 @@
-import type { SearchProduct } from "../search/types.js";
+import type { SearchProduct } from "../search/types";
 
 export type RecommendationStrategy =
   | "recently_viewed"

@@ -1,5 +1,5 @@
-import { assertPermission } from "../permissions/index.js";
-import type { AdminActor, AdminResult, AuditRepository, AuditSearchFilters, AuditWriteInput, PlatformAuditRecord } from "./types.js";
+import { assertPermission } from "../permissions/index";
+import type { AdminActor, AdminResult, AuditRepository, AuditSearchFilters, AuditWriteInput, PlatformAuditRecord } from "./types";
 
 function failure(code: string, message: string, status: number): AdminResult<never> {
   return { ok: false, code, message, status };

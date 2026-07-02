@@ -9,7 +9,7 @@ import {
   dateRangeSchema,
   customDateRangeSchema,
   timeGroupingSchema,
-} from './analytics-service.js';
+} from './analytics-service';
 
 // ============================================================================
 // SCHEMA VALIDATION TESTS

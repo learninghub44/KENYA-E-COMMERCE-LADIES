@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createEmptyRecommendationProvider, createRecommendationService } from "./index.js";
+import { createEmptyRecommendationProvider, createRecommendationService } from "./index";
 
 test("exposes future recommendation hooks without AI ranking", async () => {
   const service = createRecommendationService({ provider: createEmptyRecommendationProvider() });

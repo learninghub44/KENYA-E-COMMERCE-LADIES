@@ -32,7 +32,7 @@ export function createVariantService(deps: VariantServiceDependencies) {
 
     async add(productId: string, actorSellerId: string, input: unknown): Promise<ProductResult<ProductVariantRecord>> {
       const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      if ("error" in owned) return owned.error as unknown as ProductResult<ProductVariantRecord>;
 
       const parsed = productVariantInputSchema.safeParse(input);
       if (!parsed.success) return failure("VALIDATION_ERROR", "Variant input is invalid.", 400);
@@ -57,7 +57,7 @@ export function createVariantService(deps: VariantServiceDependencies) {
       input: unknown
     ): Promise<ProductResult<ProductVariantRecord>> {
       const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      if ("error" in owned) return owned.error as unknown as ProductResult<ProductVariantRecord>;
 
       const parsed = productVariantInputSchema.partial().safeParse(input);
       if (!parsed.success) return failure("VALIDATION_ERROR", "Variant update input is invalid.", 400);
@@ -67,8 +67,8 @@ export function createVariantService(deps: VariantServiceDependencies) {
     },
 
     async remove(productId: string, variantId: string, actorSellerId: string): Promise<ProductResult<{ deleted: true }>> {
-      const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      const owned = await assertOwnedProduct(deps, productId, variantId);
+      if ("error" in owned) return owned.error as unknown as ProductResult<{ deleted: true }>;
 
       await deps.variants.deleteVariant(variantId);
       return { ok: true, data: { deleted: true } };

@@ -1,4 +1,4 @@
-import { EventFilters, EventReplayHandler, EventRepository, InternalEvent } from "./types.js";
+import { EventFilters, EventReplayHandler, EventRepository, InternalEvent } from "./types";
 
 export interface ReplayServiceDependencies {
   repository: EventRepository;

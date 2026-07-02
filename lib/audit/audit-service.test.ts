@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createAuditService, type AdminActor, type AuditRepository, type PlatformAuditRecord } from "./index.js";
+import { createAuditService, type AdminActor, type AuditRepository, type PlatformAuditRecord } from "./index";
 
 const admin: AdminActor = { userId: "admin-1", roles: ["admin"] };
 const support: AdminActor = { userId: "support-1", roles: ["support"] };

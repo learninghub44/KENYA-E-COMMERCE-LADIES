@@ -1,4 +1,4 @@
-import { SearchRepository, SearchAnalytics } from './analytics-service.js';
+import { SearchRepository, SearchAnalytics } from './analytics-service';
 
 // ============================================================================
 // SEARCH REPOSITORY (Agent 10 Integration)

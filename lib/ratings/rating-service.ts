@@ -1,4 +1,4 @@
-import type { RatingAggregateInput, RatingResult, RatingServiceDependencies, RatingSummary } from "./types.js";
+import type { RatingAggregateInput, RatingResult, RatingServiceDependencies, RatingSummary } from "./types";
 
 function failure(code: string, message: string, status: number): RatingResult<never> {
   return { ok: false, code, message, status };

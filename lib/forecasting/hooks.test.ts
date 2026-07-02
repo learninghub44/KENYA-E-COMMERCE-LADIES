@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createForecastingService } from "./hooks.js";
-import { ForecastingHook, ForecastingHookRepository, ForecastingHookHandler } from "./types.js";
+import { createForecastingService } from "./hooks";
+import { ForecastingHook, ForecastingHookRepository, ForecastingHookHandler } from "./types";
 
 describe("forecasting hooks", () => {
   function createMockRepo(): ForecastingHookRepository {

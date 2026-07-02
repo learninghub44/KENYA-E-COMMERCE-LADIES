@@ -145,7 +145,7 @@ function SearchCommand({
             )}
             {filtered.map((item, index) => {
               const isPrevCategory =
-                index === 0 || filtered[index - 1].category !== item.category
+                index === 0 || filtered[index - 1]?.category !== item.category
               return (
                 <div key={item.id} role="option" aria-selected={selectedIndex === index}>
                   {isPrevCategory && (

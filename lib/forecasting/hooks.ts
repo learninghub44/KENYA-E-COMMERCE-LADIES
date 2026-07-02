@@ -1,4 +1,4 @@
-import { ForecastingHook, ForecastingHookHandler, ForecastingHookRepository, ForecastingService, HookInvocation, HookInvocationStatus } from "./types.js";
+import { ForecastingHook, ForecastingHookHandler, ForecastingHookRepository, ForecastingService, HookInvocation, HookInvocationStatus } from "./types";
 
 export interface HooksDependencies {
   repository: ForecastingHookRepository;

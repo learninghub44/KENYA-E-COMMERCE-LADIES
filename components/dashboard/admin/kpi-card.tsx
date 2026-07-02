@@ -15,7 +15,7 @@ export function AdminKpiCard({ title, value, description, growthRate }: AdminKpi
         {growthLabel ? (
           <span
             className={
-              growthRate >= 0
+              (growthRate ?? 0) >= 0
                 ? "text-sm font-semibold text-emerald-700 dark:text-emerald-400"
                 : "text-sm font-semibold text-rose-700 dark:text-rose-400"
             }

@@ -1,7 +1,7 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { createSellerAnalyticsService, formatDate, getDateRange } from './service.js';
-import { success, error, ErrorCodes } from './analytics-service.js';
+import { createSellerAnalyticsService, formatDate, getDateRange } from './service';
+import { success, error, ErrorCodes } from './analytics-service';
 
 // ============================================================================
 // DATE RANGE UTILITIES TESTS

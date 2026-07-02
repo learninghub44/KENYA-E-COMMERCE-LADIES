@@ -4,7 +4,7 @@
 create extension if not exists pgcrypto;
 create extension if not exists citext;
 
-create type public.app_role as enum ('buyer', 'seller', 'admin', 'moderator', 'service');
+create type public.app_role as enum ('buyer', 'seller', 'admin', 'moderator', 'service', 'support', 'super_admin');
 create type public.account_status as enum ('active', 'suspended', 'deleted');
 create type public.seller_status as enum ('draft', 'pending_kyc', 'active', 'suspended', 'closed');
 create type public.kyc_status as enum ('not_started', 'pending', 'approved', 'rejected', 'expired');

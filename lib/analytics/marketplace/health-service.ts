@@ -1,4 +1,4 @@
-import { MarketplaceHealthScore } from "./types.js";
+import { MarketplaceHealthScore } from "./types";
 
 export interface HealthScoreConfig {
   weights?: {

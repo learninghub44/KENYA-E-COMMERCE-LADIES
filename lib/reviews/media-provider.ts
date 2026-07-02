@@ -1,4 +1,4 @@
-import type { ReviewMediaInput, ReviewResult } from "./types.js";
+import type { ReviewMediaInput, ReviewResult } from "./types";
 
 export const REVIEW_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 

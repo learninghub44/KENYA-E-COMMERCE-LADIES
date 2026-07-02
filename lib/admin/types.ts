@@ -1,7 +1,7 @@
-import type { OrderStatus } from "../orders/types.js";
-import type { ProductStatus } from "../products/types.js";
-import type { SellerStatus } from "../seller/types.js";
-import type { AdminActor, AdminResult, AuditEntityType, CursorPage } from "../audit/types.js";
+import type { OrderStatus } from "../orders/types";
+import type { ProductStatus } from "../products/types";
+import type { SellerStatus } from "../seller/types";
+import type { AdminActor, AdminResult, AuditEntityType, CursorPage } from "../audit/types";
 
 export type AdminListFilters = {
   query?: string | undefined;

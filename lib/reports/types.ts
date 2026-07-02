@@ -1,4 +1,4 @@
-import type { AdminActor, AdminResult, CursorPage } from "../audit/types.js";
+import type { AdminActor, AdminResult, CursorPage } from "../audit/types";
 
 export type ReportTargetType = "product" | "seller" | "buyer" | "message" | "store";
 export type ReportStatus = "open" | "assigned" | "in_review" | "resolved" | "dismissed";

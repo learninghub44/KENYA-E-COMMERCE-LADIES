@@ -7,7 +7,7 @@ import {
   EventRepository,
   EventStatistics,
   InternalEvent,
-} from "./types.js";
+} from "./types";
 
 export interface EventsDbClient {
   from: (table: string) => {

@@ -1,12 +1,12 @@
-import { assertPermission } from "../permissions/index.js";
-import type { AdminActor } from "../audit/types.js";
+import { assertPermission } from "../permissions/index";
+import type { AdminActor } from "../audit/types";
 import type {
   CreateNotificationInput,
   NotificationListFilters,
   NotificationRecord,
   NotificationRepository,
   NotificationResult
-} from "./types.js";
+} from "./types";
 
 export type NotificationServiceDependencies = {
   notifications: NotificationRepository;

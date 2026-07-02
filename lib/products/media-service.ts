@@ -33,7 +33,7 @@ export function createMediaService(deps: MediaServiceDependencies) {
 
     async add(productId: string, actorSellerId: string, input: unknown): Promise<ProductResult<ProductImageRecord>> {
       const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      if ("error" in owned) return owned.error as unknown as ProductResult<ProductImageRecord>;
 
       const parsed = productImageInputSchema.safeParse(input);
       if (!parsed.success) return failure("VALIDATION_ERROR", "Image input is invalid. A valid Cloudinary URL is required.", 400);
@@ -45,7 +45,7 @@ export function createMediaService(deps: MediaServiceDependencies) {
     /** Drag-and-drop reorder. `orderedImageIds` must contain every image id for the product. */
     async reorder(productId: string, actorSellerId: string, orderedImageIds: string[]): Promise<ProductResult<{ reordered: true }>> {
       const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      if ("error" in owned) return owned.error as unknown as ProductResult<{ reordered: true }>;
 
       const current = await deps.images.listByProduct(productId);
       const currentIds = new Set(current.map((image) => image.id));
@@ -59,7 +59,7 @@ export function createMediaService(deps: MediaServiceDependencies) {
 
     async setPrimary(productId: string, actorSellerId: string, imageId: string): Promise<ProductResult<{ updated: true }>> {
       const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      if ("error" in owned) return owned.error as unknown as ProductResult<{ updated: true }>;
 
       await deps.images.setPrimary(productId, imageId);
       return { ok: true, data: { updated: true } };
@@ -67,7 +67,7 @@ export function createMediaService(deps: MediaServiceDependencies) {
 
     async remove(productId: string, actorSellerId: string, imageId: string): Promise<ProductResult<{ deleted: true }>> {
       const owned = await assertOwnedProduct(deps, productId, actorSellerId);
-      if ("error" in owned) return owned.error;
+      if ("error" in owned) return owned.error as unknown as ProductResult<{ deleted: true }>;
 
       await deps.images.deleteImage(imageId);
       return { ok: true, data: { deleted: true } };

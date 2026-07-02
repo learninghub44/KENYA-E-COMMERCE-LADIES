@@ -117,7 +117,7 @@ export default function PlatformHealthPage() {
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {services.map((service) => {
-              const Icon = statusIcons[service.status]
+              const Icon = statusIcons[service.status]!
               return (
                 <Card key={service.name}>
                   <CardContent className="p-4">

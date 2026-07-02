@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createReplayService } from "./replay-service.js";
-import { EventReplayHandler, EventRepository, InternalEvent } from "./types.js";
+import { createReplayService } from "./replay-service";
+import { EventReplayHandler, EventRepository, InternalEvent } from "./types";
 
 describe("replay service", () => {
   it("replays events through a handler", async () => {

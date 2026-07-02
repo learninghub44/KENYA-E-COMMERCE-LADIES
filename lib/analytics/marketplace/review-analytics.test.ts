@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ReviewAnalytics } from "./types.js";
+import { ReviewAnalytics } from "./types";
 
 describe("review analytics types", () => {
   it("constructs valid review analytics", () => {

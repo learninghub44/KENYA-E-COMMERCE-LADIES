@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createBusinessIntelligenceService } from "./service.js";
-import { BusinessIntelligence, BusinessIntelligenceRepository } from "./types.js";
+import { createBusinessIntelligenceService } from "./service";
+import { BusinessIntelligence, BusinessIntelligenceRepository } from "./types";
 
 describe("business intelligence service", () => {
   const mockBi: BusinessIntelligence = {

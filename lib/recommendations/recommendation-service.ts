@@ -1,4 +1,4 @@
-import type { RecommendationProvider, RecommendationRequest } from "./types.js";
+import type { RecommendationProvider, RecommendationRequest } from "./types";
 
 export function createRecommendationService(deps: { provider: RecommendationProvider }) {
   return {

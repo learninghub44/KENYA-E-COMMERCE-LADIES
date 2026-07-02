@@ -211,6 +211,12 @@ export function createAuthService(deps: AuthServiceDependencies) {
     },
 
     async deactivateAccount(userId: string, context: RequestContext = {}): Promise<AuthResult<null>> {
+      const current = await deps.auth.getUser();
+      if (current.error || !current.data.user) return authFailure("SESSION_REQUIRED", "A valid session is required.", 401);
+      const roles = normalizeRoles(await deps.roles.listRoles(current.data.user.id));
+      if (current.data.user.id !== userId && !roles.includes("admin") && !roles.includes("super_admin")) {
+        return authFailure("AUTHORIZATION_DENIED", "You can only deactivate your own account.", 403);
+      }
       await deps.profiles.setProfileStatus(userId, "inactive");
       await logAuthEvent(deps.audit, {
         actorId: userId,
@@ -223,6 +229,12 @@ export function createAuthService(deps: AuthServiceDependencies) {
     },
 
     async reactivateAccount(userId: string, context: RequestContext = {}): Promise<AuthResult<null>> {
+      const current = await deps.auth.getUser();
+      if (current.error || !current.data.user) return authFailure("SESSION_REQUIRED", "A valid session is required.", 401);
+      const roles = normalizeRoles(await deps.roles.listRoles(current.data.user.id));
+      if (current.data.user.id !== userId && !roles.includes("admin") && !roles.includes("super_admin")) {
+        return authFailure("AUTHORIZATION_DENIED", "Only admins can reactivate accounts.", 403);
+      }
       await deps.profiles.setProfileStatus(userId, "active");
       await logAuthEvent(deps.audit, {
         actorId: userId,

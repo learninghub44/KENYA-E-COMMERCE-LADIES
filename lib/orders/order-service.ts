@@ -24,7 +24,8 @@ export function createOrderService(deps: OrderServiceDependencies) {
       return { ok: true as const, data: await deps.orders.listByBuyer({ buyerId, cursor, limit }) };
     },
 
-    async listForSeller(sellerId: string, cursor: string | undefined, limit = 20) {
+    async listForSeller(sellerId: string, actorUserId: string, cursor: string | undefined, limit = 20) {
+      if (!actorUserId) return failure("SESSION_REQUIRED", "A valid session is required.", 401);
       return { ok: true as const, data: await deps.orders.listBySeller({ sellerId, cursor, limit }) };
     },
 
@@ -39,11 +40,13 @@ export function createOrderService(deps: OrderServiceDependencies) {
       return { ok: true, data: { ...updated, items: order.items } };
     },
 
-    async transition(input: unknown): Promise<CommerceResult<OrderWithItems>> {
+    async transition(input: unknown, actorRoles: readonly string[] = []): Promise<CommerceResult<OrderWithItems>> {
       const parsed = statusTransitionSchema.safeParse(input);
       if (!parsed.success) return failure("VALIDATION_ERROR", "Order transition input is invalid.", 400);
       const order = await deps.orders.findById(parsed.data.orderId);
       if (!order) return failure("NOT_FOUND", "Order not found.", 404);
+      const isSeller = actorRoles.includes("seller") || actorRoles.includes("admin") || actorRoles.includes("super_admin");
+      if (!isSeller) return failure("AUTHORIZATION_DENIED", "Only sellers or staff can transition orders.", 403);
       try {
         assertOrderStatusTransition(order.status, parsed.data.to);
       } catch (error) {

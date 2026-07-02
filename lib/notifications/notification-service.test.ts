@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createNotificationService } from "./notification-service.js";
-import { createPreferenceService } from "./preference-service.js";
+import { createNotificationService } from "./notification-service";
+import { createPreferenceService } from "./preference-service";
 import type {
   CreateNotificationInput,
   NotificationPreferenceRepository,
   NotificationPreferences,
   NotificationRecord,
   NotificationRepository
-} from "./types.js";
-import type { AdminActor } from "../audit/types.js";
+} from "./types";
+import type { AdminActor } from "../audit/types";
 
 const buyer: AdminActor = { userId: "buyer-1", roles: ["buyer"] };
 const otherBuyer: AdminActor = { userId: "buyer-2", roles: ["buyer"] };

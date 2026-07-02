@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRatingService, type RatingSummary } from "./index.js";
+import { createRatingService, type RatingSummary } from "./index";
 
 const summary: RatingSummary = {
   entityType: "product",

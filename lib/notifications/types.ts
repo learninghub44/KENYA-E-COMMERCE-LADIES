@@ -1,4 +1,4 @@
-import type { AdminActor, CursorPage } from "../audit/types.js";
+import type { AdminActor, CursorPage } from "../audit/types";
 
 export type NotificationResult<T> =
   | { ok: true; data: T }
