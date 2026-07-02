@@ -5,6 +5,8 @@ import { useState, type ReactNode } from "react"
 import { Toaster } from "sonner"
 
 import { ThemeProvider } from "./theme-provider"
+import { PwaInstallPrompt } from "./pwa-install-prompt"
+import { PwaUpdateNotification } from "./pwa-update-notification"
 
 interface ProvidersProps {
   children: ReactNode
@@ -28,6 +30,8 @@ function Providers({ children }: ProvidersProps) {
       <ThemeProvider>
         {children}
         <Toaster richColors closeButton position="top-right" />
+        <PwaInstallPrompt />
+        <PwaUpdateNotification />
       </ThemeProvider>
     </QueryClientProvider>
   )
