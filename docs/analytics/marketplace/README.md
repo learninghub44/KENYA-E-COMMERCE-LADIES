@@ -1,100 +1,242 @@
 # Marketplace Analytics
 
-Agent 11B Part 1 adds the core administrator marketplace analytics engine.
+Agent 11B owns administrator-facing marketplace analytics. This module provides executive
+dashboards, KPI tracking, business intelligence, search/review/messaging/notification analytics,
+marketplace health scoring, and report export capabilities for super admin and admin users.
 
 ## Architecture
 
-The module follows the repository-injection pattern used by seller analytics:
+The module follows the repository-injection pattern:
 
-- `lib/analytics/marketplace/types.ts` defines dashboard contracts, KPI types, request schemas,
-  repository interfaces, permission checks, and audit hooks.
-- `lib/analytics/marketplace/service.ts` validates date filters, enforces admin-only access,
-  fans out efficient aggregate requests, and audits reads when an audit writer is injected.
-- `lib/analytics/marketplace/supabase-repository.ts` maps service calls to Supabase RPC
-  functions.
-- `components/dashboard/admin` provides reusable responsive admin dashboard components.
-- `supabase/migrations/202607020009_marketplace_analytics.sql` adds cached daily metrics,
-  indexes, and analytics RPC functions.
+- `lib/analytics/marketplace/types.ts` — All TypeScript types, Zod schemas, repository interfaces,
+  permission check, audit hooks, and shared date utilities.
+- `lib/analytics/marketplace/service.ts` — Validation, RBAC enforcement, fan-out aggregation,
+  and audit logging.
+- `lib/analytics/marketplace/supabase-repository.ts` — Maps service calls to Supabase RPC functions.
+- `lib/analytics/marketplace/health-service.ts` — Configurable health score calculation (no DB dependency).
+- `lib/analytics/marketplace/export-service.ts` — CSV, Excel, PDF export generation.
+- `lib/analytics/marketplace/bi-repository.ts` — BI data repository for Supabase.
+- `lib/business-intelligence/` — Business Intelligence engine and service.
+- `components/dashboard/admin` — Reusable responsive admin dashboard components.
+- `app/admin/analytics/` — API route handlers for all analytics endpoints.
 
-## KPI Definitions
+## Part 1 Features
 
-- GMV: total non-cancelled, non-refunded order value in minor currency units.
-- Marketplace revenue: current commission-based marketplace share of GMV.
-- Commission revenue: commission share of GMV.
-- Seller revenue: seller share after commission.
-- Average order value: GMV divided by valid order count.
-- Growth metrics: percentage change versus the immediately preceding period of equal length.
-- Active buyers: buyers with orders in the selected date window.
-- Returning buyers: buyers active in the selected date window with an earlier order.
-- Seller activation rate: active sellers divided by all sellers.
-- Product approval rate: active products divided by active plus rejected products.
-- Category and brand revenue share: entity revenue divided by total category or brand revenue.
+- Executive Dashboard
+- Marketplace KPIs (revenue, orders, users, sellers, products, categories, brands)
+- Core Analytics APIs
+- `marketplace_daily_metrics` cached metrics table
+- Database migration `202607020009_marketplace_analytics.sql`
 
-## Aggregation Strategy
+## Part 2 Features
 
-The database migration creates `marketplace_daily_metrics` for scheduled KPI caching and adds
-indexes on order dates, product status/category/brand, seller status, and inventory stock fields.
-The RPC functions query production marketplace tables directly and accept current plus previous
-date windows so growth is computed consistently.
+### Business Intelligence Engine
 
-`refresh_marketplace_daily_metrics(metric_date)` is intended for a daily Supabase scheduled job.
-Dashboard reads can call the aggregate RPCs directly while cache warming is rolled out.
+Located in `lib/business-intelligence/`.
+
+Provides deterministic insights from marketplace data:
+- **Fastest Growing Categories** — Categories with highest revenue growth rate
+- **Highest Revenue Categories** — Categories ranked by total revenue
+- **Highest Conversion Categories** — Categories with best order-to-buyer conversion
+- **Lowest Performing Categories** — Categories with lowest revenue
+- **Best Performing Brands** — Brands ranked by total revenue
+- **Lowest Performing Brands** — Brands with lowest revenue
+- **Fastest Growing Sellers** — Sellers with highest order growth
+- **Product Growth Trends** — New products, active products, growth rates
+- **Customer Growth Trends** — New customer acquisition rates
+- **Revenue Trends** — Period-over-period revenue comparison
+
+All calculations are deterministic SQL — no AI or machine learning.
+
+### Search Analytics
+
+Integrates with Agent 10 (Search & Discovery) data:
+- Total searches and searches per day
+- Popular keywords from `popular_search_terms`
+- Search CTR (click-through rate based on result_count > 0)
+- Search conversions (users who searched and ordered)
+- Zero-result searches (queries with no results)
+- Trending searches
+- Search performance metrics (unique searchers, success rate)
+- Period-over-period growth
+
+Database tables used: `search_history`, `popular_search_terms`
+
+### Review Analytics
+
+Integrates with Agent 9 (Reviews & Ratings) data:
+- Reviews submitted (published, non-deleted)
+- Average marketplace rating
+- Rating distribution (1-5 star breakdown)
+- Review growth trends
+- Top rated products (from `rating_summaries`)
+- Lowest rated products
+- Top rated sellers (from seller `rating_summaries`)
+- Verified review percentage
+- Average seller rating
+
+Database tables used: `product_reviews`, `seller_reviews`, `rating_summaries`
+
+### Messaging Analytics
+
+Integrates with Agent 6 (Messaging) data:
+- Conversations started
+- Active conversations
+- Messages sent (non-deleted)
+- Seller response time (average hours)
+- Buyer response time (average hours)
+- Conversation and message growth trends
+
+Database tables used: `conversations`, `messages`
+
+### Notification Analytics
+
+Integrates with Agent 8 (Notifications) data:
+- Notifications sent
+- Read rate (percentage read)
+- Open rate (percentage read within 1 hour)
+- Delivery success rate (from `email_outbox`)
+- Notification type distribution (orders, messaging, seller, account, reviews, announcements, security)
+- Growth trends
+
+Database tables used: `notifications`, `email_outbox`
+
+### Marketplace Health Score
+
+Configurable health score engine (`lib/analytics/marketplace/health-service.ts`):
+
+| Component | Default Weight | Data Source |
+|-----------|---------------|-------------|
+| Seller Activity | 20 pts | Active sellers / total sellers |
+| Product Approval Rate | 15 pts | Active products / reviewed products |
+| Revenue Growth | 20 pts | Current vs previous period revenue |
+| Customer Growth | 15 pts | New buyers / active buyers |
+| Average Ratings | 15 pts | Average product rating / 5 |
+| Search Performance | 10 pts | 1 - (zero-result searches / total searches) |
+| Inventory Health | 5 pts | Stocked items / total inventory items |
+
+Score thresholds: ≥80 = "healthy", 50-79 = "moderate", <50 = "critical"
+
+Weights are configurable via `HealthScoreConfig`.
+
+### Export Engine
+
+Supports three formats:
+- **CSV** — Native Node.js implementation, no dependencies
+- **Excel (.xlsx)** — Requires `exceljs` package
+- **PDF** — Requires `jspdf` package
+
+Report types: marketplace-summary, revenue, orders, sellers, products, categories, brands,
+reviews, search, notifications.
+
+All exports support custom date ranges via `startDate` and `endDate` parameters.
 
 ## API Reference
 
-The service supports the requested administrator endpoints:
+### Core Endpoints (Part 1)
 
-- `GET /admin/analytics/dashboard`
-- `GET /admin/analytics/kpis`
-- `GET /admin/analytics/revenue`
-- `GET /admin/analytics/orders`
-- `GET /admin/analytics/users`
-- `GET /admin/analytics/sellers`
-- `GET /admin/analytics/products`
-- `GET /admin/analytics/categories`
-- `GET /admin/analytics/brands`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/analytics/dashboard` | Full executive dashboard |
+| GET | `/admin/analytics/kpis` | All KPI aggregates |
+| GET | `/admin/analytics/revenue` | Revenue analytics |
+| GET | `/admin/analytics/orders` | Orders analytics |
+| GET | `/admin/analytics/users` | Users analytics |
+| GET | `/admin/analytics/sellers` | Sellers analytics |
+| GET | `/admin/analytics/products` | Products analytics |
+| GET | `/admin/analytics/categories` | Categories analytics |
+| GET | `/admin/analytics/brands` | Brands analytics |
 
-All endpoints should construct `createMarketplaceAnalyticsService`, inject the Supabase
-repository and permission checker, pass the authenticated admin user id, and forward query
-parameters for `dateRange`, `startDate`, and `endDate`.
+### Part 2 Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/analytics/search` | Search analytics |
+| GET | `/admin/analytics/reviews` | Review analytics |
+| GET | `/admin/analytics/messages` | Messaging analytics |
+| GET | `/admin/analytics/notifications` | Notification analytics |
+| GET | `/admin/analytics/health` | Marketplace health score |
+| GET | `/admin/analytics/business-intelligence` | Business intelligence insights |
+| GET | `/admin/analytics/export` | Export reports (CSV/Excel/PDF) |
+
+### Query Parameters
+
+All endpoints accept:
+- `dateRange`: today, yesterday, last_7_days, last_30_days, last_90_days, last_year, custom
+- `startDate`: YYYY-MM-DD (required when dateRange=custom)
+- `endDate`: YYYY-MM-DD (required when dateRange=custom)
+
+Export endpoint also accepts:
+- `reportType`: marketplace-summary, revenue, orders, sellers, products, categories, brands, reviews, search, notifications
+- `format`: csv (default), xlsx, pdf
+
+### Example Requests
+
+```bash
+# Search analytics (last 30 days)
+GET /admin/analytics/search?dateRange=last_30_days
+
+# Marketplace health score (custom range)
+GET /admin/analytics/health?dateRange=custom&startDate=2026-01-01&endDate=2026-06-30
+
+# Business intelligence
+GET /admin/analytics/business-intelligence?dateRange=last_90_days
+
+# Export revenue as CSV
+GET /admin/analytics/export?reportType=revenue&format=csv&startDate=2026-01-01&endDate=2026-06-30
+```
 
 ## Security
 
-Application permission checks only allow `admin` and `super_admin` role strings to view
-marketplace analytics. Database RLS on `marketplace_daily_metrics` permits reads to admins only.
-Sellers are deliberately excluded.
+RBAC enforced at the application layer:
+- Only `admin` and `super_admin` roles can access marketplace analytics
+- Permission checker validates against `user_roles` table
+- All analytics access can be optionally audited via `MarketplaceAnalyticsAuditWriter`
+- Database RLS policies on `marketplace_daily_metrics` and `marketplace_bi_daily_metrics` restrict
+  reads to admin/super_admin roles
 
-## Dashboard Components
+## Database Migration
 
-Admin components are responsive, dark-mode compatible, and data-driven:
+File: `supabase/migrations/202607020010_marketplace_analytics_part2.sql`
 
-- `AdminKpiCard`
-- `AdminComparisonCard`
-- `AdminSummaryTable`
-- `MarketplaceAdminDashboard`
+Adds:
+- `marketplace_bi_daily_metrics` — Cached BI metrics table
+- `get_marketplace_search_analytics()` — Search analytics RPC
+- `get_marketplace_search_performance()` — Search performance RPC
+- `get_marketplace_review_analytics()` — Review analytics RPC
+- `get_marketplace_messaging_analytics()` — Messaging analytics RPC
+- `get_marketplace_notification_analytics()` — Notification analytics RPC
+- `get_marketplace_business_intelligence()` — BI insights RPC
+- `get_marketplace_health_score()` — Health score RPC
+- `get_marketplace_export_data()` — Export data RPC
+- `refresh_marketplace_bi_daily_metrics()` — BI cache refresh
+- RLS policies for admin/super_admin access
 
-`MarketplaceAdminDashboard` requires a real `MarketplaceDashboard` object and does not render
-mock statistics.
+All statements are idempotent (CREATE IF NOT EXISTS, ALTER ADD COLUMN IF NOT EXISTS,
+CREATE OR REPLACE FUNCTION, DROP POLICY IF EXISTS).
 
-## Database Schema
+## Performance
 
-`marketplace_daily_metrics` stores one row per metric date with order, revenue, buyer, seller,
-and product aggregate columns. It is rerunnable-safe with `CREATE TABLE IF NOT EXISTS`,
-`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, `CREATE OR REPLACE
-FUNCTION`, and `DROP POLICY IF EXISTS`.
+- SQL-level aggregation via RPC functions (no N+1 queries)
+- Materialized/cached daily metrics for frequent queries
+- Indexed reporting queries (`idx_marketplace_daily_metrics_date`, etc.)
+- Efficient multi-table joins with proper filtering
+- Cursor pagination support via `marketplaceListRequestSchema`
 
 ## Testing
 
-Run:
-
+Run all tests:
 ```bash
 pnpm test
 ```
 
-Current tests cover:
-
-- Date filtering and previous-period calculation
-- Growth calculations
-- Permission denial
-- Dashboard service aggregation
-- Invalid custom date requests
+Test files:
+- `lib/analytics/marketplace/service.test.ts` — Part 1 core service tests
+- `lib/analytics/marketplace/health-service.test.ts` — Health score calculation tests
+- `lib/analytics/marketplace/export-service.test.ts` — Export format tests
+- `lib/analytics/marketplace/search-analytics.test.ts` — Search analytics tests
+- `lib/analytics/marketplace/review-analytics.test.ts` — Review analytics tests
+- `lib/analytics/marketplace/messaging-analytics.test.ts` — Messaging analytics tests
+- `lib/analytics/marketplace/notification-analytics.test.ts` — Notification analytics tests
+- `lib/analytics/marketplace/permission-checker.test.ts` — Permission tests
+- `lib/business-intelligence/service.test.ts` — BI service tests
