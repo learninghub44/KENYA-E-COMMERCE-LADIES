@@ -31,11 +31,24 @@ interface OrderPageProps {
   params: Promise<{ id: string }>
 }
 
-const MOCK_ORDER = {
+const MOCK_ORDER: {
+  id: string
+  orderNumber: string
+  date: string
+  status: string
+  items: { id: string; name: string; variant: string; price: number; quantity: number; image: string }[]
+  shippingAddress: { name: string; street: string; city: string; state: string; zip: string; country: string; phone: string }
+  paymentMethod: string
+  subtotal: number
+  shipping: number
+  tax: number
+  total: number
+  estimatedDelivery: string
+} = {
   id: "1",
   orderNumber: "ORD-2024-001",
   date: "2024-12-15",
-  status: "shipped" as const,
+  status: "shipped",
   items: [
     {
       id: "1",

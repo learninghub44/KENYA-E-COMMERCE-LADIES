@@ -124,7 +124,7 @@ export default function AddressesPage() {
     setAddresses((prev) => {
       const filtered = prev.filter((a) => a.id !== id)
       const deleted = prev.find((a) => a.id === id)
-      if (deleted?.isDefault && filtered.length > 0) {
+      if (deleted?.isDefault && filtered.length > 0 && filtered[0]) {
         filtered[0].isDefault = true
       }
       return filtered
