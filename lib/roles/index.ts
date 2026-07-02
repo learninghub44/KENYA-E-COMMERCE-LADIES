@@ -13,7 +13,9 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "order.read.own",
     "message.read.own",
     "message.send",
-    "user.read.self"
+    "user.read.self",
+    "notification.read.own",
+    "notification.preferences.manage"
   ],
   seller: [
     "auth.session.read",
@@ -30,7 +32,9 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "order.read.seller",
     "message.read.own",
     "message.send",
-    "user.read.self"
+    "user.read.self",
+    "notification.read.own",
+    "notification.preferences.manage"
   ],
   moderator: [
     "auth.session.read",
@@ -41,7 +45,9 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "admin.moderate",
     "product.read",
     "user.read.support",
-    "security.audit.read"
+    "security.audit.read",
+    "notification.read.own",
+    "notification.preferences.manage"
   ],
   support: [
     "auth.session.read",
@@ -51,7 +57,9 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "admin.access",
     "admin.support",
     "user.read.support",
-    "security.audit.read"
+    "security.audit.read",
+    "notification.read.own",
+    "notification.preferences.manage"
   ],
   admin: [
     "auth.session.read",
@@ -68,7 +76,10 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "user.manage",
     "security.audit.read",
     "security.audit.write",
-    "security.lockout.manage"
+    "security.lockout.manage",
+    "notification.read.own",
+    "notification.preferences.manage",
+    "notification.broadcast.manage"
   ],
   super_admin: [
     "auth.session.read",
@@ -87,7 +98,10 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "user.manage",
     "security.audit.read",
     "security.audit.write",
-    "security.lockout.manage"
+    "security.lockout.manage",
+    "notification.read.own",
+    "notification.preferences.manage",
+    "notification.broadcast.manage"
   ]
 };
 
