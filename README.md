@@ -237,6 +237,8 @@ Full details: [`docs/Scalability.md`](docs/Scalability.md).
 
 ## Documentation
 
+- [`docs/project/`](docs/project/README.md) — start here: Overview, Architecture Summary,
+  Development, Deployment, Maintenance, Scaling, Security, and Repository Standards guides
 - [`docs/Architecture.md`](docs/Architecture.md) — system design
 - [`docs/Engineering.md`](docs/Engineering.md) — who owns what
 - [`docs/Repository.md`](docs/Repository.md) — repo layout and rules
