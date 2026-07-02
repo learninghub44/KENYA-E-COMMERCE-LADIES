@@ -1,4 +1,4 @@
-import type { OrderStatus } from "./types.js";
+import type { OrderStatus } from "./types";
 
 const transitions: Record<OrderStatus, readonly OrderStatus[]> = {
   draft: ["pending", "cancelled"],

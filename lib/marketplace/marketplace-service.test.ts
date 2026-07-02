@@ -13,7 +13,7 @@ import {
   type ProductSearchIndex,
   type ProductSummary,
   type WishlistRepository
-} from "./index.js";
+} from "./index";
 
 const now = "2026-07-02T00:00:00.000Z";
 

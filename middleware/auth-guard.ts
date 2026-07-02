@@ -1,6 +1,6 @@
-import type { Permission } from "../types/permissions.js";
-import type { AppRole } from "../types/roles.js";
-import { hasEveryPermission, hasPermission } from "../lib/permissions/index.js";
+import type { Permission } from "../types/permissions";
+import type { AppRole } from "../types/roles";
+import { hasEveryPermission, hasPermission } from "../lib/permissions/index";
 
 export type RouteAuthLevel = "public" | "authenticated" | "seller" | "admin";
 

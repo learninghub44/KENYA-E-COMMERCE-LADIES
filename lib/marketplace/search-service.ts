@@ -1,5 +1,5 @@
-import type { MarketplaceResult, ProductSearchIndex, ProductSummary, SearchPage } from "./types.js";
-import { productSearchSchema } from "../products/schemas.js";
+import type { MarketplaceResult, ProductSearchIndex, ProductSummary, SearchPage } from "./types";
+import { productSearchSchema } from "../products/schemas";
 
 export type SearchServiceDependencies = {
   index: ProductSearchIndex;

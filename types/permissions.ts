@@ -26,7 +26,10 @@ export const PERMISSIONS = [
   "admin.role.manage",
   "security.audit.read",
   "security.audit.write",
-  "security.lockout.manage"
+  "security.lockout.manage",
+  "notification.read.own",
+  "notification.preferences.manage",
+  "notification.broadcast.manage"
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

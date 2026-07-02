@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { authorizeRoute } from "./auth-guard.js";
+import { authorizeRoute } from "./auth-guard";
 
 describe("authorizeRoute", () => {
   it("allows public routes without a session", () => {

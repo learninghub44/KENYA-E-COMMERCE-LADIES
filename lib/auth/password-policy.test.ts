@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { validatePassword } from "./password-policy.js";
+import { validatePassword } from "./password-policy";
 
 describe("password policy", () => {
   it("accepts a strong password", () => {

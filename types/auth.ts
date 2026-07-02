@@ -1,4 +1,4 @@
-import type { AppRole } from "./roles.js";
+import type { AppRole } from "./roles";
 
 export type AuthEvent =
   | "registration_started"
