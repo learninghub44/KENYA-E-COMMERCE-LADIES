@@ -189,7 +189,7 @@ export const error = (code: string, message: string, status?: number): Result<ne
   ok: false,
   code,
   message,
-  status,
+  ...(status === undefined ? {} : { status }),
 });
 
 // ============================================================================
