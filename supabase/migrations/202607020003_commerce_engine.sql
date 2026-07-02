@@ -34,6 +34,15 @@ create table if not exists public.carts (
   check (user_id is not null or guest_token is not null)
 );
 
+alter table public.carts add column if not exists status text default 'active';
+alter table public.carts alter column status set not null;
+do $$
+begin
+ if not exists (select 1 from pg_constraint where conname='carts_status_check') then
+  alter table public.carts add constraint carts_status_check check (status in ('active','converted','abandoned'));
+ end if;
+end $$;
+
 create unique index if not exists idx_carts_active_user
   on public.carts(user_id)
   where user_id is not null and status = 'active';
@@ -177,8 +186,11 @@ begin
 end;
 $$;
 
+drop trigger if exists set_carts_updated_at on public.carts;
 create trigger set_carts_updated_at before update on public.carts for each row execute function public.set_updated_at();
+drop trigger if exists set_cart_items_updated_at on public.cart_items;
 create trigger set_cart_items_updated_at before update on public.cart_items for each row execute function public.set_updated_at();
+drop trigger if exists set_coupons_updated_at on public.coupons;
 create trigger set_coupons_updated_at before update on public.coupons for each row execute function public.set_updated_at();
 
 alter table public.carts enable row level security;
@@ -187,20 +199,30 @@ alter table public.coupons enable row level security;
 alter table public.order_coupon_applications enable row level security;
 alter table public.order_status_history enable row level security;
 
+drop policy if exists "buyers manage own carts" on public.carts;
+
 create policy "buyers manage own carts" on public.carts
   for all using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+drop policy if exists "cart items follow cart ownership" on public.cart_items;
 
 create policy "cart items follow cart ownership" on public.cart_items
   for all using (exists (select 1 from public.carts c where c.id = cart_id and c.user_id = auth.uid()))
   with check (exists (select 1 from public.carts c where c.id = cart_id and c.user_id = auth.uid()));
 
+drop policy if exists "active coupons are readable" on public.coupons;
+
 create policy "active coupons are readable" on public.coupons
   for select using (is_active = true or public.current_user_is_staff() or (seller_id is not null and public.current_user_can_manage_seller(seller_id)));
+
+drop policy if exists "seller coupons managed by seller" on public.coupons;
 
 create policy "seller coupons managed by seller" on public.coupons
   for all using (public.current_user_is_staff() or (seller_id is not null and public.current_user_can_manage_seller(seller_id)))
   with check (public.current_user_is_staff() or (seller_id is not null and public.current_user_can_manage_seller(seller_id)));
+
+drop policy if exists "order coupons visible with order" on public.order_coupon_applications;
 
 create policy "order coupons visible with order" on public.order_coupon_applications
   for select using (
@@ -209,6 +231,8 @@ create policy "order coupons visible with order" on public.order_coupon_applicat
       where o.id = order_id and (o.buyer_id = auth.uid() or public.current_user_can_manage_seller(o.seller_id) or public.current_user_is_staff())
     )
   );
+
+drop policy if exists "order history visible with order" on public.order_status_history;
 
 create policy "order history visible with order" on public.order_status_history
   for select using (
