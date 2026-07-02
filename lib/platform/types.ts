@@ -87,3 +87,77 @@ export interface PaginationResult<T> {
   nextCursor: string | null;
   total: number;
 }
+
+export type HealthStatus = "healthy" | "warning" | "critical";
+
+export interface HealthCheckResult {
+  service: string;
+  status: HealthStatus;
+  message: string;
+  latencyMs: number;
+  checkedAt: string;
+}
+
+export interface HealthReport {
+  overall: HealthStatus;
+  checks: HealthCheckResult[];
+  generatedAt: string;
+}
+
+export interface ReadinessCheck {
+  name: string;
+  status: HealthStatus;
+  required: boolean;
+  message: string;
+}
+
+export interface ReadinessReport {
+  ready: boolean;
+  checks: ReadinessCheck[];
+  generatedAt: string;
+}
+
+export interface DiagnosticsReport {
+  environment: Record<string, string>;
+  storage: HealthCheckResult[];
+  database: HealthCheckResult;
+  search: HealthCheckResult | null;
+  analytics: HealthCheckResult | null;
+  jobs: HealthCheckResult;
+  generatedAt: string;
+}
+
+export type MaintenanceType = "global" | "read_only" | "scheduled";
+
+export interface MaintenanceWindow {
+  id: string;
+  maintenanceType: MaintenanceType;
+  isActive: boolean;
+  message: string | null;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  currentCount: number;
+  maxRequests: number;
+  remaining: number;
+  resetAt: string;
+}
+
+export interface FeatureFlagEvaluation {
+  flag: string;
+  enabled: boolean;
+  targeting: {
+    userId?: string | undefined;
+    role?: string | undefined;
+    country?: string | undefined;
+    percentage?: number | undefined;
+  };
+}
