@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://kenya-ecommerce-ladies.com"
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://zurimarket.dev"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [

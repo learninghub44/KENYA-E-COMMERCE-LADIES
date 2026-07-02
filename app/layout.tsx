@@ -7,11 +7,11 @@ import { organizationJsonLd, websiteJsonLd } from "../lib/seo";
 
 export const metadata: Metadata = {
   title: {
-    default: "Kenya E-Commerce Ladies | Premium Fashion & Beauty Marketplace",
-    template: "%s | Kenya E-Commerce Ladies",
+    default: "Zuri Market | Kenya's Marketplace for Women",
+    template: "%s | Zuri Market",
   },
   description:
-    "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+    "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
   keywords: [
     "fashion",
     "beauty",
@@ -21,26 +21,27 @@ export const metadata: Metadata = {
     "Kenya",
     "marketplace",
     "women fashion",
+    "Zuri Market",
   ],
-  authors: [{ name: "Kenya E-Commerce Ladies" }],
+  authors: [{ name: "Zuri Market" }],
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim() !== ""
       ? process.env.NEXT_PUBLIC_APP_URL
-      : "https://kenya-ecommerce-ladies.com"
+      : "https://zurimarket.dev"
   ),
   openGraph: {
     type: "website",
     locale: "en_KE",
-    siteName: "Kenya E-Commerce Ladies",
-    title: "Kenya E-Commerce Ladies",
+    siteName: "Zuri Market",
+    title: "Zuri Market",
     description:
-      "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+      "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kenya E-Commerce Ladies",
+    title: "Zuri Market",
     description:
-      "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+      "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
   },
   icons: {
     icon: "/favicon.ico",
@@ -54,7 +55,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: dark)", color: "#2D0A42" },
   ],
 };
 

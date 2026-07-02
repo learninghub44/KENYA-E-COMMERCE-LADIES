@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <Link href="/" className="text-2xl font-bold tracking-tight">
-            Kenya E-Commerce Ladies
+            Zuri Market
           </Link>
           <h1 className="mt-6 text-2xl font-semibold tracking-tight">Forgot password</h1>
           <p className="mt-2 text-sm text-muted-foreground">

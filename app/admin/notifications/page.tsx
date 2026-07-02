@@ -43,7 +43,7 @@ interface Notification {
 }
 
 const initialNotifications: Notification[] = [
-  { id: "n1", title: "Welcome to the Platform", message: "Thank you for joining Kenya E-Commerce Ladies!", audience: "All Users", status: "Sent", sentAt: "2025-06-30 10:00" },
+  { id: "n1", title: "Welcome to the Platform", message: "Thank you for joining Zuri Market!", audience: "All Users", status: "Sent", sentAt: "2025-06-30 10:00" },
   { id: "n2", title: "New Seller Guidelines", message: "Please review the updated seller guidelines.", audience: "Sellers", status: "Sent", sentAt: "2025-06-28 14:30" },
   { id: "n3", title: "Flash Sale Announcement", message: "Get ready for the weekend flash sale!", audience: "All Users", status: "Scheduled", sentAt: "2025-07-01 08:00" },
   { id: "n4", title: "KYC Reminder", message: "Complete your KYC verification to start selling.", audience: "Sellers", status: "Draft", sentAt: "" },

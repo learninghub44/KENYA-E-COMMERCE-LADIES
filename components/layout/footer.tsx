@@ -80,11 +80,11 @@ function Footer({ className }: FooterProps) {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
             <Link href="/" className="text-xl font-bold tracking-tight">
-              KENYA LUXE
+              ZURI MARKET
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
-              Discover curated luxury fashion from African designers. Premium
-              quality, authentic craftsmanship, delivered worldwide.
+              Kenya's marketplace for women's fashion, beauty, wellness, and
+              lifestyle products from verified sellers. Discover. Shop. Empower.
             </p>
             <form
               onSubmit={handleNewsletterSubmit}
@@ -147,7 +147,7 @@ function Footer({ className }: FooterProps) {
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Kenya Luxe. All rights reserved.
+            &copy; {new Date().getFullYear()} Zuri Market. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

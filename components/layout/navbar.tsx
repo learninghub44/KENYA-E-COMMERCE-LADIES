@@ -161,7 +161,7 @@ function Navbar({ className }: NavbarProps) {
               href="/"
               className="text-xl font-bold tracking-tight text-foreground"
             >
-              KENYA LUXE
+              ZURI MARKET
             </Link>
           </div>
 

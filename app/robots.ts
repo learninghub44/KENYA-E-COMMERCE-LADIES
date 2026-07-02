@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin/", "/seller/", "/auth/", "/api/internal/", "/offline"],
       },
     ],
-    sitemap: "https://kenya-ecommerce-ladies.com/sitemap.xml",
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim() !== "" ? process.env.NEXT_PUBLIC_APP_URL : "https://zurimarket.dev"}/sitemap.xml`,
   }
 }

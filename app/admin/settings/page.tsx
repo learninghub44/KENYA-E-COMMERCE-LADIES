@@ -11,12 +11,12 @@ import { Switch } from "../../../components/ui/switch"
 import { Badge } from "../../../components/ui/badge"
 
 export default function SettingsPage() {
-  const [siteName, setSiteName] = useState("Kenya E-Commerce Ladies")
-  const [siteDescription, setSiteDescription] = useState("Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.")
+  const [siteName, setSiteName] = useState("Zuri Market")
+  const [siteDescription, setSiteDescription] = useState("Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.")
   const [platformFee, setPlatformFee] = useState("5")
   const [fixedFee, setFixedFee] = useState("50")
-  const [senderName, setSenderName] = useState("KEC Ladies")
-  const [senderEmail, setSenderEmail] = useState("noreply@kenyaecoladies.com")
+  const [senderName, setSenderName] = useState("Zuri Market")
+  const [senderEmail, setSenderEmail] = useState("noreply@zurimarket.dev")
   const [minPasswordLength, setMinPasswordLength] = useState("8")
   const [maxLoginAttempts, setMaxLoginAttempts] = useState("5")
   const [sessionDuration, setSessionDuration] = useState("24")

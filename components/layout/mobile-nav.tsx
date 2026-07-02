@@ -55,7 +55,7 @@ function MobileNav({ open, onOpenChange, categories = [] }: MobileNavProps) {
         <DrawerHeader className="flex items-center justify-between border-b px-4 py-3">
           <DrawerTitle className="text-lg font-bold tracking-tight">
             <Link href="/" onClick={close}>
-              KENYA LUXE
+              ZURI MARKET
             </Link>
           </DrawerTitle>
           <DrawerClose asChild>
