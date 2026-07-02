@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createAdminService, type AdminListFilters, type UserAdminRecord } from "./index.js";
-import type { AdminActor, CursorPage } from "../audit/index.js";
+import { createAdminService, type AdminListFilters, type UserAdminRecord } from "./index";
+import type { AdminActor, CursorPage } from "../audit/index";
 
 const admin: AdminActor = { userId: "admin-1", roles: ["admin"] };
 const moderator: AdminActor = { userId: "mod-1", roles: ["moderator"] };

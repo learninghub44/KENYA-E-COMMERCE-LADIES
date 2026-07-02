@@ -1,8 +1,8 @@
-import { assertPermission } from "../permissions/index.js";
-import type { OrderStatus } from "../orders/types.js";
-import type { ProductStatus } from "../products/types.js";
-import type { SellerStatus } from "../seller/types.js";
-import type { AdminActor, CursorPage } from "../audit/types.js";
+import { assertPermission } from "../permissions/index";
+import type { OrderStatus } from "../orders/types";
+import type { ProductStatus } from "../products/types";
+import type { SellerStatus } from "../seller/types";
+import type { AdminActor, CursorPage } from "../audit/types";
 import type {
   AdminAuditWriter,
   AdminDashboardMetrics,
@@ -14,7 +14,7 @@ import type {
   ProductAdministrationGateway,
   SellerAdministrationGateway,
   UserAdministrationGateway
-} from "./types.js";
+} from "./types";
 
 export type AdminServiceDependencies = {
   dashboard: DashboardRepository;

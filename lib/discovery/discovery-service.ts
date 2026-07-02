@@ -1,4 +1,4 @@
-import type { DiscoveryRepository, DiscoveryResult, RecentlyViewedRepository } from "./types.js";
+import type { DiscoveryRepository, DiscoveryResult, RecentlyViewedRepository } from "./types";
 
 function cap(limit: number | undefined): number {
   return Math.min(Math.max(limit ?? 24, 1), 100);

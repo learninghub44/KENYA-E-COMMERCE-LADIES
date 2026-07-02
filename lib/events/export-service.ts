@@ -1,4 +1,4 @@
-import { EventRepository, InternalEvent, EventFilters, CursorPage } from "./types.js";
+import { EventRepository, InternalEvent, EventFilters, CursorPage } from "./types";
 
 export interface ExportOptions {
   format: "csv" | "excel" | "pdf";

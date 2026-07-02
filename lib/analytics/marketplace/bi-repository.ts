@@ -1,6 +1,6 @@
-import { AnalyticsDateWindow } from "./types.js";
-import { BusinessIntelligence, BusinessIntelligenceRepository } from "../../business-intelligence/types.js";
-import { SupabaseRpcClient } from "./supabase-repository.js";
+import { AnalyticsDateWindow } from "./types";
+import { BusinessIntelligence, BusinessIntelligenceRepository } from "../../business-intelligence/types";
+import { SupabaseRpcClient } from "./supabase-repository";
 
 async function rpc<T>(client: SupabaseRpcClient, name: string, window: AnalyticsDateWindow): Promise<T> {
   const { data, error } = await client.rpc(name, {

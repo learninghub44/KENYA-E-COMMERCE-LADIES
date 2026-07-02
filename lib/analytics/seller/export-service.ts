@@ -4,7 +4,7 @@ import {
   success,
   error,
   ErrorCodes,
-} from './analytics-service.js';
+} from './analytics-service';
 
 // ============================================================================
 // EXPORT TYPES

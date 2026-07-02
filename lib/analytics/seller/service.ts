@@ -20,7 +20,7 @@ import {
   productAnalyticsRequestSchema,
   customerAnalyticsRequestSchema,
   exportRequestSchema,
-} from './analytics-service.js';
+} from './analytics-service';
 
 // ============================================================================
 // DATE RANGE UTILITIES

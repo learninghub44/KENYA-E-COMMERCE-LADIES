@@ -52,7 +52,7 @@ interface User {
   name: string
   email: string
   role: "Buyer" | "Seller" | "Admin"
-  status: "Active" | "Suspended" | "Banned"
+  status: "Active" | "Suspended" | "Banned" | "Pending"
   orders: number
   joined: string
   avatar: string

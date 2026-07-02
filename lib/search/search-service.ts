@@ -1,5 +1,5 @@
-import { autocompleteSchema, saveSearchSchema, searchFiltersSchema } from "./schemas.js";
-import { compareProducts, matchesFilters, relevanceScore } from "./ranking.js";
+import { autocompleteSchema, saveSearchSchema, searchFiltersSchema } from "./schemas";
+import { compareProducts, matchesFilters, relevanceScore } from "./ranking";
 import type {
   AutocompleteSuggestion,
   ProductSearchRepository,
@@ -7,7 +7,7 @@ import type {
   SearchHistoryRepository,
   SearchProduct,
   SearchResult
-} from "./types.js";
+} from "./types";
 
 function failure(code: string, message: string, status: number): SearchResult<never> {
   return { ok: false, code, message, status };

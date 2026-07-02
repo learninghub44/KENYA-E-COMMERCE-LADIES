@@ -1,4 +1,4 @@
-import type { RatingSummary, ReviewResult } from "../reviews/types.js";
+import type { RatingSummary, ReviewResult } from "../reviews/types";
 export type { RatingSummary };
 
 export type RatingEntityType = "product" | "seller";

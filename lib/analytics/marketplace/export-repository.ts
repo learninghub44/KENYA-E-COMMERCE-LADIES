@@ -1,5 +1,5 @@
-import { ExportRecord, ExportReportType } from "./export-service.js";
-import { SupabaseRpcClient } from "./supabase-repository.js";
+import { ExportRecord, ExportReportType } from "./export-service";
+import { SupabaseRpcClient } from "./supabase-repository";
 
 export function createMarketplaceExportRepository(client: SupabaseRpcClient) {
   return {

@@ -1,5 +1,5 @@
-import { assertPermission } from "../permissions/index.js";
-import type { AdminActor } from "../audit/types.js";
+import { assertPermission } from "../permissions/index";
+import type { AdminActor } from "../audit/types";
 import type {
   AudienceResolver,
   BroadcastRecord,
@@ -8,7 +8,7 @@ import type {
   NotificationRepository,
   NotificationAuditWriter,
   NotificationResult
-} from "./types.js";
+} from "./types";
 
 export type BroadcastServiceDependencies = {
   broadcasts: BroadcastRepository;

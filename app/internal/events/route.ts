@@ -3,7 +3,7 @@ import { createEventService } from "../../../lib/events/event-service";
 import { createEventRepository, EventsDbClient } from "../../../lib/events/event-repository";
 import { createSupabaseClient } from "../../../lib/supabase/server";
 
-async function checkPrivilegedAccess(supabase: ReturnType<typeof createSupabaseClient>): Promise<boolean> {
+async function checkPrivilegedAccess(supabase: Awaited<ReturnType<typeof createSupabaseClient>>): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
@@ -11,15 +11,15 @@ async function checkPrivilegedAccess(supabase: ReturnType<typeof createSupabaseC
   return roles.some((r) => r === "admin" || r === "super_admin");
 }
 
-function getService() {
-  const supabase = createSupabaseClient();
+async function getService() {
+  const supabase = await createSupabaseClient();
   const repository = createEventRepository(supabase as unknown as EventsDbClient);
   return { service: createEventService({ repository }), supabase };
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { service, supabase } = getService();
+    const { service, supabase } = await getService();
     const allowed = await checkPrivilegedAccess(supabase);
     if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { service, supabase } = getService();
+    const { service, supabase } = await getService();
     const allowed = await checkPrivilegedAccess(supabase);
     if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
 
     const result = await service.listEvents(
-      Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined)) as typeof filters,
+      Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined)) as any,
       cursor,
       limit,
     );

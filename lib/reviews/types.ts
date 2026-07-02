@@ -1,5 +1,5 @@
-import type { AdminActor, AdminResult, CursorPage } from "../audit/types.js";
-import type { PlatformEventType } from "../notifications/types.js";
+import type { AdminActor, AdminResult, CursorPage } from "../audit/types";
+import type { PlatformEventType } from "../notifications/types";
 
 export type ReviewResult<T> =
   | { ok: true; data: T }

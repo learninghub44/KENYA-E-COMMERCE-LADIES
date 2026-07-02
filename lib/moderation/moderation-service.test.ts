@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createModerationService, type MessageModerationRecord } from "./index.js";
-import type { AdminActor } from "../audit/index.js";
+import { createModerationService, type MessageModerationRecord } from "./index";
+import type { AdminActor } from "../audit/index";
 
 const moderator: AdminActor = { userId: "mod-1", roles: ["moderator"] };
 const support: AdminActor = { userId: "support-1", roles: ["support"] };

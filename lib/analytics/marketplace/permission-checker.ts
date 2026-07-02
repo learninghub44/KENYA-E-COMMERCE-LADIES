@@ -1,4 +1,4 @@
-import { MarketplaceAnalyticsPermissionChecker } from "./types.js";
+import { MarketplaceAnalyticsPermissionChecker } from "./types";
 
 export interface SupabaseRoleClient {
   from: (table: string) => {

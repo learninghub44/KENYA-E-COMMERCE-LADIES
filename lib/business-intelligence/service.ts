@@ -9,8 +9,8 @@ import {
   MarketplaceAnalyticsPermissionChecker,
   MarketplaceAnalyticsRequest,
   success,
-} from "../analytics/marketplace/types.js";
-import { BusinessIntelligence, BusinessIntelligenceRepository } from "./types.js";
+} from "../analytics/marketplace/types";
+import { BusinessIntelligence, BusinessIntelligenceRepository } from "./types";
 
 export interface BiDependencies {
   repository: BusinessIntelligenceRepository;

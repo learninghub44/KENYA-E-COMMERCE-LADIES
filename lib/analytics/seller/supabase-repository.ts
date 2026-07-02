@@ -6,7 +6,7 @@ import {
   CustomerAnalytics,
   InventoryMetrics,
   TimeGrouping,
-} from './analytics-service.js';
+} from './analytics-service';
 
 // ============================================================================
 // SUPABASE REPOSITORY IMPLEMENTATION

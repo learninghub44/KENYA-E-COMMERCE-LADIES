@@ -6,14 +6,14 @@ import { createSupabaseClient } from "../../../../lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const permissionChecker = createMarketplaceAnalyticsPermissionChecker(supabase);
+    const permissionChecker = createMarketplaceAnalyticsPermissionChecker(supabase as any);
     const allowed = await permissionChecker.canViewMarketplaceAnalytics(user.id);
     if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const exportRepo = createMarketplaceExportRepository(supabase);
+    const exportRepo = createMarketplaceExportRepository(supabase as any);
     const service = createExportService({ fetchData: exportRepo.fetchData });
     const result = await service.export(reportType, format, startDate, endDate, `Marketplace ${reportType} Report`);
 

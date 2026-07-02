@@ -1,4 +1,4 @@
-import { PermissionChecker } from './analytics-service.js';
+import { PermissionChecker } from './analytics-service';
 
 // ============================================================================
 // SUPABASE PERMISSION CHECKER

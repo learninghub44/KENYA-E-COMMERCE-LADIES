@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createAppMetricRepository, createDbMetricRepository, createCacheMetricRepository, createStorageMetricRepository, createPerformanceTracker } from "./metrics-service.js";
-import { MetricsRepositoryClient } from "./metrics-service.js";
+import { createAppMetricRepository, createDbMetricRepository, createCacheMetricRepository, createStorageMetricRepository, createPerformanceTracker } from "./metrics-service";
+import { MetricsRepositoryClient } from "./metrics-service";
 
 describe("observability metrics", () => {
   function createMockClient(): MetricsRepositoryClient {

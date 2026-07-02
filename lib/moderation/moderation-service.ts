@@ -1,6 +1,6 @@
-import { assertPermission } from "../permissions/index.js";
-import type { AdminActor } from "../audit/types.js";
-import type { MessageModerationGateway, ModerationAuditWriter, ModerationRepository, ModerationResult } from "./types.js";
+import { assertPermission } from "../permissions/index";
+import type { AdminActor } from "../audit/types";
+import type { MessageModerationGateway, ModerationAuditWriter, ModerationRepository, ModerationResult } from "./types";
 
 export type ModerationServiceDependencies = {
   moderation: ModerationRepository;

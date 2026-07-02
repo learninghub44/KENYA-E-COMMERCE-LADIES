@@ -1,4 +1,4 @@
-import type { EventHandler, EventRepository, PlatformEvent, PlatformEventType, PublishEventInput } from "./types.js";
+import type { EventHandler, EventRepository, PlatformEvent, PlatformEventType, PublishEventInput } from "./types";
 
 export type EventBusDependencies = {
   events: EventRepository;

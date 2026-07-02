@@ -1,14 +1,14 @@
-export { KPICard } from './kpi-card.js';
-export type { KPICardProps } from './kpi-card.js';
+export { KPICard } from './kpi-card';
+export type { KPICardProps } from './kpi-card';
 
-export { LineChart } from './line-chart.js';
-export type { LineChartProps, DataPoint } from './line-chart.js';
+export { LineChart } from './line-chart';
+export type { LineChartProps, DataPoint } from './line-chart';
 
-export { BarChart } from './bar-chart.js';
-export type { BarChartProps, BarDataPoint } from './bar-chart.js';
+export { BarChart } from './bar-chart';
+export type { BarChartProps, BarDataPoint } from './bar-chart';
 
-export { PieChart } from './pie-chart.js';
-export type { PieChartProps, PieDataPoint } from './pie-chart.js';
+export { PieChart } from './pie-chart';
+export type { PieChartProps, PieDataPoint } from './pie-chart';
 
-export { DataTable } from './data-table.js';
-export type { DataTableProps, TableColumn } from './data-table.js';
+export { DataTable } from './data-table';
+export type { DataTableProps, TableColumn } from './data-table';

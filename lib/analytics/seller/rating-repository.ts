@@ -1,4 +1,4 @@
-import { RatingRepository, RatingAnalytics } from './analytics-service.js';
+import { RatingRepository, RatingAnalytics } from './analytics-service';
 
 // ============================================================================
 // RATING REPOSITORY (Agent 9 Integration)

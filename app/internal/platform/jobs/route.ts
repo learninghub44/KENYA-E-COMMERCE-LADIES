@@ -1,24 +1,6 @@
 import { authorizeRoute } from "../../../../middleware/auth-guard";
 import type { JobRecord, JobStatus } from "../../../../lib/jobs/types";
 
-interface JobsDbClient {
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (col: string, val: unknown) => {
-        single: () => Promise<{ data: unknown; error: unknown }>;
-      };
-      order: (col: string, opts: { ascending: boolean }) => {
-        limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
-      };
-    };
-    update: (values: Record<string, unknown>) => {
-      eq: (col: string, val: unknown) => {
-        select: () => Promise<{ data: unknown; error: unknown }>;
-      };
-    };
-  };
-}
-
 function mapJobRow(row: Record<string, unknown>): JobRecord {
   return {
     id: row.id as string,
@@ -51,7 +33,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const jobId = url.searchParams.get("jobId");
 
-  const client: JobsDbClient = {
+  const client: any = {
     from: (table: string) => ({
       select: (columns: string) => ({
         eq: (col: string, val: unknown) => ({
@@ -99,18 +81,18 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json() as { jobId: string; action: string };
-  const client: JobsDbClient = {
-    from: (table: string) => ({
-      select: (columns: string) => ({
-        eq: (col: string, val: unknown) => ({
+  const client: any = {
+    from: (_table: string) => ({
+      select: (_columns: string) => ({
+        eq: (_col: string, _val: unknown) => ({
           single: async () => ({ data: null, error: null }),
-          order: (col: string, opts: { ascending: boolean }) => ({
-            limit: async (n: number) => ({ data: [], error: null }),
+          order: (_col: string, _opts: { ascending: boolean }) => ({
+            limit: async (_n: number) => ({ data: [], error: null }),
           }),
         }),
       }),
       update: (values: Record<string, unknown>) => ({
-        eq: (col: string, val: unknown) => ({
+        eq: (_col: string, _val: unknown) => ({
           select: async () => ({ data: [values], error: null }),
         }),
       }),

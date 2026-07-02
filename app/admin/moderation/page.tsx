@@ -68,7 +68,7 @@ const messagesReports: Report[] = [
   { id: "r8", item: "Message from User #1234", reporter: "System", reason: "Harassment", date: "2025-06-28", status: "Pending" },
 ]
 
-const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
+const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   Pending: "destructive",
   Reviewed: "secondary",
   Dismissed: "outline",

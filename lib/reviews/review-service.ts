@@ -1,5 +1,5 @@
-import { createProductReviewSchema, createSellerReviewSchema, reportReviewSchema, updateProductReviewSchema } from "./schemas.js";
-import { validateReviewMedia } from "./media-provider.js";
+import { createProductReviewSchema, createSellerReviewSchema, reportReviewSchema, updateProductReviewSchema } from "./schemas";
+import { validateReviewMedia } from "./media-provider";
 import type {
   CreateProductReviewInput,
   CreateSellerReviewInput,
@@ -7,7 +7,7 @@ import type {
   ReviewResult,
   ReviewServiceDependencies,
   SellerReviewRecord
-} from "./types.js";
+} from "./types";
 
 const DEFAULT_EDIT_WINDOW_HOURS = 72;
 const DEFAULT_MAX_IMAGES = 8;

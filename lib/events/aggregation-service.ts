@@ -1,4 +1,4 @@
-import { AggregationDimension, AggregationPeriod, EventAggregation, EventFilters, EventRepository, InternalEvent } from "./types.js";
+import { AggregationDimension, AggregationPeriod, EventAggregation, EventFilters, EventRepository, InternalEvent } from "./types";
 
 export interface AggregationServiceDependencies {
   repository: EventRepository;
