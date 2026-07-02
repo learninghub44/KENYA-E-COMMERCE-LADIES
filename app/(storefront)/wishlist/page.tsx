@@ -6,11 +6,11 @@ import { Heart, Share2, Trash2 } from "lucide-react"
 
 import { Button } from "../../../components/ui/button"
 import { Card, CardContent } from "../../../components/ui/card"
-import { ProductCard } from "../../../components/shared/product-card"
+import { ProductCard, type Product as ProductCardType } from "../../../components/shared/product-card"
 import { EmptyState } from "../../../components/shared/empty-state"
 import { Breadcrumbs } from "../../../components/shared/breadcrumbs"
 
-const MOCK_WISHLIST = Array.from({ length: 8 }, (_, i) => ({
+const MOCK_WISHLIST: ProductCardType[] = Array.from({ length: 8 }, (_, i) => ({
   id: String(i + 1),
   name: [
     "Premium Ankara Maxi Dress",
@@ -21,15 +21,15 @@ const MOCK_WISHLIST = Array.from({ length: 8 }, (_, i) => ({
     "Embroidered Crop Top",
     "Leather Crossbody Bag",
     "Statement Earrings Set",
-  ][i],
-  price: [4500, 3200, 8900, 12500, 5600, 2800, 6500, 1800][i],
-  comparePrice: [null, 4200, null, 15000, null, 3800, null, 2500][i],
+  ][i] ?? "",
+  price: [4500, 3200, 8900, 12500, 5600, 2800, 6500, 1800][i] ?? 0,
+  comparePrice: [null, 4200, null, 15000, null, 3800, null, 2500][i] as number | null | undefined,
   images: ["/placeholder.svg"],
-  rating: [4.5, 3.8, 4.2, 4.8, 4.0, 3.5, 4.6, 4.3][i],
-  reviewCount: [24, 12, 45, 78, 33, 8, 56, 19][i],
-  isNew: [true, false, false, true, false, true, false, false][i],
-  discount: [null, 15, null, 20, null, 25, null, 30][i],
-  sellerName: ["Luxe Kenya", "African Trends", "Nairobi Styles", "Elegance Hub"][i % 4],
+  rating: [4.5, 3.8, 4.2, 4.8, 4.0, 3.5, 4.6, 4.3][i] ?? 0,
+  reviewCount: [24, 12, 45, 78, 33, 8, 56, 19][i] ?? 0,
+  isNew: [true, false, false, true, false, true, false, false][i] ?? false,
+  discount: [null, 15, null, 20, null, 25, null, 30][i] as number | null | undefined,
+  sellerName: ["Luxe Kenya", "African Trends", "Nairobi Styles", "Elegance Hub"][i % 4] ?? "",
   slug: `product-${i + 1}`,
 }))
 

@@ -42,7 +42,7 @@ import {
   DrawerTrigger,
 } from "../../../../components/ui/drawer"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
-import { ProductCard } from "../../../../components/shared/product-card"
+import { ProductCard, type Product as ProductCardType } from "../../../../components/shared/product-card"
 import { EmptyState } from "../../../../components/shared/empty-state"
 
 const categoriesData: Record<string, { name: string; description: string; image: string }> = {
@@ -65,7 +65,7 @@ const brands = ["African Heritage", "Nairobi Luxe", "Safari Chic", "Coastal Vibe
 const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL"]
 const colors = ["Black", "White", "Red", "Blue", "Green", "Gold", "Silver", "Pink", "Purple", "Brown"]
 
-function generateMockProducts(count: number) {
+function generateMockProducts(count: number): ProductCardType[] {
   return Array.from({ length: count }, (_, i) => ({
     id: String(i + 1),
     name: [
@@ -79,15 +79,15 @@ function generateMockProducts(count: number) {
       "Embroidered Linen Top",
       "Leather Crossbody Bag",
       "Batik Print Jumpsuit",
-    ][i % 10],
-    price: [4500, 6200, 2800, 3900, 5500, 1800, 8500, 4200, 7200, 5800][i % 10],
-    comparePrice: [null, 7800, null, null, 7200, null, 11000, null, 9000, null][i % 10],
+    ][i % 10] ?? "",
+    price: [4500, 6200, 2800, 3900, 5500, 1800, 8500, 4200, 7200, 5800][i % 10] ?? 0,
+    comparePrice: [null, 7800, null, null, 7200, null, 11000, null, 9000, null][i % 10] as number | null | undefined,
     images: [],
-    rating: [4.5, 4.7, 4.3, 4.8, 4.6, 4.4, 4.9, 4.2, 4.7, 4.5][i % 10],
-    reviewCount: [56, 89, 34, 112, 67, 45, 203, 28, 91, 78][i % 10],
+    rating: [4.5, 4.7, 4.3, 4.8, 4.6, 4.4, 4.9, 4.2, 4.7, 4.5][i % 10] ?? 0,
+    reviewCount: [56, 89, 34, 112, 67, 45, 203, 28, 91, 78][i % 10] ?? 0,
     isNew: i < 4,
-    discount: [null, 21, null, null, 24, null, 23, null, 20, null][i % 10],
-    sellerName: ["Nairobi Styles", "Safari Chic", "Makena Accessories", "Coastal Crafts", "Urban Leather Co.", "Accra Threads", "PureGlow Kenya", "Safari Chic", "Urban Leather Co.", "Coastal Crafts"][i % 10],
+    discount: [null, 21, null, null, 24, null, 23, null, 20, null][i % 10] as number | null | undefined,
+    sellerName: ["Nairobi Styles", "Safari Chic", "Makena Accessories", "Coastal Crafts", "Urban Leather Co.", "Accra Threads", "PureGlow Kenya", "Safari Chic", "Urban Leather Co.", "Coastal Crafts"][i % 10] ?? "",
     slug: `product-${i + 1}`,
   }))
 }
@@ -100,7 +100,7 @@ export default function CategoryPage() {
   const category = categoriesData[slug]
 
   const [sortBy, setSortBy] = useState("newest")
-  const [priceRange, setPriceRange] = useState([0, 20000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 20000])
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
@@ -167,7 +167,7 @@ export default function CategoryPage() {
         <div className="space-y-3">
           <Slider
             value={priceRange}
-            onValueChange={(val) => { setPriceRange(val); setCurrentPage(1) }}
+            onValueChange={(val) => { setPriceRange(val as [number, number]); setCurrentPage(1) }}
             min={0}
             max={20000}
             step={500}

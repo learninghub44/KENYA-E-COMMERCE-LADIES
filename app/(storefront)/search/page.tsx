@@ -38,10 +38,16 @@ import {
 import { RadioGroup, RadioGroupItem } from "../../../components/ui/radio-group"
 import { Price } from "../../../components/shared/price"
 import { Rating } from "../../../components/shared/rating"
-import { ProductCard } from "../../../components/shared/product-card"
+import { ProductCard, type Product as ProductCardType } from "../../../components/shared/product-card"
 import { EmptyState } from "../../../components/shared/empty-state"
 
-const MOCK_PRODUCTS = Array.from({ length: 24 }, (_, i) => ({
+interface SearchProduct extends ProductCardType {
+  category: string
+  brand: string
+  colors: string[]
+}
+
+const MOCK_PRODUCTS: SearchProduct[] = Array.from({ length: 24 }, (_, i) => ({
   id: String(i + 1),
   name: [
     "Premium Ankara Maxi Dress",
@@ -52,20 +58,20 @@ const MOCK_PRODUCTS = Array.from({ length: 24 }, (_, i) => ({
     "Embroidered Crop Top",
     "Leather Crossbody Bag",
     "Statement Earrings Set",
-  ][i % 8],
-  price: [4500, 3200, 8900, 12500, 5600, 2800, 6500, 1800][i % 8],
-  comparePrice: [null, 4200, null, 15000, null, 3800, null, 2500][i % 8],
+  ][i % 8] ?? "",
+  price: [4500, 3200, 8900, 12500, 5600, 2800, 6500, 1800][i % 8] ?? 0,
+  comparePrice: [null, 4200, null, 15000, null, 3800, null, 2500][i % 8] as number | null | undefined,
   images: [`/placeholder.svg`],
-  rating: [4.5, 3.8, 4.2, 4.8, 4.0, 3.5, 4.6, 4.3][i % 8],
-  reviewCount: [24, 12, 45, 78, 33, 8, 56, 19][i % 8],
-  isNew: [true, false, false, true, false, true, false, false][i % 8],
-  discount: [null, 15, null, 20, null, 25, null, 30][i % 8],
+  rating: [4.5, 3.8, 4.2, 4.8, 4.0, 3.5, 4.6, 4.3][i % 8] ?? 0,
+  reviewCount: [24, 12, 45, 78, 33, 8, 56, 19][i % 8] ?? 0,
+  isNew: [true, false, false, true, false, true, false, false][i % 8] ?? false,
+  discount: [null, 15, null, 20, null, 25, null, 30][i % 8] as number | null | undefined,
   sellerName: [
     "Luxe Kenya",
     "African Trends",
     "Nairobi Styles",
     "Elegance Hub",
-  ][i % 4],
+  ][i % 4] ?? "",
   slug: `product-${i + 1}`,
   category: [
     "Dresses",
@@ -76,7 +82,7 @@ const MOCK_PRODUCTS = Array.from({ length: 24 }, (_, i) => ({
     "Tops",
     "Accessories",
     "Accessories",
-  ][i % 8],
+  ][i % 8] ?? "",
   brand: [
     "Luxe Africa",
     "Safari Chic",
@@ -86,7 +92,7 @@ const MOCK_PRODUCTS = Array.from({ length: 24 }, (_, i) => ({
     "Kente House",
     "Beaded Bliss",
     "Afro Glam",
-  ][i % 8],
+  ][i % 8] ?? "",
   colors: ["Black", "Red", "Gold", "Blue", "Green", "White", "Brown", "Purple"],
 }))
 
