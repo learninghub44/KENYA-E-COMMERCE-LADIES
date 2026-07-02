@@ -1,4 +1,4 @@
-import type { SellerStatus, StoredSellerStatus } from "./types.js";
+import type { SellerStatus, StoredSellerStatus } from "./types";
 
 export const SELLER_STATUS_TRANSITIONS: Record<SellerStatus, readonly SellerStatus[]> = {
   draft: ["pending"],

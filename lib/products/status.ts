@@ -1,4 +1,4 @@
-import type { ProductRecord, ProductStatus, StoredProductStatus } from "./types.js";
+import type { ProductRecord, ProductStatus, StoredProductStatus } from "./types";
 
 export const PRODUCT_STATUS_TRANSITIONS: Record<ProductStatus, readonly ProductStatus[]> = {
   draft: ["pending_review", "archived"],

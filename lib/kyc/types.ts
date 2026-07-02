@@ -1,4 +1,4 @@
-import type { KycStatus, SellerNotificationEvent, SellerRecord } from "../seller/types.js";
+import type { KycStatus, SellerNotificationEvent, SellerRecord } from "../seller/types";
 
 export type KycDocumentInput = {
   type: "national_id" | "passport" | "business_registration" | "tax_certificate" | "proof_of_address";

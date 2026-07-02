@@ -1,5 +1,5 @@
-import type { ProductImageRecord, ProductImageRepository, ProductRepository, ProductResult } from "./types.js";
-import { productImageInputSchema } from "./schemas.js";
+import type { ProductImageRecord, ProductImageRepository, ProductRepository, ProductResult } from "./types";
+import { productImageInputSchema } from "./schemas";
 
 export type MediaServiceDependencies = {
   products: ProductRepository;

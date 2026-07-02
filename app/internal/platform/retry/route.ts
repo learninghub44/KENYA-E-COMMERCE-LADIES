@@ -1,4 +1,4 @@
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
 
 interface SupabaseResult {
   data: unknown;

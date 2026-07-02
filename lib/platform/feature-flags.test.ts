@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createFeatureFlagService } from "./feature-flags.js";
-import { createConfigService } from "./config.js";
+import { createFeatureFlagService } from "./feature-flags";
+import { createConfigService } from "./config";
 
 describe("feature flag service", () => {
   it("returns false for unknown flag", async () => {

@@ -1,5 +1,5 @@
-import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_BYTES, attachmentUploadSchema } from "./schemas.js";
-import type { AttachmentProvider, AttachmentUploadInput, PendingAttachment } from "./types.js";
+import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_BYTES, attachmentUploadSchema } from "./schemas";
+import type { AttachmentProvider, AttachmentUploadInput, PendingAttachment } from "./types";
 
 export type CloudinaryClient = {
   uploadImage(input: { fileBase64: string; folder: string; filename?: string | undefined }): Promise<{

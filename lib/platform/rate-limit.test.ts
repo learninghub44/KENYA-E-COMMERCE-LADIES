@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createRateLimitService } from "./rate-limit.js";
+import { createRateLimitService } from "./rate-limit";
 
 describe("rate limit service", () => {
   it("allows first request", async () => {

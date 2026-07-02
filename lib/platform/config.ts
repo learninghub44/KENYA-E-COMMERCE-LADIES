@@ -1,4 +1,4 @@
-import { ConfigEntry, ConfigType, SetConfigInput, configEntrySchema } from "./types.js";
+import { ConfigEntry, ConfigType, SetConfigInput, configEntrySchema } from "./types";
 
 interface SupabaseResult {
   data: unknown;

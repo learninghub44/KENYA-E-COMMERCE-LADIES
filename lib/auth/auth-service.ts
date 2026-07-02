@@ -1,16 +1,16 @@
-import type { AuthResult, AuthSession, RequestContext } from "../../types/auth.js";
-import type { AppRole } from "../../types/roles.js";
-import { normalizeRoles } from "../permissions/index.js";
-import type { AuditRepository } from "./audit.js";
-import { logAuthEvent } from "./audit.js";
+import type { AuthResult, AuthSession, RequestContext } from "../../types/auth";
+import type { AppRole } from "../../types/roles";
+import { normalizeRoles } from "../permissions/index";
+import type { AuditRepository } from "./audit";
+import { logAuthEvent } from "./audit";
 import {
   emailUpdateSchema,
   loginSchema,
   passwordResetSchema,
   passwordUpdateSchema,
   registerSchema
-} from "./schemas.js";
-import type { ProfileRepository, RoleRepository, SupabaseAuthPort } from "./types.js";
+} from "./schemas";
+import type { ProfileRepository, RoleRepository, SupabaseAuthPort } from "./types";
 
 export type AuthServiceDependencies = {
   auth: SupabaseAuthPort;

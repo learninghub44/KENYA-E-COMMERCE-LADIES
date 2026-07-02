@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createRetryStrategy } from "./retry.js";
+import { createRetryStrategy } from "./retry";
 
 describe("retry strategy", () => {
   it("succeeds on first attempt", async () => {

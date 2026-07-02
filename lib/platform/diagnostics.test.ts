@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createDiagnosticsService } from "./diagnostics.js";
+import { createDiagnosticsService } from "./diagnostics";
 
 describe("diagnostics service", () => {
   it("generates environment diagnostics", async () => {

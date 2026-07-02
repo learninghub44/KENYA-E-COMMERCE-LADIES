@@ -1,6 +1,6 @@
-import { diditWebhookSchema } from "./schemas.js";
-import type { KycProvider, KycProviderResult, KycSubmissionInput, KycWebhookEvent } from "./types.js";
-import type { SellerRecord } from "../seller/types.js";
+import { diditWebhookSchema } from "./schemas";
+import type { KycProvider, KycProviderResult, KycSubmissionInput, KycWebhookEvent } from "./types";
+import type { SellerRecord } from "../seller/types";
 
 export type DiditClient = {
   createSession(input: {

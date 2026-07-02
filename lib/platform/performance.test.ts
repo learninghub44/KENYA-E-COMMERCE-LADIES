@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createRequestBatcher, createLazyLoader, paginate, batchArray, compressInput } from "./performance.js";
+import { createRequestBatcher, createLazyLoader, paginate, batchArray, compressInput } from "./performance";
 
 describe("request batcher", () => {
   it("batches items and resolves with results", async () => {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createSellerService, type SellerRecord, type SellerRepository, type SellerRoleRepository } from "./index.js";
+import { createSellerService, type SellerRecord, type SellerRepository, type SellerRoleRepository } from "./index";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const sellerId = "22222222-2222-4222-8222-222222222222";

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { KYC_STATUSES, SELLER_STATUSES } from "./types.js";
+import { KYC_STATUSES, SELLER_STATUSES } from "./types";
 
 const slugSourceSchema = z.string().trim().min(2).max(120);
 

@@ -1,4 +1,4 @@
-import { TimeoutOptions } from "./types.js";
+import { TimeoutOptions } from "./types";
 
 export interface TimeoutStrategy {
   execute<T>(fn: () => Promise<T>): Promise<T>;

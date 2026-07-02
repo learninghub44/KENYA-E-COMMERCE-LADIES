@@ -1,4 +1,4 @@
-import { CreateJobInput, createJobSchema, JobHandler, JobRecord, JobRepository, JobService, JobStatus } from "./types.js";
+import { CreateJobInput, createJobSchema, JobHandler, JobRecord, JobRepository, JobService, JobStatus } from "./types";
 
 export interface JobServiceDependencies {
   repository: JobRepository;

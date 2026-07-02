@@ -1,5 +1,5 @@
-import type { Permission } from "../../types/permissions.js";
-import type { AppRole } from "../../types/roles.js";
+import type { Permission } from "../../types/permissions";
+import type { AppRole } from "../../types/roles";
 
 export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
   buyer: [

@@ -1,5 +1,5 @@
-import { createDiagnosticsService } from "../../../../lib/platform/diagnostics.js";
-import { authorizeRoute } from "../../../../middleware/auth-guard.js";
+import { createDiagnosticsService } from "../../../../lib/platform/diagnostics";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
 
 export async function GET() {
   const auth = authorizeRoute({ authLevel: "admin", roles: ["admin", "super_admin"] });

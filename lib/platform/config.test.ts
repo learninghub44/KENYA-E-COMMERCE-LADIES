@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createConfigService } from "./config.js";
+import { createConfigService } from "./config";
 
 describe("config service", () => {
   it("falls back to environment variables", async () => {

@@ -1,5 +1,5 @@
-import { MESSAGE_EDIT_WINDOW_MINUTES } from "./schemas.js";
-import { deleteMessageSchema, editMessageSchema, markReadSchema, reportMessageSchema, sendMessageSchema } from "./schemas.js";
+import { MESSAGE_EDIT_WINDOW_MINUTES } from "./schemas";
+import { deleteMessageSchema, editMessageSchema, markReadSchema, reportMessageSchema, sendMessageSchema } from "./schemas";
 import type {
   ConversationParticipantRole,
   ConversationRepository,
@@ -9,7 +9,7 @@ import type {
   MessagingEventPublisher,
   MessagingResult,
   ModerationEventPublisher
-} from "./types.js";
+} from "./types";
 
 export type MessageServiceDependencies = {
   messages: MessageRepository;

@@ -1,4 +1,4 @@
-import { RateLimitResult } from "./types.js";
+import { RateLimitResult } from "./types";
 
 export type RateLimitType = "user" | "seller" | "admin" | "api" | "ip";
 

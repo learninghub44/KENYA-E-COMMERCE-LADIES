@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createDiditProvider, createKycService, type KycRepository, type KycVerificationRecord } from "./index.js";
-import type { SellerRecord } from "../seller/index.js";
+import { createDiditProvider, createKycService, type KycRepository, type KycVerificationRecord } from "./index";
+import type { SellerRecord } from "../seller/index";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const sellerId = "22222222-2222-4222-8222-222222222222";

@@ -1,6 +1,6 @@
-import { calculateCartSummary } from "../orders/calculations.js";
-import { addCartItemSchema, cartItemActionSchema, cartOwnerSchema, mergeCartSchema, updateCartItemSchema } from "../orders/schemas.js";
-import type { CartItemRecord, CartItemRepository, CartRepository, CartSummary, CommerceResult, ProductReader } from "../orders/types.js";
+import { calculateCartSummary } from "../orders/calculations";
+import { addCartItemSchema, cartItemActionSchema, cartOwnerSchema, mergeCartSchema, updateCartItemSchema } from "../orders/schemas";
+import type { CartItemRecord, CartItemRepository, CartRepository, CartSummary, CommerceResult, ProductReader } from "../orders/types";
 
 export type CartServiceDependencies = {
   carts: CartRepository;

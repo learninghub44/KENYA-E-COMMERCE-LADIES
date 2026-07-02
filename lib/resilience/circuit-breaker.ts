@@ -1,4 +1,4 @@
-import { CircuitBreakerOptions, CircuitState } from "./types.js";
+import { CircuitBreakerOptions, CircuitState } from "./types";
 
 export interface CircuitBreaker {
   call<T>(fn: () => Promise<T>): Promise<T>;

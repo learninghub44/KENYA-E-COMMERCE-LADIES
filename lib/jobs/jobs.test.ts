@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createJobService } from "./job-service.js";
-import { createJobRepository } from "./job-repository.js";
-import type { CreateJobInput, JobRecord, JobStatus } from "./types.js";
+import { createJobService } from "./job-service";
+import { createJobRepository } from "./job-repository";
+import type { CreateJobInput, JobRecord, JobStatus } from "./types";
 
 function createMockJobsDb() {
   const store = new Map<string, Record<string, unknown>>();

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createCircuitBreaker } from "./circuit-breaker.js";
+import { createCircuitBreaker } from "./circuit-breaker";
 
 describe("circuit breaker", () => {
   it("starts closed", () => {

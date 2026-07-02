@@ -1,6 +1,6 @@
-import { statusTransitionSchema } from "./schemas.js";
-import { assertOrderStatusTransition, buyerCanCancel, fulfillmentStatusFor } from "./status.js";
-import type { CommerceEventPublisher, CommerceResult, OrderRepository, OrderWithItems } from "./types.js";
+import { statusTransitionSchema } from "./schemas";
+import { assertOrderStatusTransition, buyerCanCancel, fulfillmentStatusFor } from "./status";
+import type { CommerceEventPublisher, CommerceResult, OrderRepository, OrderWithItems } from "./types";
 
 export type OrderServiceDependencies = {
   orders: OrderRepository;

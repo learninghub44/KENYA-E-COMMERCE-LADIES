@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { kycStatusSchema } from "../seller/schemas.js";
+import { kycStatusSchema } from "../seller/schemas";
 
 export const kycDocumentSchema = z.object({
   type: z.enum(["national_id", "passport", "business_registration", "tax_certificate", "proof_of_address"]),

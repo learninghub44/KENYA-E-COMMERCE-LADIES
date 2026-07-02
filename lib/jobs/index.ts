@@ -1,3 +1,3 @@
-export * from "./types.js";
-export * from "./job-service.js";
-export * from "./job-repository.js";
+export * from "./types";
+export * from "./job-service";
+export * from "./job-repository";

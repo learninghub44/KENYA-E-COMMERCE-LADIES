@@ -1,4 +1,4 @@
-import { BulkheadOptions } from "./types.js";
+import { BulkheadOptions } from "./types";
 
 export interface Bulkhead {
   execute<T>(fn: () => Promise<T>): Promise<T>;

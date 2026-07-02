@@ -1,5 +1,5 @@
-import type { ProductRepository, ProductResult, ProductVariantInput, ProductVariantRecord, ProductVariantRepository } from "./types.js";
-import { productVariantInputSchema } from "./schemas.js";
+import type { ProductRepository, ProductResult, ProductVariantInput, ProductVariantRecord, ProductVariantRepository } from "./types";
+import { productVariantInputSchema } from "./schemas";
 
 export type VariantServiceDependencies = {
   products: ProductRepository;

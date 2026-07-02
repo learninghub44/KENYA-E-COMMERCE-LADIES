@@ -1,5 +1,5 @@
-import { calculateOrderTotals } from "../orders/calculations.js";
-import { checkoutSchema, couponCodeSchema } from "../orders/schemas.js";
+import { calculateOrderTotals } from "../orders/calculations";
+import { checkoutSchema, couponCodeSchema } from "../orders/schemas";
 import type {
   CartItemRecord,
   CartItemRepository,
@@ -11,7 +11,7 @@ import type {
   InventoryReservationRepository,
   OrderItemRecord,
   OrderRepository
-} from "../orders/types.js";
+} from "../orders/types";
 
 export type CheckoutServiceDependencies = {
   carts: CartRepository;

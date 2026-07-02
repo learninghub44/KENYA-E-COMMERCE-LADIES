@@ -1,0 +1,176 @@
+"use client"
+
+import * as React from "react"
+import Link from "next/link"
+import { Instagram, Twitter, Facebook, Youtube } from "lucide-react"
+
+import { cn } from "../../lib/utils"
+import { Input } from "../ui/input"
+import { Button } from "../ui/button"
+import { Separator } from "../ui/separator"
+
+interface FooterColumn {
+  title: string
+  links: { name: string; href: string }[]
+}
+
+const columns: FooterColumn[] = [
+  {
+    title: "Shop",
+    links: [
+      { name: "All Products", href: "/shop" },
+      { name: "New Arrivals", href: "/new-arrivals" },
+      { name: "Best Sellers", href: "/best-sellers" },
+      { name: "Sale", href: "/sale" },
+      { name: "Collections", href: "/collections" },
+    ],
+  },
+  {
+    title: "About",
+    links: [
+      { name: "Our Story", href: "/about" },
+      { name: "Careers", href: "/careers" },
+      { name: "Press", href: "/press" },
+      { name: "Blog", href: "/blog" },
+      { name: "Sustainability", href: "/sustainability" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { name: "Contact Us", href: "/contact" },
+      { name: "FAQs", href: "/faqs" },
+      { name: "Shipping & Delivery", href: "/shipping" },
+      { name: "Returns & Exchanges", href: "/returns" },
+      { name: "Size Guide", href: "/size-guide" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
+      { name: "Cookie Policy", href: "/cookies" },
+    ],
+  },
+]
+
+const socialLinks = [
+  { name: "Instagram", icon: Instagram, href: "https://instagram.com" },
+  { name: "Twitter", icon: Twitter, href: "https://twitter.com" },
+  { name: "Facebook", icon: Facebook, href: "https://facebook.com" },
+  { name: "YouTube", icon: Youtube, href: "https://youtube.com" },
+]
+
+interface FooterProps {
+  className?: string
+}
+
+function Footer({ className }: FooterProps) {
+  const [email, setEmail] = React.useState("")
+
+  function handleNewsletterSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setEmail("")
+  }
+
+  return (
+    <footer className={cn("border-t bg-background", className)}>
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-6">
+          <div className="lg:col-span-2">
+            <Link href="/" className="text-xl font-bold tracking-tight">
+              KENYA LUXE
+            </Link>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Discover curated luxury fashion from African designers. Premium
+              quality, authentic craftsmanship, delivered worldwide.
+            </p>
+            <form
+              onSubmit={handleNewsletterSubmit}
+              className="mt-6 flex gap-2"
+            >
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                aria-label="Email for newsletter"
+                className="flex-1"
+                required
+              />
+              <Button type="submit" variant="default">
+                Subscribe
+              </Button>
+            </form>
+            <div className="mt-6 flex items-center gap-3">
+              {socialLinks.map((social) => {
+                const Icon = social.icon
+                return (
+                  <Link
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    aria-label={social.name}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          {columns.map((column) => (
+            <div key={column.title}>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">
+                {column.title}
+              </h3>
+              <ul className="space-y-2">
+                {column.links.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <Separator className="my-8" />
+
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} Kenya Luxe. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-block h-5 w-8 rounded border bg-muted" />
+              <span className="inline-block h-5 w-8 rounded border bg-muted" />
+              <span className="inline-block h-5 w-8 rounded border bg-muted" />
+              <span className="text-xs">We accept all major cards</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <select
+                className="rounded border bg-background px-2 py-1 text-xs"
+                aria-label="Select language"
+                defaultValue="en"
+              >
+                <option value="en">English</option>
+                <option value="sw">Kiswahili</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+export { Footer }

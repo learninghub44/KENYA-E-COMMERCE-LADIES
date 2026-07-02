@@ -1,4 +1,4 @@
-import { CacheMetrics } from "./types.js";
+import { CacheMetrics } from "./types";
 
 interface SupabaseResult {
   data: unknown;

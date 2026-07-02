@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createReadinessService, createEnvReadinessCheck, createConnectivityReadinessCheck } from "./readiness.js";
+import { createReadinessService, createEnvReadinessCheck, createConnectivityReadinessCheck } from "./readiness";
 
 describe("readiness service", () => {
   it("returns ready when all required checks pass", async () => {

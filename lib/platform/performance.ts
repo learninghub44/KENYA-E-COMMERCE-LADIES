@@ -1,4 +1,4 @@
-import { PaginationInput, PaginationResult } from "./types.js";
+import { PaginationInput, PaginationResult } from "./types";
 
 export interface ConnectionPoolOptions {
   maxConnections: number;

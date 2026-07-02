@@ -1,4 +1,4 @@
-import { DiagnosticsReport, HealthCheckResult, HealthStatus } from "./types.js";
+import { DiagnosticsReport, HealthCheckResult, HealthStatus } from "./types";
 
 export interface DiagnosticsDependencies {
   env?: Record<string, string | undefined>;

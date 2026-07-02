@@ -1,4 +1,4 @@
-import { FileValidationInput, FileValidationResult, SIZE_LIMITS, ALLOWED_MIME_TYPES, StorageProviderAdapter, StorageService, UploadInput, UploadResult, DeleteInput } from "./types.js";
+import { FileValidationInput, FileValidationResult, SIZE_LIMITS, ALLOWED_MIME_TYPES, StorageProviderAdapter, StorageService, UploadInput, UploadResult, DeleteInput } from "./types";
 
 export interface StorageServiceDependencies {
   adapter: StorageProviderAdapter;

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createBulkhead } from "./bulkhead.js";
+import { createBulkhead } from "./bulkhead";
 
 describe("bulkhead", () => {
   it("executes function when under limit", async () => {
