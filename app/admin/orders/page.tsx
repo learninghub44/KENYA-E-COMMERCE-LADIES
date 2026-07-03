@@ -74,7 +74,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
   const { data: roleRows, error: rolesError } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
   if (rolesError) throw new Error(`Failed to load admin roles: ${rolesError.message}`);
   const roles = (roleRows ?? []).map((row: { role: AppRole }) => row.role);
-  const auth = authorizeRoute({ authLevel: "admin", roles });
+  const auth = authorizeRoute({ authLevel: "admin", roles, permissions: "order.manage" });
   if (!auth.allowed) redirect("/");
 
   const q = params.q?.trim() || undefined;

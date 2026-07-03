@@ -25,7 +25,7 @@ export function authorizeRoute(input: GuardInput): GuardResult {
     return { allowed: false, status: 403, code: "AUTHORIZATION_DENIED" };
   }
 
-  if (input.authLevel === "admin" && !input.roles.some((role) => role === "admin" || role === "super_admin")) {
+  if (input.authLevel === "admin" && !hasPermission(input.roles, "admin.access")) {
     return { allowed: false, status: 403, code: "AUTHORIZATION_DENIED" };
   }
 

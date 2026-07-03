@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -25,8 +26,11 @@ import {
   FileCheck,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
+import { createSupabaseBrowserClient } from "../../lib/supabase/client"
+import { normalizeRoles, permissionsForRoles } from "../../lib/permissions/index"
+import type { Permission } from "../../types/permissions"
 import { Button } from "../../components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar"
+import { Avatar, AvatarFallback } from "../../components/ui/avatar"
 import { Badge } from "../../components/ui/badge"
 import { Input } from "../../components/ui/input"
 import { Separator } from "../../components/ui/separator"
@@ -45,6 +49,7 @@ interface NavItem {
   label: string
   href: string
   icon: React.ElementType
+  permission: Permission
 }
 
 interface NavSection {
@@ -56,47 +61,47 @@ const navSections: NavSection[] = [
   {
     title: "Main",
     items: [
-      { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-      { label: "Users", href: "/admin/users", icon: Users },
-      { label: "Sellers", href: "/admin/sellers", icon: Store },
-      { label: "Products", href: "/admin/products", icon: Package },
-      { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
+      { label: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: "admin.access" },
+      { label: "Users", href: "/admin/users", icon: Users, permission: "user.manage" },
+      { label: "Sellers", href: "/admin/sellers", icon: Store, permission: "user.manage" },
+      { label: "Products", href: "/admin/products", icon: Package, permission: "admin.moderate" },
+      { label: "Orders", href: "/admin/orders", icon: ShoppingCart, permission: "order.manage" },
     ],
   },
   {
     title: "Verification",
     items: [
-      { label: "KYC Reviews", href: "/admin/kyc", icon: FileCheck },
+      { label: "KYC Reviews", href: "/admin/kyc", icon: FileCheck, permission: "kyc.review" },
     ],
   },
   {
     title: "Analytics",
     items: [
-      { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-      { label: "Search Analytics", href: "/admin/search-analytics", icon: Search },
-      { label: "Business Intelligence", href: "/admin/business-intelligence", icon: BrainCircuit },
+      { label: "Analytics", href: "/admin/analytics", icon: BarChart3, permission: "admin.role.manage" },
+      { label: "Search Analytics", href: "/admin/search-analytics", icon: Search, permission: "admin.role.manage" },
+      { label: "Business Intelligence", href: "/admin/business-intelligence", icon: BrainCircuit, permission: "admin.role.manage" },
     ],
   },
   {
     title: "Content",
     items: [
-      { label: "Moderation", href: "/admin/moderation", icon: Shield },
-      { label: "Reviews", href: "/admin/reviews", icon: Star },
+      { label: "Moderation", href: "/admin/moderation", icon: Shield, permission: "admin.moderate" },
+      { label: "Reviews", href: "/admin/reviews", icon: Star, permission: "admin.moderate" },
     ],
   },
   {
     title: "Platform",
     items: [
-      { label: "Health", href: "/admin/platform/health", icon: HeartPulse },
-      { label: "Diagnostics", href: "/admin/platform/diagnostics", icon: Stethoscope },
-      { label: "Feature Flags", href: "/admin/platform/feature-flags", icon: Flag },
+      { label: "Health", href: "/admin/platform/health", icon: HeartPulse, permission: "admin.role.manage" },
+      { label: "Diagnostics", href: "/admin/platform/diagnostics", icon: Stethoscope, permission: "admin.role.manage" },
+      { label: "Feature Flags", href: "/admin/platform/feature-flags", icon: Flag, permission: "admin.role.manage" },
     ],
   },
   {
     title: "System",
     items: [
-      { label: "Notifications", href: "/admin/notifications", icon: Bell },
-      { label: "Settings", href: "/admin/settings", icon: Settings },
+      { label: "Notifications", href: "/admin/notifications", icon: Bell, permission: "admin.role.manage" },
+      { label: "Settings", href: "/admin/settings", icon: Settings, permission: "admin.role.manage" },
     ],
   },
 ]
@@ -104,16 +109,25 @@ const navSections: NavSection[] = [
 function SidebarNav({
   collapsed,
   onNavClick,
+  permissions,
 }: {
   collapsed: boolean
   onNavClick?: () => void
+  permissions: Set<Permission>
 }) {
   const pathname = usePathname()
+
+  const visibleSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => permissions.has(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0)
 
   return (
     <ScrollArea className="flex-1 px-3 py-4">
       <div className="space-y-6">
-        {navSections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.title}>
             {!collapsed && (
               <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -149,7 +163,35 @@ function SidebarNav({
   )
 }
 
-function AdminTopBar() {
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  super_admin: "Super Admin",
+  moderator: "Moderator",
+  kyc_reviewer: "KYC Reviewer",
+  support: "Support",
+}
+
+function AdminTopBar({
+  displayName,
+  email,
+  roleLabel,
+  unreadCount,
+  onLogout,
+}: {
+  displayName: string
+  email: string
+  roleLabel: string
+  unreadCount: number
+  onLogout: () => void
+}) {
+  const initials = displayName
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "AD"
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
       <div className="flex flex-1 items-center gap-4">
@@ -162,39 +204,49 @@ function AdminTopBar() {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-          <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]">
-            3
-          </Badge>
-        </Button>
+        <Link href="/admin/notifications">
+          <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </Link>
         <Separator orientation="vertical" className="h-8" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 px-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="https://avatar.vercel.sh/admin" alt="Admin" />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <div className="hidden text-left sm:block">
-                <p className="text-sm font-medium">Admin</p>
-                <p className="text-xs text-muted-foreground">admin@zurimarket.dev</p>
+                <p className="text-sm font-medium">{displayName}</p>
+                <p className="text-xs text-muted-foreground">{roleLabel}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              <p className="font-medium">{displayName}</p>
+              <p className="text-xs font-normal text-muted-foreground">{email}</p>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+            <DropdownMenuItem asChild>
+              <Link href="/account/profile">
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <DropdownMenuItem asChild>
+              <Link href="/admin/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive" onSelect={onLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
@@ -206,6 +258,65 @@ function AdminTopBar() {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<Set<Permission>>(new Set())
+  const [profile, setProfile] = useState({ displayName: "", email: "", roleLabel: "Admin" })
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    const supabase = createSupabaseBrowserClient()
+
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace("/auth/login")
+        return
+      }
+
+      const [{ data: roleRows }, { data: profileRow }, { count }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+        supabase.from("profiles").select("display_name, email").eq("id", user.id).single(),
+        supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("status", "unread"),
+      ])
+
+      if (cancelled) return
+
+      const roles = normalizeRoles((roleRows ?? []).map((row: { role: string }) => row.role))
+      const perms = permissionsForRoles(roles)
+
+      setPermissions(perms)
+      setUnreadCount(count ?? 0)
+      setProfile({
+        displayName: profileRow?.display_name || user.email?.split("@")[0] || "Admin",
+        email: profileRow?.email || user.email || "",
+        roleLabel: roles.map((r) => ROLE_LABELS[r] ?? r).join(", ") || "Admin",
+      })
+      setLoading(false)
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [router])
+
+  const handleLogout = async () => {
+    const supabase = createSupabaseBrowserClient()
+    await supabase.auth.signOut()
+    router.push("/auth/login")
+    router.refresh()
+  }
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Loading admin console…</div>
+  }
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
@@ -213,7 +324,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Store className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">Zuri Market</span>
         </div>
-        <SidebarNav collapsed={false} />
+        <SidebarNav collapsed={false} permissions={permissions} />
       </aside>
 
       <Sheet>
@@ -227,12 +338,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Store className="h-6 w-6 text-primary" />
             <span className="text-lg font-bold">Zuri Market</span>
           </div>
-          <SidebarNav collapsed={false} onNavClick={() => document.body.click()} />
+          <SidebarNav collapsed={false} onNavClick={() => document.body.click()} permissions={permissions} />
         </SheetContent>
       </Sheet>
 
       <div className="flex flex-1 flex-col">
-        <AdminTopBar />
+        <AdminTopBar
+          displayName={profile.displayName}
+          email={profile.email}
+          roleLabel={profile.roleLabel}
+          unreadCount={unreadCount}
+          onLogout={handleLogout}
+        />
         <main id="main-content" className="flex-1 p-6">
           {children}
         </main>

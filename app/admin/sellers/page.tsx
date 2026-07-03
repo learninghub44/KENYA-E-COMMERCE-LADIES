@@ -27,7 +27,7 @@ export default async function AdminSellersPage({ searchParams }: { searchParams?
 
   const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
   const roles = (roleRows ?? []).map((row: { role: AppRole }) => row.role);
-  const auth = authorizeRoute({ authLevel: "admin", roles });
+  const auth = authorizeRoute({ authLevel: "admin", roles, permissions: "user.manage" });
   if (!auth.allowed) redirect("/");
 
   const q = params.q?.trim() || undefined;

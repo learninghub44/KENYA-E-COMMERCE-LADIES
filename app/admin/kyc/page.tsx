@@ -28,7 +28,7 @@ export default async function AdminKycPage() {
 
   const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
   const roles = (roleRows ?? []).map((row: { role: AppRole }) => row.role);
-  const auth = authorizeRoute({ authLevel: "admin", roles });
+  const auth = authorizeRoute({ authLevel: "admin", roles, permissions: "kyc.review" });
   if (!auth.allowed) redirect("/");
 
   const { data: verifications, error } = await supabase
