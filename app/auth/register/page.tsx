@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,9 @@ import { Separator } from "../../../components/ui/separator";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "../../../lib/supabase/client";
+import { resolvePostLoginPath, sanitizeRedirectTarget } from "../../../lib/auth/post-login-redirect";
+import { normalizeRoles } from "../../../lib/permissions/index";
+import type { AppRole } from "../../../types/roles";
 
 const registerSchema = z
   .object({
@@ -29,6 +32,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const {
@@ -42,7 +46,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setAuthError(null);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -53,7 +57,28 @@ export default function RegisterPage() {
       setAuthError(error.message);
       return;
     }
-    router.push("/auth/login?registered=true");
+
+    const redirectTo = sanitizeRedirectTarget(searchParams.get("redirectTo"));
+
+    // If Supabase returned a live session (email confirmation disabled), the
+    // user is already signed in -- send them straight where they were headed
+    // instead of making them log in again. The buyer role is already granted
+    // by the on_auth_user_created trigger by the time signUp resolves.
+    if (signUpData.session && signUpData.user) {
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", signUpData.user.id);
+      const roles: AppRole[] = normalizeRoles((roleRows ?? []).map((row: { role: AppRole }) => row.role));
+      router.push(resolvePostLoginPath(roles, redirectTo));
+      router.refresh();
+      return;
+    }
+
+    const loginUrl = new URL("/auth/login", window.location.origin);
+    loginUrl.searchParams.set("registered", "true");
+    if (redirectTo) loginUrl.searchParams.set("redirectTo", redirectTo);
+    router.push(`${loginUrl.pathname}${loginUrl.search}`);
   };
 
   return (
@@ -208,7 +233,14 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/auth/login" className="font-medium text-primary hover:underline">
+          <Link
+            href={
+              searchParams.get("redirectTo")
+                ? `/auth/login?redirectTo=${encodeURIComponent(searchParams.get("redirectTo")!)}`
+                : "/auth/login"
+            }
+            className="font-medium text-primary hover:underline"
+          >
             Sign in
           </Link>
         </p>

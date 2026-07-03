@@ -2,6 +2,7 @@ export * from "./audit";
 export * from "./auth-service";
 export * from "./csrf";
 export * from "./password-policy";
+export * from "./post-login-redirect";
 export * from "./rate-limit";
 export * from "./schemas";
 export * from "./supabase-profile-repository";

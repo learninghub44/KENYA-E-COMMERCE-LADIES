@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,9 @@ import { Separator } from "../../../components/ui/separator";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "../../../lib/supabase/client";
+import { resolvePostLoginPath } from "../../../lib/auth/post-login-redirect";
+import { normalizeRoles } from "../../../lib/permissions/index";
+import type { AppRole } from "../../../types/roles";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -22,6 +25,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const {
@@ -35,7 +39,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setAuthError(null);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
@@ -43,7 +47,23 @@ export default function LoginPage() {
       setAuthError(error.message);
       return;
     }
-    router.push("/");
+
+    // Previously this always sent everyone to "/", regardless of role, so a
+    // seller or admin logging in still landed on the storefront homepage
+    // instead of their own dashboard. Look up their roles and route
+    // accordingly, honoring an explicit redirectTo (e.g. from middleware
+    // bouncing an unauthenticated visit to a protected page) when present.
+    let roles: AppRole[] = [];
+    if (signInData.user) {
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", signInData.user.id);
+      roles = normalizeRoles((roleRows ?? []).map((row: { role: AppRole }) => row.role));
+    }
+
+    const destination = resolvePostLoginPath(roles, searchParams.get("redirectTo"));
+    router.push(destination);
     router.refresh();
   };
 
@@ -160,7 +180,14 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/register" className="font-medium text-primary hover:underline">
+          <Link
+            href={
+              searchParams.get("redirectTo")
+                ? `/auth/register?redirectTo=${encodeURIComponent(searchParams.get("redirectTo")!)}`
+                : "/auth/register"
+            }
+            className="font-medium text-primary hover:underline"
+          >
             Create one
           </Link>
         </p>
