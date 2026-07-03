@@ -103,7 +103,9 @@ export type DiscountLine = {
 
 export const ORDER_STATUSES = [
   "draft",
+  "pending_payment",
   "pending",
+  "paid",
   "confirmed",
   "processing",
   "ready_for_shipment",

@@ -4,4 +4,5 @@ export * from "./calculations";
 export * from "./order-service";
 export * from "./schemas";
 export * from "./status";
+export * from "./supabase-order-repository";
 export * from "./types";
