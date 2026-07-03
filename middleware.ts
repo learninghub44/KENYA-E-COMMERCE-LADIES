@@ -53,7 +53,16 @@ function permissionForPath(pathname: string): Permission | "admin.access" {
   return "admin.role.manage";
 }
 
+// Each section's own login page must stay outside the guard it fronts —
+// otherwise an unauthenticated visitor hitting /admin/login gets bounced by
+// this same middleware before ever seeing the form (redirect loop).
+const SECTION_LOGIN_PATH: Record<"admin" | "seller", string> = {
+  admin: "/admin/login",
+  seller: "/seller/login",
+};
+
 function sectionForPath(pathname: string): "admin" | "seller" | null {
+  if (pathname === "/admin/login" || pathname === "/seller/login") return null;
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/seller")) return "seller";
   return null;
@@ -87,7 +96,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    const loginUrl = new URL("/auth/login", request.url);
+    const loginUrl = new URL(SECTION_LOGIN_PATH[section], request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
   }
