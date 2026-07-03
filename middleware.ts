@@ -17,6 +17,19 @@ const ADMIN_ROUTE_PERMISSIONS: Array<{ prefix: string; permission: Permission }>
   { prefix: "/admin/orders", permission: "order.manage" },
 ];
 
+// Seller Hub is a single permission surface: only the "seller" role carries
+// "seller.profile.manage" (see lib/roles/index.ts), so every /seller/* page is
+// covered by this one check without needing a per-route map.
+const SELLER_ROUTE_PERMISSION: Permission = "seller.profile.manage";
+
+// Where to send a signed-in user who does NOT hold the required role for the
+// section they tried to reach, instead of the generic "/" bounce that silently
+// hides why access was denied.
+const DENIED_REDIRECT: Record<"admin" | "seller", string> = {
+  admin: "/",
+  seller: "/become-a-seller",
+};
+
 function permissionForPath(pathname: string): Permission | "admin.access" {
   for (const { prefix, permission } of ADMIN_ROUTE_PERMISSIONS) {
     if (pathname === prefix || pathname.startsWith(prefix + "/")) return permission;
@@ -27,9 +40,16 @@ function permissionForPath(pathname: string): Permission | "admin.access" {
   return "admin.role.manage";
 }
 
+function sectionForPath(pathname: string): "admin" | "seller" | null {
+  if (pathname.startsWith("/admin")) return "admin";
+  if (pathname.startsWith("/seller")) return "seller";
+  return null;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (!pathname.startsWith("/admin")) return NextResponse.next();
+  const section = sectionForPath(pathname);
+  if (!section) return NextResponse.next();
 
   let response = NextResponse.next({ request });
 
@@ -62,14 +82,14 @@ export async function middleware(request: NextRequest) {
   const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
   const roles = normalizeRoles((roleRows ?? []).map((row: { role: AppRole }) => row.role));
 
-  const required = permissionForPath(pathname);
+  const required = section === "admin" ? permissionForPath(pathname) : SELLER_ROUTE_PERMISSION;
   if (!hasPermission(roles, required)) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL(DENIED_REDIRECT[section], request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/seller/:path*"],
 };
