@@ -8,6 +8,7 @@ import { cn } from "../../lib/utils"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
+import { Logo } from "./logo"
 
 interface FooterColumn {
   title: string
@@ -79,9 +80,7 @@ function Footer({ className }: FooterProps) {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
-            <Link href="/" className="text-xl font-bold tracking-tight">
-              ZURI MARKET
-            </Link>
+            <Logo />
             <p className="mt-3 text-sm text-muted-foreground">
               Kenya's marketplace for women's fashion, beauty, wellness, and
               lifestyle products from verified sellers. Discover. Shop. Empower.

@@ -14,6 +14,7 @@ import { SearchTrigger } from "./search-trigger"
 import { CartButton } from "./cart-button"
 import { ThemeToggle } from "./theme-toggle"
 import { MobileNav } from "./mobile-nav"
+import { Logo } from "./logo"
 
 interface NavLink {
   name: string
@@ -157,12 +158,7 @@ function Navbar({ className }: NavbarProps) {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <Link
-              href="/"
-              className="text-xl font-bold tracking-tight text-foreground"
-            >
-              ZURI MARKET
-            </Link>
+            <Logo className="shrink-0" />
           </div>
 
           <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
