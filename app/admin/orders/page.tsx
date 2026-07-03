@@ -1,101 +1,90 @@
-"use client"
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ChevronRight, Eye, RefreshCw, Search, ShoppingCart, Undo2, XCircle } from "lucide-react";
 
-import { useState } from "react"
-import {
-  Search,
-  MoreHorizontal,
-  Eye,
-  RefreshCw,
-  Undo2,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
-import { Input } from "../../../components/ui/input"
-import { Badge } from "../../../components/ui/badge"
-import { Checkbox } from "../../../components/ui/checkbox"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select"
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "../../../components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu"
+  TableRow
+} from "../../../components/ui/table";
+import { listAdminOrders, ORDER_STATUSES, type OrderStatus } from "../../../lib/orders";
+import { createSupabaseClient } from "../../../lib/supabase/server";
+import { authorizeRoute } from "../../../middleware/auth-guard";
+import type { AppRole } from "../../../types/roles";
 
-interface Order {
-  id: string
-  customer: string
-  seller: string
-  items: number
-  total: string
-  status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled"
-  date: string
-}
-
-const orders: Order[] = [
-  { id: "#ORD-001", customer: "Jane Wanjiku", seller: "Mrembo Fashions", items: 3, total: "KES 4,500", status: "Delivered", date: "2025-06-30" },
-  { id: "#ORD-002", customer: "Achieng Omondi", seller: "Dada Cosmetics", items: 1, total: "KES 2,300", status: "Processing", date: "2025-06-30" },
-  { id: "#ORD-003", customer: "Faith Nyambura", seller: "Sista Styles", items: 2, total: "KES 8,700", status: "Pending", date: "2025-06-29" },
-  { id: "#ORD-004", customer: "Grace Akinyi", seller: "Mrembo Fashions", items: 1, total: "KES 1,200", status: "Shipped", date: "2025-06-29" },
-  { id: "#ORD-005", customer: "Mary Wambui", seller: "Dada Cosmetics", items: 4, total: "KES 6,300", status: "Delivered", date: "2025-06-28" },
-  { id: "#ORD-006", customer: "Nancy Wairimu", seller: "Neo Beauty", items: 2, total: "KES 3,400", status: "Pending", date: "2025-06-27" },
-  { id: "#ORD-007", customer: "Sarah Chelangat", seller: "Amani Collections", items: 1, total: "KES 950", status: "Cancelled", date: "2025-06-26" },
-  { id: "#ORD-008", customer: "Esther Nyambura", seller: "Zuri Fashion House", items: 3, total: "KES 5,200", status: "Processing", date: "2025-06-25" },
-]
+type SearchParams = {
+  q?: string;
+  status?: string;
+  cursor?: string;
+};
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  Delivered: "default",
-  Processing: "secondary",
-  Pending: "outline",
-  Shipped: "secondary",
-  Cancelled: "destructive",
+  draft: "outline",
+  pending_payment: "outline",
+  pending: "outline",
+  paid: "secondary",
+  confirmed: "secondary",
+  processing: "secondary",
+  ready_for_shipment: "secondary",
+  shipped: "secondary",
+  delivered: "default",
+  completed: "default",
+  cancelled: "destructive",
+  refunded: "destructive",
+  returned: "destructive"
+};
+
+function formatStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-const ITEMS_PER_PAGE = 5
+function formatMoney(amountMinor: number, currency: string) {
+  return new Intl.NumberFormat("en-KE", { style: "currency", currency }).format(amountMinor / 100);
+}
 
-export default function OrdersPage() {
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("All")
-  const [page, setPage] = useState(1)
-  const [selected, setSelected] = useState<string[]>([])
+function formatDate(value: string | null) {
+  if (!value) return "Not placed";
+  return new Intl.DateTimeFormat("en-KE", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value));
+}
 
-  const filtered = orders.filter((o) => {
-    const matchSearch = o.id.toLowerCase().includes(search.toLowerCase()) || o.customer.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === "All" || o.status === statusFilter
-    return matchSearch && matchStatus
-  })
+function statusHref(status: OrderStatus | "all", q?: string) {
+  const params = new URLSearchParams();
+  if (status !== "all") params.set("status", status);
+  if (q) params.set("q", q);
+  const query = params.toString();
+  return query ? `/admin/orders?${query}` : "/admin/orders";
+}
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+export default async function AdminOrdersPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
+  const params = (await searchParams) ?? {};
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
-  }
+  if (!user) redirect("/auth/login");
 
-  const toggleAll = () => {
-    if (selected.length === paginated.length) {
-      setSelected([])
-    } else {
-      setSelected(paginated.map((o) => o.id))
-    }
-  }
+  const { data: roleRows, error: rolesError } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+  if (rolesError) throw new Error(`Failed to load admin roles: ${rolesError.message}`);
+  const roles = (roleRows ?? []).map((row: { role: AppRole }) => row.role);
+  const auth = authorizeRoute({ authLevel: "admin", roles });
+  if (!auth.allowed) redirect("/");
+
+  const q = params.q?.trim() || undefined;
+  const status = ORDER_STATUSES.includes(params.status as OrderStatus) ? (params.status as OrderStatus) : undefined;
+  const result = await listAdminOrders(supabase as any, {
+    q,
+    status,
+    cursor: params.cursor,
+    limit: 25
+  });
 
   return (
     <div className="space-y-6">
@@ -108,54 +97,31 @@ export default function OrdersPage() {
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Orders</CardTitle>
-            <div className="flex items-center gap-2">
+            <form className="flex flex-col gap-2 sm:flex-row sm:items-center" action="/admin/orders">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search orders..." className="pl-9 w-64" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
+                <Input name="q" placeholder="Search order number..." className="w-64 pl-9" defaultValue={q ?? ""} />
               </div>
-              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Processing">Processing</SelectItem>
-                  <SelectItem value="Shipped">Shipped</SelectItem>
-                  <SelectItem value="Delivered">Delivered</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              {status && <input type="hidden" name="status" value={status} />}
+              <Button type="submit" variant="outline">Search</Button>
+            </form>
           </div>
         </CardHeader>
         <CardContent>
-          {selected.length > 0 && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
-              <span className="text-sm text-muted-foreground">{selected.length} selected</span>
-              <Select>
-                <SelectTrigger className="w-40 h-8 text-xs">
-                  <SelectValue placeholder="Update Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Processing">Processing</SelectItem>
-                  <SelectItem value="Shipped">Shipped</SelectItem>
-                  <SelectItem value="Delivered">Delivered</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button asChild size="sm" variant={!status ? "default" : "secondary"}>
+              <Link href={statusHref("all", q)}>All</Link>
+            </Button>
+            {(["pending", "processing", "shipped", "delivered", "cancelled"] as OrderStatus[]).map((item) => (
+              <Button key={item} asChild size="sm" variant={status === item ? "default" : "secondary"}>
+                <Link href={statusHref(item, q)}>{formatStatus(item)}</Link>
+              </Button>
+            ))}
+          </div>
 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={paginated.length > 0 && selected.length === paginated.length}
-                    onCheckedChange={toggleAll}
-                  />
-                </TableHead>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Seller</TableHead>
@@ -163,68 +129,64 @@ export default function OrdersPage() {
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead className="w-12"></TableHead>
+                <TableHead className="w-[180px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginated.map((order) => (
+              {result.items.map((order) => (
                 <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                  <TableCell>{order.buyerName}</TableCell>
+                  <TableCell>{order.sellerName}</TableCell>
+                  <TableCell>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</TableCell>
+                  <TableCell className="font-medium">{formatMoney(order.totalMinor, order.currency)}</TableCell>
                   <TableCell>
-                    <Checkbox checked={selected.includes(order.id)} onCheckedChange={() => toggleSelect(order.id)} />
+                    <Badge variant={statusVariant[order.status]}>{formatStatus(order.status)}</Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.customer}</TableCell>
-                  <TableCell>{order.seller}</TableCell>
-                  <TableCell>{order.items}</TableCell>
-                  <TableCell className="font-medium">{order.total}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(order.placedAt ?? order.createdAt)}</TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant[order.status]}>{order.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" /> View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <RefreshCw className="mr-2 h-4 w-4" /> Update Status
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Undo2 className="mr-2 h-4 w-4" /> Issue Refund
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <XCircle className="mr-2 h-4 w-4" /> Cancel
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-1">
+                      <Button asChild variant="ghost" size="icon">
+                        <Link href={`/admin/orders/${order.id}`} aria-label={`View ${order.orderNumber}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" disabled aria-label="Update status">
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" disabled aria-label="Issue refund">
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" disabled aria-label="Cancel order">
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
+              {result.items.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                    <ShoppingCart className="mx-auto mb-2 h-8 w-8" />
+                    No orders found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
 
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
-              <div className="flex gap-1">
-                <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+          {result.nextCursor && (
+            <div className="mt-4 flex justify-end">
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/admin/orders?cursor=${encodeURIComponent(result.nextCursor)}${q ? `&q=${encodeURIComponent(q)}` : ""}${status ? `&status=${status}` : ""}`}>
+                  Next page
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

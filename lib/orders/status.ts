@@ -1,8 +1,10 @@
 import type { OrderStatus } from "./types";
 
 const transitions: Record<OrderStatus, readonly OrderStatus[]> = {
-  draft: ["pending", "cancelled"],
+  draft: ["pending_payment", "pending", "cancelled"],
+  pending_payment: ["paid", "pending", "cancelled"],
   pending: ["confirmed", "cancelled"],
+  paid: ["confirmed", "processing", "cancelled"],
   confirmed: ["processing", "cancelled"],
   processing: ["ready_for_shipment", "cancelled"],
   ready_for_shipment: ["shipped", "cancelled"],
@@ -31,5 +33,5 @@ export function fulfillmentStatusFor(status: OrderStatus) {
 }
 
 export function buyerCanCancel(status: OrderStatus): boolean {
-  return status === "pending" || status === "confirmed";
+  return status === "pending_payment" || status === "pending" || status === "paid" || status === "confirmed";
 }
