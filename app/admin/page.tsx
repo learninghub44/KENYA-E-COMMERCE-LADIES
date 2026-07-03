@@ -1,85 +1,76 @@
-"use client"
-
-import {
-  Users,
-  Store,
-  Package,
-  ShoppingCart,
-  TrendingUp,
-  DollarSign,
-} from "lucide-react"
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table"
-
-const revenueData = Array.from({ length: 30 }, (_, i) => {
-  const date = new Date()
-  date.setDate(date.getDate() - (29 - i))
-  return {
-    date: date.toLocaleDateString("en-KE", { month: "short", day: "numeric" }),
-    revenue: Math.floor(Math.random() * 50000 + 10000),
-    fees: Math.floor(Math.random() * 5000 + 500),
-  }
-})
-
-const stats = [
-  { label: "Total Users", value: "24,891", icon: Users, change: "+12%", color: "text-blue-600" },
-  { label: "Total Sellers", value: "1,842", icon: Store, change: "+8%", color: "text-emerald-600" },
-  { label: "Total Products", value: "45,237", icon: Package, change: "+15%", color: "text-violet-600" },
-  { label: "Total Orders", value: "12,456", icon: ShoppingCart, change: "+22%", color: "text-orange-600" },
-  { label: "Revenue (KES)", value: "KES 3.2M", icon: TrendingUp, change: "+18%", color: "text-green-600" },
-  { label: "Platform Fee", value: "KES 128K", icon: DollarSign, change: "+10%", color: "text-rose-600" },
-]
-
-const recentOrders = [
-  { id: "#ORD-001", customer: "Jane Wanjiku", seller: "Mrembo Fashions", total: "KES 4,500", status: "Delivered", date: "2025-06-30" },
-  { id: "#ORD-002", customer: "Achieng Omondi", seller: "Dada Cosmetics", total: "KES 2,300", status: "Processing", date: "2025-06-30" },
-  { id: "#ORD-003", customer: "Faith Nyambura", seller: "Sista Styles", total: "KES 8,700", status: "Pending", date: "2025-06-29" },
-  { id: "#ORD-004", customer: "Grace Akinyi", seller: "Mrembo Fashions", total: "KES 1,200", status: "Shipped", date: "2025-06-29" },
-  { id: "#ORD-005", customer: "Mary Wambui", seller: "Dada Cosmetics", total: "KES 6,300", status: "Delivered", date: "2025-06-28" },
-]
-
-const topSellers = [
-  { name: "Mrembo Fashions", revenue: "KES 892K", orders: 1456, avatar: "MF" },
-  { name: "Dada Cosmetics", revenue: "KES 654K", orders: 982, avatar: "DC" },
-  { name: "Sista Styles", revenue: "KES 431K", orders: 723, avatar: "SS" },
-  { name: "Neo Beauty", revenue: "KES 289K", orders: 456, avatar: "NB" },
-  { name: "Amani Collections", revenue: "KES 198K", orders: 312, avatar: "AC" },
-]
-
-const recentUsers = [
-  { name: "Jane Wanjiku", email: "jane@example.com", joined: "2025-06-30", avatar: "JW" },
-  { name: "Achieng Omondi", email: "achieng@example.com", joined: "2025-06-29", avatar: "AO" },
-  { name: "Faith Nyambura", email: "faith@example.com", joined: "2025-06-28", avatar: "FN" },
-  { name: "Grace Akinyi", email: "grace@example.com", joined: "2025-06-27", avatar: "GA" },
-  { name: "Mary Wambui", email: "mary@example.com", joined: "2025-06-26", avatar: "MW" },
-]
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Users, Store, Package, ShoppingCart, TrendingUp, DollarSign } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { Avatar, AvatarFallback } from "../../components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { createSupabaseClient } from "../../lib/supabase/server";
+import { authorizeRoute } from "../../middleware/auth-guard";
+import { listAdminOrders } from "../../lib/orders";
+import type { AppRole } from "../../types/roles";
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   Delivered: "default",
   Processing: "secondary",
   Pending: "outline",
   Shipped: "secondary",
+};
+
+function formatStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export default function AdminDashboardPage() {
+function formatMoney(amountMinor: number, currency: string) {
+  return new Intl.NumberFormat("en-KE", { style: "currency", currency }).format(amountMinor / 100);
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "N/A";
+  return new Intl.DateTimeFormat("en-KE", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value));
+}
+
+export default async function AdminDashboardPage() {
+  const supabase = await createSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login");
+
+  const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+  const roles = (roleRows ?? []).map((row: { role: AppRole }) => row.role);
+  const auth = authorizeRoute({ authLevel: "admin", roles });
+  if (!auth.allowed) redirect("/");
+
+  const [
+    { count: userCount },
+    { count: sellerCount },
+    { count: productCount },
+    { count: orderCount },
+    recentOrdersResult,
+    { data: recentUsers },
+  ] = await Promise.all([
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("sellers").select("*", { count: "exact", head: true }),
+    supabase.from("products").select("*", { count: "exact", head: true }),
+    supabase.from("orders").select("*", { count: "exact", head: true }),
+    listAdminOrders(supabase as any, { limit: 5 }),
+    supabase
+      .from("profiles")
+      .select("id, display_name, email, created_at, avatar_url")
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  const orders = recentOrdersResult.items ?? [];
+
+  const stats = [
+    { label: "Total Users", value: (userCount ?? 0).toLocaleString(), icon: Users, change: "+12%", color: "text-blue-600" },
+    { label: "Total Sellers", value: (sellerCount ?? 0).toLocaleString(), icon: Store, change: "+8%", color: "text-emerald-600" },
+    { label: "Total Products", value: (productCount ?? 0).toLocaleString(), icon: Package, change: "+15%", color: "text-violet-600" },
+    { label: "Total Orders", value: (orderCount ?? 0).toLocaleString(), icon: ShoppingCart, change: "+22%", color: "text-orange-600" },
+    { label: "Revenue (KES)", value: "KES --", icon: TrendingUp, change: "+18%", color: "text-green-600" },
+    { label: "Platform Fee", value: "KES --", icon: DollarSign, change: "+10%", color: "text-rose-600" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,7 +80,7 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => {
-          const Icon = stat.icon
+          const Icon = stat.icon;
           return (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -103,62 +94,8 @@ export default function AdminDashboardPage() {
                 </p>
               </CardContent>
             </Card>
-          )
+          );
         })}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>Revenue Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="feesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs text-muted-foreground" tick={{ fontSize: 12 }} />
-                  <YAxis className="text-xs text-muted-foreground" tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="url(#revenueGradient)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="fees" stroke="#f59e0b" fill="url(#feesGradient)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Top Sellers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topSellers.map((seller) => (
-                <div key={seller.name} className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback>{seller.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">{seller.name}</p>
-                    <p className="text-xs text-muted-foreground">{seller.orders} orders</p>
-                  </div>
-                  <div className="text-sm font-medium">{seller.revenue}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-7">
@@ -179,18 +116,25 @@ export default function AdminDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentOrders.map((order) => (
+                {orders.map((order: any) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.customer}</TableCell>
-                    <TableCell>{order.seller}</TableCell>
-                    <TableCell>{order.total}</TableCell>
+                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                    <TableCell>{order.buyerName}</TableCell>
+                    <TableCell>{order.sellerName}</TableCell>
+                    <TableCell>{formatMoney(order.totalMinor, order.currency)}</TableCell>
                     <TableCell>
-                      <Badge variant={statusVariant[order.status]}>{order.status}</Badge>
+                      <Badge variant={statusVariant[formatStatus(order.status)] || "outline"}>
+                        {formatStatus(order.status)}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{order.date}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(order.placedAt ?? order.createdAt)}</TableCell>
                   </TableRow>
                 ))}
+                {orders.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No orders yet</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -202,26 +146,25 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentUsers.map((user) => (
-                <div key={user.email} className="flex items-center gap-3">
+              {(recentUsers ?? []).map((u: any) => (
+                <div key={u.id} className="flex items-center gap-3">
                   <Avatar className="h-9 w-9">
-                    <AvatarFallback>{user.avatar}</AvatarFallback>
+                    <AvatarFallback>{(u.display_name ?? u.email ?? "?")?.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">{u.display_name ?? "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
                   </div>
-                  <div className="text-xs text-muted-foreground">{user.joined}</div>
+                  <div className="text-xs text-muted-foreground">{formatDate(u.created_at)}</div>
                 </div>
               ))}
+              {(recentUsers ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No users yet</p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
-}
-
-function cn(...inputs: (string | undefined | false | null)[]) {
-  return inputs.filter(Boolean).join(" ")
+  );
 }

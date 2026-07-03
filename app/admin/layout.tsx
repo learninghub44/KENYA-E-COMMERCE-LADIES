@@ -19,11 +19,10 @@ import {
   Bell,
   Settings,
   Menu,
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   User,
   SearchIcon,
+  FileCheck,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { Button } from "../../components/ui/button"
@@ -57,41 +56,47 @@ const navSections: NavSection[] = [
   {
     title: "Main",
     items: [
-      { label: "Dashboard", href: "/", icon: LayoutDashboard },
-      { label: "Users", href: "/users", icon: Users },
-      { label: "Sellers", href: "/sellers", icon: Store },
-      { label: "Products", href: "/products", icon: Package },
-      { label: "Orders", href: "/orders", icon: ShoppingCart },
+      { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { label: "Users", href: "/admin/users", icon: Users },
+      { label: "Sellers", href: "/admin/sellers", icon: Store },
+      { label: "Products", href: "/admin/products", icon: Package },
+      { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
+    ],
+  },
+  {
+    title: "Verification",
+    items: [
+      { label: "KYC Reviews", href: "/admin/kyc", icon: FileCheck },
     ],
   },
   {
     title: "Analytics",
     items: [
-      { label: "Analytics", href: "/analytics", icon: BarChart3 },
-      { label: "Search Analytics", href: "/search-analytics", icon: Search },
-      { label: "Business Intelligence", href: "/business-intelligence", icon: BrainCircuit },
+      { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+      { label: "Search Analytics", href: "/admin/search-analytics", icon: Search },
+      { label: "Business Intelligence", href: "/admin/business-intelligence", icon: BrainCircuit },
     ],
   },
   {
     title: "Content",
     items: [
-      { label: "Moderation", href: "/moderation", icon: Shield },
-      { label: "Reviews", href: "/reviews", icon: Star },
+      { label: "Moderation", href: "/admin/moderation", icon: Shield },
+      { label: "Reviews", href: "/admin/reviews", icon: Star },
     ],
   },
   {
     title: "Platform",
     items: [
-      { label: "Health", href: "/platform/health", icon: HeartPulse },
-      { label: "Diagnostics", href: "/platform/diagnostics", icon: Stethoscope },
-      { label: "Feature Flags", href: "/platform/feature-flags", icon: Flag },
+      { label: "Health", href: "/admin/platform/health", icon: HeartPulse },
+      { label: "Diagnostics", href: "/admin/platform/diagnostics", icon: Stethoscope },
+      { label: "Feature Flags", href: "/admin/platform/feature-flags", icon: Flag },
     ],
   },
   {
     title: "System",
     items: [
-      { label: "Notifications", href: "/notifications", icon: Bell },
-      { label: "Settings", href: "/settings", icon: Settings },
+      { label: "Notifications", href: "/admin/notifications", icon: Bell },
+      { label: "Settings", href: "/admin/settings", icon: Settings },
     ],
   },
 ]
@@ -118,13 +123,11 @@ function SidebarNav({
             <nav className="space-y-1">
               {section.items.map((item) => {
                 const Icon = item.icon
-                const href = item.href === "/" ? "" : item.href
-                const fullPath = `/${href}`
-                const isActive = pathname === fullPath || pathname.startsWith(fullPath + "/")
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
                 return (
                   <Link
                     key={item.label}
-                    href={item.href === "" ? "/" : item.href}
+                    href={item.href}
                     onClick={onNavClick}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
