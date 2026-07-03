@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "women fashion",
   ],
   authors: [{ name: "Kenya E-Commerce Ladies" }],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://kenya-ecommerce-ladies.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   openGraph: {
     type: "website",
     locale: "en_KE",
