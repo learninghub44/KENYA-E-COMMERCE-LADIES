@@ -1,5 +1,5 @@
-"use client"
-
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -7,18 +7,11 @@ import {
   ShoppingCart,
   Users,
   DollarSign,
-} from "lucide-react"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts"
+} from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 import {
   Table,
   TableBody,
@@ -26,95 +19,43 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table"
+} from "../../components/ui/table";
+import { RevenueChart } from "./revenue-chart";
+import { createSupabaseClient } from "../../lib/supabase/server";
+import { createSupabaseSellerRepository } from "../../lib/seller";
+import { createOrderService, createSupabaseOrderRepository } from "../../lib/orders";
+import { createSellerAnalyticsService, getDateRange, formatDate } from "../../lib/analytics/seller/service";
+import { createSupabaseAnalyticsRepository } from "../../lib/analytics/seller/supabase-repository";
+import { createSupabasePermissionChecker } from "../../lib/analytics/seller/permission-checker";
 
-const revenueData = [
-  { day: "Mon", revenue: 12400 },
-  { day: "Tue", revenue: 18200 },
-  { day: "Wed", revenue: 15800 },
-  { day: "Thu", revenue: 22100 },
-  { day: "Fri", revenue: 19400 },
-  { day: "Sat", revenue: 25600 },
-  { day: "Sun", revenue: 20300 },
-]
+function formatMoney(amountMinor: number, currency: string) {
+  return new Intl.NumberFormat("en-KE", { style: "currency", currency }).format(amountMinor / 100);
+}
 
-const stats = [
-  {
-    title: "Total Revenue",
-    value: "KES 134,200",
-    trend: 12.5,
-    icon: DollarSign,
-  },
-  {
-    title: "Total Orders",
-    value: "1,342",
-    trend: 8.2,
-    icon: ShoppingCart,
-  },
-  {
-    title: "Active Products",
-    value: "486",
-    trend: -3.1,
-    icon: Package,
-  },
-  {
-    title: "New Customers",
-    value: "2,847",
-    trend: 18.6,
-    icon: Users,
-  },
-]
+function formatDateDisplay(value: string | null) {
+  if (!value) return "Not placed";
+  return new Intl.DateTimeFormat("en-KE", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value));
+}
 
-const recentOrders = [
-  {
-    id: "#ORD-8721",
-    customer: "Jane Muthoni",
-    product: "Kitenge Maxi Dress",
-    amount: "KES 3,500",
-    status: "Delivered" as const,
-    date: "2024-12-02",
-  },
-  {
-    id: "#ORD-8720",
-    customer: "Akinyi Ochieng",
-    product: "Beaded Sandals",
-    amount: "KES 1,800",
-    status: "Shipped" as const,
-    date: "2024-12-02",
-  },
-  {
-    id: "#ORD-8719",
-    customer: "Wanjiku Kimani",
-    product: "Ankara Blazer",
-    amount: "KES 5,200",
-    status: "Processing" as const,
-    date: "2024-12-01",
-  },
-  {
-    id: "#ORD-8718",
-    customer: "Amina Hassan",
-    product: "Kente Scarf Set",
-    amount: "KES 2,450",
-    status: "Pending" as const,
-    date: "2024-12-01",
-  },
-  {
-    id: "#ORD-8717",
-    customer: "Grace Nyambura",
-    product: "Dashiki Top",
-    amount: "KES 1,950",
-    status: "Delivered" as const,
-    date: "2024-11-30",
-  },
-]
+const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  delivered: "default",
+  completed: "default",
+  shipped: "secondary",
+  ready_for_shipment: "secondary",
+  processing: "outline",
+  confirmed: "outline",
+  paid: "outline",
+  pending: "outline",
+  pending_payment: "outline",
+  draft: "outline",
+  cancelled: "destructive",
+  refunded: "destructive",
+  returned: "destructive",
+};
 
-const lowStock = [
-  { name: "Kitenge Maxi Dress", sku: "KMD-001", stock: 3, threshold: 10 },
-  { name: "Beaded Sandals", sku: "BS-002", stock: 5, threshold: 15 },
-  { name: "Ankara Blazer", sku: "AB-003", stock: 2, threshold: 10 },
-  { name: "Kente Scarf Set", sku: "KSS-004", stock: 4, threshold: 12 },
-  { name: "Dashiki Top", sku: "DT-005", stock: 1, threshold: 10 },
-]
+function formatStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 function StatCard({
   title,
@@ -122,56 +63,176 @@ function StatCard({
   trend,
   icon: Icon,
 }: {
-  title: string
-  value: string
-  trend: number
-  icon: React.ElementType
+  title: string;
+  value: string;
+  trend: number | null;
+  icon: React.ElementType;
 }) {
-  const isPositive = trend >= 0
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        <div className="mt-1 flex items-center gap-1 text-xs">
-          {isPositive ? (
-            <TrendingUp className="h-3 w-3 text-emerald-500" />
-          ) : (
-            <TrendingDown className="h-3 w-3 text-red-500" />
-          )}
-          <span className={isPositive ? "text-emerald-500" : "text-red-500"}>
-            {isPositive ? "+" : ""}
-            {trend}%
-          </span>
-          <span className="text-muted-foreground">vs last month</span>
-        </div>
+        {trend !== null && (
+          <div className="mt-1 flex items-center gap-1 text-xs">
+            {trend >= 0 ? (
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <TrendingDown className="h-3 w-3 text-red-500" />
+            )}
+            <span className={trend >= 0 ? "text-emerald-500" : "text-red-500"}>
+              {trend >= 0 ? "+" : ""}
+              {trend.toFixed(1)}%
+            </span>
+            <span className="text-muted-foreground">vs previous 7 days</span>
+          </div>
+        )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    Delivered: "default",
-    Shipped: "secondary",
-    Processing: "outline",
-    Pending: "outline",
+export default async function SellerDashboardPage() {
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/auth/login");
+
+  const seller = await createSupabaseSellerRepository(supabase as any).findByOwnerId(user.id);
+  if (!seller) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Welcome to Zuri Market Seller Hub.</p>
+        </div>
+        <Card>
+          <CardContent className="space-y-4 py-12 text-center text-muted-foreground">
+            <p>No seller account is linked to this session.</p>
+            <Button asChild>
+              <Link href="/become-a-seller/apply">Apply to become a seller</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-  return <Badge variant={variants[status] ?? "outline"}>{status}</Badge>
-}
 
-export default function SellerDashboardPage() {
+  const currency = seller.defaultCurrency ?? "KES";
+
+  const analyticsService = createSellerAnalyticsService({
+    analyticsRepository: createSupabaseAnalyticsRepository(supabase as any),
+    permissionChecker: createSupabasePermissionChecker(supabase as any),
+  });
+
+  const today = new Date();
+  const last7 = getDateRange("last_7_days");
+  const prev7End = new Date(last7.startDate);
+  prev7End.setDate(prev7End.getDate() - 1);
+  const prev7Start = new Date(prev7End);
+  prev7Start.setDate(prev7Start.getDate() - 6);
+
+  // "All time" revenue/orders are computed by grouping monthly rather than fetching every
+  // order row, so the totals stay cheap even for a seller with years of order history.
+  const allTimeStart = "2020-01-01";
+
+  const [last7Result, prev7Result, allTimeResult, productResult, ordersResult] = await Promise.all([
+    analyticsService.getRevenueAnalytics(user.id, {
+      sellerId: seller.id,
+      startDate: last7.startDate,
+      endDate: last7.endDate,
+      groupBy: "day",
+    }),
+    analyticsService.getRevenueAnalytics(user.id, {
+      sellerId: seller.id,
+      startDate: formatDate(prev7Start),
+      endDate: formatDate(prev7End),
+      groupBy: "day",
+    }),
+    analyticsService.getRevenueAnalytics(user.id, {
+      sellerId: seller.id,
+      startDate: allTimeStart,
+      endDate: formatDate(today),
+      groupBy: "month",
+    }),
+    analyticsService.getProductAnalytics(user.id, { sellerId: seller.id, limit: 100 }),
+    createOrderService({ orders: createSupabaseOrderRepository(supabase as any) }).listForSeller(
+      seller.id,
+      user.id,
+      undefined,
+      5
+    ),
+  ]);
+
+  const last7Points = last7Result.ok ? last7Result.data : [];
+  const prev7Points = prev7Result.ok ? prev7Result.data : [];
+  const allTimePoints = allTimeResult.ok ? allTimeResult.data : [];
+  const products = productResult.ok ? productResult.data : [];
+  const recentOrders = ordersResult.ok ? ordersResult.data.items : [];
+
+  const last7Revenue = last7Points.reduce((sum, p) => sum + p.grossRevenueMinor, 0);
+  const prev7Revenue = prev7Points.reduce((sum, p) => sum + p.grossRevenueMinor, 0);
+  const revenueTrend = prev7Revenue > 0 ? ((last7Revenue - prev7Revenue) / prev7Revenue) * 100 : null;
+
+  const last7Orders = last7Points.reduce((sum, p) => sum + p.ordersCount, 0);
+  const prev7Orders = prev7Points.reduce((sum, p) => sum + p.ordersCount, 0);
+  const ordersTrend = prev7Orders > 0 ? ((last7Orders - prev7Orders) / prev7Orders) * 100 : null;
+
+  const totalRevenueMinor = allTimePoints.reduce((sum, p) => sum + p.grossRevenueMinor, 0);
+  const totalOrders = allTimePoints.reduce((sum, p) => sum + p.ordersCount, 0);
+
+  const activeProducts = products.filter((p) => p.status === "active").length;
+  const lowStock = products
+    .filter((p) => p.isLowStock)
+    .sort((a, b) => a.stockAvailable - b.stockAvailable)
+    .slice(0, 5);
+
+  // New customers = distinct buyers whose first order with this seller fell in the last 7 days.
+  const { data: recentBuyers } = await supabase
+    .from("orders")
+    .select("buyer_id")
+    .eq("seller_id", seller.id)
+    .gte("created_at", `${last7.startDate}T00:00:00Z`);
+  const newCustomers = new Set((recentBuyers ?? []).map((r: { buyer_id: string }) => r.buyer_id)).size;
+
+  const stats = [
+    {
+      title: "Revenue (7 days)",
+      value: formatMoney(last7Revenue, currency),
+      trend: revenueTrend,
+      icon: DollarSign,
+    },
+    {
+      title: "Orders (7 days)",
+      value: String(last7Orders),
+      trend: ordersTrend,
+      icon: ShoppingCart,
+    },
+    {
+      title: "Active Products",
+      value: String(activeProducts),
+      trend: null,
+      icon: Package,
+    },
+    {
+      title: "New Customers (7 days)",
+      value: String(newCustomers),
+      trend: null,
+      icon: Users,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Welcome back! Here&apos;s what&apos;s happening with your store today.
+          Welcome back! Here&apos;s what&apos;s happening with {seller.storeName ?? "your store"} today.
         </p>
       </div>
 
@@ -187,16 +248,9 @@ export default function SellerDashboardPage() {
             <CardTitle className="text-base">Revenue (Last 7 Days)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueData}>
-                  <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip />
-                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <RevenueChart
+              data={last7Points.map((p) => ({ day: p.period.slice(5), revenue: p.grossRevenueMinor / 100 }))}
+            />
           </CardContent>
         </Card>
 
@@ -205,20 +259,23 @@ export default function SellerDashboardPage() {
             <CardTitle className="text-base">Low Stock Alerts</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {lowStock.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Nothing running low right now.
+              </p>
+            )}
             {lowStock.map((item) => (
               <div
-                key={item.sku}
+                key={item.productId}
                 className="flex items-center justify-between rounded-lg border p-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                  <p className="truncate text-sm font-medium">{item.productName}</p>
+                  <p className="text-xs text-muted-foreground">SKU: {item.sku ?? "—"}</p>
                 </div>
                 <div className="ml-4 text-right">
-                  <p className="text-sm font-semibold text-destructive">{item.stock}</p>
-                  <p className="text-xs text-muted-foreground">
-                    threshold: {item.threshold}
-                  </p>
+                  <p className="text-sm font-semibold text-destructive">{item.stockAvailable}</p>
+                  <p className="text-xs text-muted-foreground">in stock</p>
                 </div>
               </div>
             ))}
@@ -236,7 +293,7 @@ export default function SellerDashboardPage() {
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead>Product</TableHead>
+                <TableHead>Items</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
@@ -245,22 +302,33 @@ export default function SellerDashboardPage() {
             <TableBody>
               {recentOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.customer}</TableCell>
-                  <TableCell>{order.product}</TableCell>
-                  <TableCell>{order.amount}</TableCell>
+                  <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                  <TableCell>{order.shippingAddress.recipientName}</TableCell>
+                  <TableCell>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</TableCell>
+                  <TableCell>{formatMoney(order.totalMinor, order.currency)}</TableCell>
                   <TableCell>
-                    <StatusBadge status={order.status} />
+                    <Badge variant={statusColors[order.status] ?? "outline"}>{formatStatus(order.status)}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {order.date}
+                    {formatDateDisplay(order.placedAt ?? order.createdAt)}
                   </TableCell>
                 </TableRow>
               ))}
+              {recentOrders.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    No orders yet.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <p className="text-xs text-muted-foreground">
+        Lifetime: {formatMoney(totalRevenueMinor, currency)} across {totalOrders} orders.
+      </p>
     </div>
-  )
+  );
 }
