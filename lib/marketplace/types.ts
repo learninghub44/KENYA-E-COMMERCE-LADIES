@@ -54,22 +54,28 @@ export type ProductSummary = {
   inStock: boolean;
   publishedAt: string | null;
   createdAt: string;
+  rating: number;
+  reviewCount: number;
 };
 
 export type ProductSearchFilters = {
   q?: string | undefined;
   categoryId?: string | undefined;
+  categoryIds?: string[] | undefined;
   brandId?: string | undefined;
+  brandIds?: string[] | undefined;
   sellerId?: string | undefined;
   collectionId?: string | undefined;
   tags?: string[] | undefined;
   minPriceMinor?: number | undefined;
   maxPriceMinor?: number | undefined;
   color?: string | undefined;
+  colors?: string[] | undefined;
   size?: string | undefined;
   material?: string | undefined;
+  minRating?: number | undefined;
   inStockOnly?: boolean | undefined;
-  sort: "relevance" | "newest" | "price_asc" | "price_desc" | "featured";
+  sort: "relevance" | "newest" | "price_asc" | "price_desc" | "featured" | "rating";
   cursor?: string | undefined;
   limit: number;
 };
@@ -77,6 +83,9 @@ export type ProductSearchFilters = {
 export type SearchPage<T> = {
   items: T[];
   nextCursor: string | null;
+  /** Total matching rows, when cheaply available from the backing query. Optional so in-memory/
+   *  test implementations aren't forced to compute it. */
+  totalCount?: number;
 };
 
 export type MarketplaceResult<T> =

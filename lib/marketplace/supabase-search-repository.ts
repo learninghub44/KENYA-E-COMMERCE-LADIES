@@ -10,15 +10,16 @@ import type { ProductSearchFilters, ProductSearchIndex, ProductSummary, SearchPa
  * product images, so every method here does a second batched lookup against `products` and
  * `product_images` for the page of rows returned, rather than fetching those per-row (avoids N+1).
  *
- * Pagination is offset-based: `cursor` is a base64-encoded offset. This is simpler and safer to
- * ship first than keyset pagination, at the cost of "page N" queries getting slightly more
- * expensive as the offset grows. Fine at marketplace-catalog scale; revisit if pagination deep in
- * result sets becomes a hot path.
+ * Pagination is offset-based: `cursor` is a base64-encoded offset. Simpler and safer to ship
+ * first than keyset pagination, at the cost of "page N" queries getting slightly more expensive
+ * as the offset grows. Fine at marketplace-catalog scale; revisit if pagination deep in result
+ * sets becomes a hot path.
  *
- * `sort: "relevance"` without a text query falls back to newest-first (there is no meaningful
- * relevance ranking without a query). With a query, results are still ordered newest-first after
- * the full-text filter — true `ts_rank` ordering would need a Postgres RPC function, which does
- * not exist yet in this schema. Flagging this rather than faking a rank.
+ * `sort: "relevance"` with a non-empty `q` is served by the `search_products_ranked` RPC (see
+ * supabase/migrations/202607020014_product_search_ranking.sql), which ranks with `ts_rank_cd`.
+ * PostgREST/supabase-js can't order by a computed expression on a plain table query, hence the
+ * RPC. `relevance` with no `q`, and all other sorts, use the plain table query below (ordered by
+ * whatever the sort implies) since ts_rank has no meaning without a query.
  */
 
 type SearchDocumentRow = {
@@ -36,10 +37,12 @@ type SearchDocumentRow = {
   is_featured: boolean | null;
   published_at: string | null;
   created_at: string | null;
+  rating: number | null;
+  review_count: number | null;
 };
 
 const SEARCH_DOCUMENT_COLUMNS =
-  "product_id, seller_id, category_id, brand_id, brand_name, seller_store_name, name, currency, base_price_minor, compare_at_price_minor, in_stock, is_featured, published_at, created_at";
+  "product_id, seller_id, category_id, brand_id, brand_name, seller_store_name, name, currency, base_price_minor, compare_at_price_minor, in_stock, is_featured, published_at, created_at, rating, review_count";
 
 function encodeCursor(offset: number): string {
   return Buffer.from(String(offset), "utf-8").toString("base64");
@@ -108,7 +111,9 @@ async function hydrateSummaries(client: SupabaseClient, rows: SearchDocumentRow[
       primaryImageUrl: primaryImageByProduct.get(row.product_id) ?? null,
       inStock: row.in_stock ?? false,
       publishedAt: row.published_at,
-      createdAt: row.created_at ?? new Date().toISOString()
+      createdAt: row.created_at ?? new Date().toISOString(),
+      rating: row.rating ?? 0,
+      reviewCount: row.review_count ?? 0
     }));
 }
 
@@ -130,11 +135,49 @@ export function createSupabaseProductSearchIndex(client: SupabaseClient): Produc
     const nextOffset = offset + rows.length;
     const nextCursor = count !== null && count !== undefined && nextOffset < count ? encodeCursor(nextOffset) : null;
 
-    return { items, nextCursor };
+    return { items, nextCursor, totalCount: count ?? undefined };
+  }
+
+  /** Relevance sort with a non-empty query: delegate to the ts_rank_cd RPC for genuine ranking. */
+  async function rankedSearch(filters: ProductSearchFilters): Promise<SearchPage<ProductSummary>> {
+    const offset = decodeCursor(filters.cursor);
+    const { data, error } = await client.rpc("search_products_ranked", {
+      p_query: filters.q,
+      p_category_id: filters.categoryId ?? null,
+      p_category_ids: filters.categoryIds ?? null,
+      p_brand_id: filters.brandId ?? null,
+      p_brand_ids: filters.brandIds ?? null,
+      p_seller_id: filters.sellerId ?? null,
+      p_collection_id: filters.collectionId ?? null,
+      p_min_price: filters.minPriceMinor ?? null,
+      p_max_price: filters.maxPriceMinor ?? null,
+      p_color: filters.color ?? null,
+      p_colors: filters.colors ?? null,
+      p_size: filters.size ?? null,
+      p_material: filters.material ?? null,
+      p_in_stock_only: filters.inStockOnly ?? false,
+      p_min_rating: filters.minRating ?? null,
+      p_tags: filters.tags ?? null,
+      p_limit: filters.limit,
+      p_offset: offset
+    });
+    if (error) throw new Error(`Ranked product search failed: ${error.message}`);
+
+    const rows = (data ?? []) as (SearchDocumentRow & { total_count: number })[];
+    const items = await hydrateSummaries(client, rows);
+    const total = rows[0]?.total_count ?? 0;
+    const nextOffset = offset + rows.length;
+    const nextCursor = nextOffset < total ? encodeCursor(nextOffset) : null;
+
+    return { items, nextCursor, totalCount: total };
   }
 
   return {
     async search(filters: ProductSearchFilters): Promise<SearchPage<ProductSummary>> {
+      if (filters.sort === "relevance" && filters.q && filters.q.trim().length > 0) {
+        return rankedSearch(filters);
+      }
+
       let collectionProductIds: string[] | null = null;
       if (filters.collectionId) {
         const { data, error } = await client
@@ -151,14 +194,18 @@ export function createSupabaseProductSearchIndex(client: SupabaseClient): Produc
           let query = (q as any).not("published_at", "is", null);
           if (filters.q) query = query.textSearch("search_vector", filters.q, { type: "websearch", config: "simple" });
           if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
+          if (filters.categoryIds?.length) query = query.in("category_id", filters.categoryIds);
           if (filters.brandId) query = query.eq("brand_id", filters.brandId);
+          if (filters.brandIds?.length) query = query.in("brand_id", filters.brandIds);
           if (filters.sellerId) query = query.eq("seller_id", filters.sellerId);
           if (collectionProductIds) query = query.in("product_id", collectionProductIds);
           if (filters.minPriceMinor !== undefined) query = query.gte("base_price_minor", filters.minPriceMinor);
           if (filters.maxPriceMinor !== undefined) query = query.lte("base_price_minor", filters.maxPriceMinor);
           if (filters.color) query = query.contains("colors", [filters.color]);
+          if (filters.colors?.length) query = query.overlaps("colors", filters.colors);
           if (filters.size) query = query.contains("sizes", [filters.size]);
           if (filters.material) query = query.contains("materials", [filters.material]);
+          if (filters.minRating !== undefined) query = query.gte("rating", filters.minRating);
           if (filters.inStockOnly) query = query.eq("in_stock", true);
           if (filters.tags?.length) query = query.overlaps("tags", filters.tags);
 
@@ -175,8 +222,13 @@ export function createSupabaseProductSearchIndex(client: SupabaseClient): Produc
             case "featured":
               query = query.order("is_featured", { ascending: false }).order("published_at", { ascending: false });
               break;
+            case "rating":
+              query = query.order("rating", { ascending: false }).order("review_count", { ascending: false });
+              break;
             case "relevance":
             default:
+              // No query text (or sort=relevance was requested without q): nothing to rank, so
+              // fall back to newest-first rather than calling the RPC for no reason.
               query = query.order("published_at", { ascending: false });
               break;
           }

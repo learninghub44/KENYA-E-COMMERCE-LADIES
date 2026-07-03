@@ -3,6 +3,7 @@ import { createSupabaseProductSearchIndex } from "../../lib/marketplace/supabase
 import { createSupabaseCategoryRepository } from "../../lib/marketplace/supabase-catalog-repository"
 import { createSearchService } from "../../lib/marketplace/search-service"
 import { createCatalogService } from "../../lib/marketplace/catalog-service"
+import { toCardProduct } from "../../lib/marketplace/product-summary-mapper"
 import type { Product } from "../../components/shared/product-card"
 import LandingPageClient, { type CategoryDisplay } from "./landing-page-client"
 
@@ -10,43 +11,6 @@ import LandingPageClient, { type CategoryDisplay } from "./landing-page-client"
 // serializable data down to the client component that owns the animated presentation.
 // Errors thrown here are caught by app/(storefront)/error.tsx; the fetch itself is covered by
 // app/(storefront)/loading.tsx while it's in flight.
-
-function toCardProduct(summary: {
-  id: string
-  name: string
-  slug: string
-  basePriceMinor: number
-  compareAtPriceMinor: number | null
-  primaryImageUrl: string | null
-  sellerStoreName: string
-  isFeatured: boolean
-  publishedAt: string | null
-}): Product {
-  const price = summary.basePriceMinor / 100
-  const comparePrice = summary.compareAtPriceMinor != null ? summary.compareAtPriceMinor / 100 : null
-  const discount =
-    comparePrice != null && comparePrice > price ? Math.round(((comparePrice - price) / comparePrice) * 100) : null
-  const isNew = summary.publishedAt
-    ? Date.now() - new Date(summary.publishedAt).getTime() < 1000 * 60 * 60 * 24 * 30
-    : false
-
-  return {
-    id: summary.id,
-    name: summary.name,
-    price,
-    comparePrice,
-    images: summary.primaryImageUrl ? [summary.primaryImageUrl] : [],
-    // Rating/review count aren't part of ProductSummary yet (they live on rating_summaries,
-    // joined into product_search_documents but not selected by the search index today) —
-    // showing 0 rather than a fabricated number until that's wired through.
-    rating: 0,
-    reviewCount: 0,
-    isNew,
-    discount,
-    sellerName: summary.sellerStoreName,
-    slug: summary.slug,
-  }
-}
 
 async function getHomepageData() {
   const supabase = await createSupabaseClient()
