@@ -93,6 +93,7 @@ export function createSellerService(deps: SellerServiceDependencies) {
         businessCategory: parsed.data.businessCategory ?? seller.metadata.businessCategory,
         businessAddress: parsed.data.businessAddress ?? seller.metadata.businessAddress,
         storePolicies: parsed.data.storePolicies ?? seller.metadata.storePolicies,
+        socialLinks: parsed.data.socialLinks ?? seller.metadata.socialLinks,
         businessHours: parsed.data.businessHours ?? seller.metadata.businessHours,
         visibility: parsed.data.visibility ?? seller.metadata.visibility
       });

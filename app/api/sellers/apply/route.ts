@@ -40,7 +40,21 @@ export async function POST(request: NextRequest) {
     roles: { grantSellerRole: async () => {} },
   })
 
-  const result = await service.apply({ ...body, userId: user.id })
+  let result
+  try {
+    result = await service.apply({ ...body, userId: user.id })
+  } catch (error) {
+    // If this throws it's almost always a missing table/trigger from an
+    // unapplied migration (e.g. seller_members, on_seller_created) or a
+    // misconfigured server env var -- never let it bubble up as an
+    // unhandled exception, since Next.js turns that into an HTML 500 page
+    // that breaks the frontend's response.json() parsing.
+    console.error("[sellers/apply] unexpected error", error)
+    return NextResponse.json(
+      { error: "Something went wrong while creating your seller account. Please try again." },
+      { status: 500 }
+    )
+  }
 
   if (!result.ok) {
     return NextResponse.json({ error: result.message, code: result.code }, { status: result.status })
