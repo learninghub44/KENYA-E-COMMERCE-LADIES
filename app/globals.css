@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+/* Display face for editorial moments (landing page hero, section headings). Bunny Fonts mirrors
+   Google Fonts but has proven more reliable in some build/proxy environments. */
+@import url('https://fonts.bunny.net/css?family=fraunces:500,600,600i,700');
 
 @layer base {
   :root {
