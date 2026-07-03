@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { Label } from "../../../components/ui/label";
 import { Separator } from "../../../components/ui/separator";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { createSupabaseBrowserClient } from "../../../lib/supabase/client";
 
 const registerSchema = z
   .object({
@@ -26,7 +28,9 @@ const registerSchema = z
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -35,8 +39,21 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (_data: RegisterForm) => {
-    // Will connect to Supabase auth
+  const onSubmit = async (data: RegisterForm) => {
+    setAuthError(null);
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: { full_name: data.name },
+      },
+    });
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+    router.push("/auth/login?registered=true");
   };
 
   return (
@@ -87,6 +104,11 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {authError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {authError}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
               <div className="relative">

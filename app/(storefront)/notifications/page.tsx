@@ -40,73 +40,6 @@ interface Notification {
   read: boolean
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    type: "order",
-    title: "Order Shipped",
-    description: "Your order ORD-2024-001 has been shipped and is on its way.",
-    time: "5m ago",
-    read: false,
-  },
-  {
-    id: "2",
-    type: "message",
-    title: "New Message",
-    description: "Luxe Kenya Store sent you a message about your order.",
-    time: "1h ago",
-    read: false,
-  },
-  {
-    id: "3",
-    type: "promotion",
-    title: "Flash Sale!",
-    description: "Up to 50% off on selected items. Shop now!",
-    time: "3h ago",
-    read: false,
-  },
-  {
-    id: "4",
-    type: "review",
-    title: "Review Request",
-    description: "How was your experience? Leave a review for your recent purchase.",
-    time: "1d ago",
-    read: true,
-  },
-  {
-    id: "5",
-    type: "order",
-    title: "Order Delivered",
-    description: "Your order ORD-2024-005 has been delivered successfully.",
-    time: "2d ago",
-    read: true,
-  },
-  {
-    id: "6",
-    type: "alert",
-    title: "Payment Failed",
-    description: "Your payment for order ORD-2024-003 could not be processed.",
-    time: "3d ago",
-    read: true,
-  },
-  {
-    id: "7",
-    type: "message",
-    title: "New Message",
-    description: "Nairobi Styles responded to your inquiry about the Kente Blazer.",
-    time: "4d ago",
-    read: true,
-  },
-  {
-    id: "8",
-    type: "promotion",
-    title: "New Arrivals",
-    description: "Check out our latest collection of Ankara dresses.",
-    time: "5d ago",
-    read: true,
-  },
-]
-
 const FILTER_TABS = [
   { value: "all", label: "All" },
   { value: "order", label: "Orders" },
@@ -123,7 +56,7 @@ const TYPE_ICONS = {
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [activeTab, setActiveTab] = useState("all")
 
   const filteredNotifications =

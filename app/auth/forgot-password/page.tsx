@@ -9,6 +9,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Mail, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { createSupabaseBrowserClient } from "../../../lib/supabase/client";
 
 const forgotSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -26,7 +27,14 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(forgotSchema),
   });
 
-  const onSubmit = async (_data: ForgotForm) => {
+  const onSubmit = async (data: ForgotForm) => {
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+    });
+    if (error) {
+      return;
+    }
     setSent(true);
   };
 

@@ -12,7 +12,6 @@ import {
   MessageSquare,
   Bell,
   Clock,
-  Eye,
   ChevronRight,
 } from "lucide-react"
 
@@ -22,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Separator } from "../../../components/ui/separator"
 import { Price } from "../../../components/shared/price"
 import { Breadcrumbs } from "../../../components/shared/breadcrumbs"
+import { useAuth } from "../../../lib/auth/auth-context"
 
 const QUICK_LINKS = [
   { label: "Profile", href: "/account/profile", icon: User },
@@ -34,65 +34,9 @@ const QUICK_LINKS = [
   { label: "Notifications", href: "/notifications", icon: Bell },
 ]
 
-const RECENT_ORDERS = [
-  {
-    id: "1",
-    orderNumber: "ORD-2024-003",
-    date: "2024-12-28",
-    status: "processing",
-    total: 5600,
-    itemCount: 1,
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2024-002",
-    date: "2024-12-20",
-    status: "shipped",
-    total: 11800,
-    itemCount: 2,
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2024-001",
-    date: "2024-12-15",
-    status: "delivered",
-    total: 25900,
-    itemCount: 3,
-  },
-  {
-    id: "4",
-    orderNumber: "ORD-2024-005",
-    date: "2024-10-05",
-    status: "delivered",
-    total: 32000,
-    itemCount: 4,
-  },
-  {
-    id: "5",
-    orderNumber: "ORD-2024-004",
-    date: "2024-11-10",
-    status: "cancelled",
-    total: 14200,
-    itemCount: 2,
-  },
-]
-
-const STATUS_STYLES: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  processing: "default",
-  shipped: "secondary",
-  delivered: "outline",
-  cancelled: "destructive",
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
-}
-
 export default function AccountDashboard() {
+  const { user } = useAuth()
+  const displayName = user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Guest"
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <Breadcrumbs
@@ -104,7 +48,7 @@ export default function AccountDashboard() {
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">
-          Welcome back, Grace
+          Welcome back, {displayName}
         </h1>
         <p className="text-muted-foreground">
           Here&apos;s an overview of your account
@@ -113,10 +57,10 @@ export default function AccountDashboard() {
 
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: "Total Orders", value: "12", icon: Package },
-          { label: "Active Orders", value: "2", icon: ShoppingBag },
-          { label: "Wishlist Items", value: "8", icon: Heart },
-          { label: "Reviews", value: "5", icon: Star },
+          { label: "Total Orders", value: "0", icon: Package },
+          { label: "Active Orders", value: "0", icon: ShoppingBag },
+          { label: "Wishlist Items", value: "0", icon: Heart },
+          { label: "Reviews", value: "0", icon: Star },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="flex flex-col items-center p-4 text-center">
@@ -141,31 +85,15 @@ export default function AccountDashboard() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {RECENT_ORDERS.slice(0, 5).map((order) => (
-              <Link key={order.id} href={`/orders/${order.id}`}>
-                <div className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted/50">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">
-                        {order.orderNumber}
-                      </span>
-                      <Badge
-                        variant={STATUS_STYLES[order.status]}
-                        className="capitalize"
-                      >
-                        {order.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(order.date)} &middot; {order.itemCount}{" "}
-                      {order.itemCount === 1 ? "item" : "items"}
-                    </p>
-                  </div>
-                  <Price amount={order.total} size="sm" />
-                </div>
-              </Link>
-            ))}
+          <div className="flex flex-col items-center py-8 text-center">
+            <Package className="mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-1 text-lg font-semibold">No orders yet</h3>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Start shopping to see your orders here.
+            </p>
+            <Button asChild>
+              <Link href="/">Start Shopping</Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

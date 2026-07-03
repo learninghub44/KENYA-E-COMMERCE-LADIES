@@ -48,31 +48,8 @@ interface Address {
   isDefault: boolean
 }
 
-const MOCK_ADDRESSES: Address[] = [
-  {
-    id: "1",
-    name: "Grace Akinyi",
-    phone: "+254 712 345 678",
-    street: "45 Moi Avenue, Westlands",
-    city: "Nairobi",
-    state: "Nairobi County",
-    zip: "00100",
-    isDefault: true,
-  },
-  {
-    id: "2",
-    name: "Grace Akinyi",
-    phone: "+254 723 456 789",
-    street: "12 Kenyatta Road",
-    city: "Kisumu",
-    state: "Kisumu County",
-    zip: "40100",
-    isDefault: false,
-  },
-]
-
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>(MOCK_ADDRESSES)
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
