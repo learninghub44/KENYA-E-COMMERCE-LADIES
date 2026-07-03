@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { SkipNav } from "../components/shared/skip-nav";
 import { Providers } from "../components/shared/providers";
 import { JsonLd } from "../components/shared/json-ld";
 import { organizationJsonLd, websiteJsonLd } from "../lib/seo";
@@ -78,7 +77,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <SkipNav />
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
         <Providers>{children}</Providers>
