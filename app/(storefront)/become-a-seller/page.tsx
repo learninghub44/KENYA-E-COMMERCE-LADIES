@@ -53,7 +53,7 @@ export default function BecomeASellerPage() {
             with M-Pesa payouts and tools built for your business.
           </p>
           <Button asChild size="lg" className="bg-white text-rose-900 hover:bg-white/90">
-            <Link href="/auth/register">
+            <Link href="/become-a-seller/apply">
               Get Started
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -112,7 +112,7 @@ export default function BecomeASellerPage() {
             No listing fees to get started
           </p>
           <Button asChild size="lg" className="bg-white text-rose-900 hover:bg-white/90">
-            <Link href="/auth/register">
+            <Link href="/become-a-seller/apply">
               Create Your Store
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
