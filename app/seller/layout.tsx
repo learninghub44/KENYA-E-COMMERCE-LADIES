@@ -101,7 +101,6 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
             </Button>
             <Separator orientation="vertical" className="h-8" />
             <Avatar className="h-8 w-8">
-              <AvatarImage src="/avatars/seller.jpg" alt="Seller" />
               <AvatarFallback>SA</AvatarFallback>
             </Avatar>
           </div>

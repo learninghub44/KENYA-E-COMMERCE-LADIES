@@ -2,9 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { User, Package, Heart, MessageSquare, Settings, LogOut, LogIn, UserPlus } from "lucide-react"
 
 import { cn } from "../../lib/utils"
+import { useAuth } from "../../lib/auth/auth-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +21,18 @@ interface AccountDropdownProps {
   className?: string
 }
 
-function AccountDropdown({ isLoggedIn = false, className }: AccountDropdownProps) {
-  if (!isLoggedIn) {
+function AccountDropdown({ isLoggedIn, className }: AccountDropdownProps) {
+  const { user, signOut } = useAuth()
+  const router = useRouter()
+  const loggedIn = isLoggedIn ?? Boolean(user)
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push("/")
+    router.refresh()
+  }
+
+  if (!loggedIn) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -103,11 +115,9 @@ function AccountDropdown({ isLoggedIn = false, className }: AccountDropdownProps
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/sign-out" className="cursor-pointer">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Link>
+        <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer">
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

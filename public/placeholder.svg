@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#F3E9E3"/>
+  <g fill="none" stroke="#C9A98C" stroke-width="2">
+    <rect x="40" y="40" width="320" height="320" rx="8"/>
+  </g>
+  <g fill="#C9A98C">
+    <circle cx="200" cy="160" r="42"/>
+    <path d="M110 300c0-55 40-95 90-95s90 40 90 95v20H110v-20z"/>
+  </g>
+  <text x="200" y="360" font-family="Arial, sans-serif" font-size="16" fill="#A78868" text-anchor="middle">Zuri Market</text>
+</svg>
