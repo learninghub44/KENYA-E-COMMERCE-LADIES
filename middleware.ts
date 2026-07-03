@@ -22,6 +22,19 @@ const ADMIN_ROUTE_PERMISSIONS: Array<{ prefix: string; permission: Permission }>
 // covered by this one check without needing a per-route map.
 const SELLER_ROUTE_PERMISSION: Permission = "seller.profile.manage";
 
+// Having the "seller" role only means a seller row exists (see
+// 202607030005_grant_seller_role_on_application.sql) -- it says nothing about
+// whether KYC has actually been approved. The dashboard and the KYC page
+// itself stay open so a seller can see their status and submit documents;
+// everything else that could touch real money or a live storefront (products,
+// orders, store settings, payouts, coupons...) requires kyc_status =
+// 'approved' first.
+const KYC_EXEMPT_SELLER_PATHS = ["/seller", "/seller/kyc"];
+
+function isKycExemptPath(pathname: string): boolean {
+  return KYC_EXEMPT_SELLER_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
 // Where to send a signed-in user who does NOT hold the required role for the
 // section they tried to reach, instead of the generic "/" bounce that silently
 // hides why access was denied.
@@ -85,6 +98,19 @@ export async function middleware(request: NextRequest) {
   const required = section === "admin" ? permissionForPath(pathname) : SELLER_ROUTE_PERMISSION;
   if (!hasPermission(roles, required)) {
     return NextResponse.redirect(new URL(DENIED_REDIRECT[section], request.url));
+  }
+
+  if (section === "seller" && !isKycExemptPath(pathname)) {
+    const { data: sellerRow } = await supabase
+      .from("sellers")
+      .select("kyc_status")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (sellerRow?.kyc_status !== "approved") {
+      const kycUrl = new URL("/seller/kyc", request.url);
+      kycUrl.searchParams.set("reason", "verification_required");
+      return NextResponse.redirect(kycUrl);
+    }
   }
 
   return response;
