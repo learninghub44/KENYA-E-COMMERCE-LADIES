@@ -51,12 +51,10 @@ const SHIPPING_METHODS = [
   { id: "next-day", name: "Next Day Delivery", price: 2500, days: "1" },
 ]
 
-const CART_ITEMS = [
-  { id: "1", name: "Premium Ankara Maxi Dress", variant: "Size M / Red", price: 4500, quantity: 1, image: "/placeholder.svg" },
-  { id: "2", name: "Handwoven Kente Blazer", variant: "Size L / Gold", price: 8900, quantity: 2, image: "/placeholder.svg" },
-]
-
 export default function CheckoutPage() {
+  const [cartItems, setCartItems] = useState<
+    { id: string; name: string; variant: string; price: number; quantity: number; image: string }[]
+  >([])
   const [shippingMethod, setShippingMethod] = useState("standard")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -75,7 +73,7 @@ export default function CheckoutPage() {
     (m) => m.id === shippingMethod
   )!
 
-  const subtotal = CART_ITEMS.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   )
@@ -315,7 +313,7 @@ export default function CheckoutPage() {
                 <CardTitle className="text-lg">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {CART_ITEMS.map((item) => (
+                {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-3">
                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
                       <Image

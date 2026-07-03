@@ -39,63 +39,8 @@ interface Conversation {
   messages: Message[]
 }
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: "1",
-    name: "Luxe Kenya Store",
-    avatar: "/placeholder.svg",
-    lastMessage: "Your order has been shipped! Track it here:...",
-    lastTime: "5m ago",
-    unread: 2,
-    online: true,
-    messages: [
-      { id: "m1", senderId: "them", text: "Hi! Thank you for your order.", timestamp: "10:30 AM" },
-      { id: "m2", senderId: "me", text: "When will it be shipped?", timestamp: "10:32 AM" },
-      { id: "m3", senderId: "them", text: "Your order has been shipped! Track it here: https://track.example.com/ORD-2024-001", timestamp: "10:35 AM" },
-      { id: "m4", senderId: "me", text: "Great, thank you!", timestamp: "10:36 AM" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Nairobi Styles",
-    avatar: "/placeholder.svg",
-    lastMessage: "Yes, we have that in stock",
-    lastTime: "1h ago",
-    unread: 0,
-    online: true,
-    messages: [
-      { id: "m5", senderId: "me", text: "Do you have the Kente Blazer in size L?", timestamp: "9:00 AM" },
-      { id: "m6", senderId: "them", text: "Yes, we have that in stock", timestamp: "9:15 AM" },
-    ],
-  },
-  {
-    id: "3",
-    name: "African Trends",
-    avatar: "/placeholder.svg",
-    lastMessage: "Your custom order is ready for review",
-    lastTime: "1d ago",
-    unread: 1,
-    online: false,
-    messages: [
-      { id: "m7", senderId: "them", text: "Your custom order is ready for review", timestamp: "Yesterday" },
-    ],
-  },
-  {
-    id: "4",
-    name: "Elegance Hub",
-    avatar: "/placeholder.svg",
-    lastMessage: "Thank you for your purchase!",
-    lastTime: "3d ago",
-    unread: 0,
-    online: false,
-    messages: [
-      { id: "m8", senderId: "them", text: "Thank you for your purchase!", timestamp: "3 days ago" },
-    ],
-  },
-]
-
 export default function MessagesPage() {
-  const [conversations] = useState(MOCK_CONVERSATIONS)
+  const [conversations] = useState<Conversation[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(
     conversations[0]?.id ?? null
   )

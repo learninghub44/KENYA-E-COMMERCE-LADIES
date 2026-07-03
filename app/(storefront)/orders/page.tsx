@@ -28,69 +28,6 @@ interface Order {
   items: { name: string }[]
 }
 
-const MOCK_ORDERS: Order[] = [
-  {
-    id: "1",
-    orderNumber: "ORD-2024-001",
-    date: "2024-12-15",
-    status: "delivered",
-    itemCount: 3,
-    total: 25900,
-    items: [
-      { name: "Premium Ankara Maxi Dress" },
-      { name: "Handwoven Kente Blazer" },
-      { name: "Beaded Evening Gown" },
-    ],
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2024-002",
-    date: "2024-12-20",
-    status: "shipped",
-    itemCount: 2,
-    total: 11800,
-    items: [
-      { name: "Silk Blend Wrap Top" },
-      { name: "Leather Crossbody Bag" },
-    ],
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2024-003",
-    date: "2024-12-28",
-    status: "processing",
-    itemCount: 1,
-    total: 5600,
-    items: [{ name: "Linen Wide Leg Trousers" }],
-  },
-  {
-    id: "4",
-    orderNumber: "ORD-2024-004",
-    date: "2024-11-10",
-    status: "cancelled",
-    itemCount: 2,
-    total: 14200,
-    items: [
-      { name: "Embroidered Crop Top" },
-      { name: "Statement Earrings Set" },
-    ],
-  },
-  {
-    id: "5",
-    orderNumber: "ORD-2024-005",
-    date: "2024-10-05",
-    status: "delivered",
-    itemCount: 4,
-    total: 32000,
-    items: [
-      { name: "Premium Ankara Maxi Dress" },
-      { name: "Beaded Evening Gown" },
-      { name: "Leather Crossbody Bag" },
-      { name: "Statement Earrings Set" },
-    ],
-  },
-]
-
 const STATUS_TABS = [
   { value: "all", label: "All" },
   { value: "processing", label: "Processing" },
@@ -115,14 +52,15 @@ function formatDate(dateStr: string) {
 }
 
 export default function OrdersPage() {
+  const [orders] = useState<Order[]>([])
   const [statusFilter, setStatusFilter] = useState("all")
 
   const filteredOrders =
     statusFilter === "all"
-      ? MOCK_ORDERS
-      : MOCK_ORDERS.filter((o) => o.status === statusFilter)
+      ? orders
+      : orders.filter((o) => o.status === statusFilter)
 
-  if (MOCK_ORDERS.length === 0) {
+  if (orders.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-16">
         <EmptyState

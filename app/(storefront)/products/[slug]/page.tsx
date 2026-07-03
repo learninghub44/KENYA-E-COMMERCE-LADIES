@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
@@ -37,61 +37,60 @@ import {
   TooltipProvider,
 } from "../../../../components/ui/tooltip"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
-import { ProductCard } from "../../../../components/shared/product-card"
+import { ProductCard, type Product } from "../../../../components/shared/product-card"
 import { Rating } from "../../../../components/shared/rating"
 import { Price } from "../../../../components/shared/price"
 
-const product = {
-  id: "1",
-  name: "Premium African Print Maxi Dress",
-  slug: "premium-african-print-maxi-dress",
-  price: 8500,
-  comparePrice: 12000,
-  description: "Make a statement with this stunning premium African print maxi dress. Crafted from high-quality Ankara fabric, featuring an elegant floor-length silhouette with a flattering fit-and-flare design. Perfect for weddings, galas, and special occasions. Features a flattering V-neckline, adjustable waist tie, and flowy skirt. Each piece is uniquely patterned, ensuring you stand out from the crowd.",
-  images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
-  rating: 4.8,
-  reviewCount: 124,
-  discount: 29,
-  isNew: true,
-  seller: {
-    name: "Nairobi Styles",
-    slug: "nairobi-styles",
-    avatar: "/placeholder.svg",
-    rating: 4.9,
-    productCount: 48,
-    memberSince: "2023",
-  },
-  variants: {
-    colors: ["Gold", "Emerald", "Ruby Red", "Royal Blue", "Ivory"],
-    sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL"],
-  },
-  category: { name: "Fashion", slug: "fashion" },
-  tags: ["Dresses", "African Print", "Maxi", "Formal Wear"],
+interface ProductData {
+  id: string
+  name: string
+  slug: string
+  price: number
+  comparePrice?: number | null
+  description: string
+  images: string[]
+  rating: number
+  reviewCount: number
+  discount?: number | null
+  isNew?: boolean
+  seller: { name: string; slug: string; avatar: string; rating: number; productCount: number; memberSince: string }
+  variants: { colors: string[]; sizes: string[] }
+  category: { name: string; slug: string }
+  tags: string[]
 }
 
-const reviews = [
-  { id: "1", author: "Grace W.", avatar: "/placeholder.svg", rating: 5, date: "2 weeks ago", text: "Absolutely stunning dress! The fabric is high quality and the fit is perfect. Received so many compliments at the wedding I attended." },
-  { id: "2", author: "Faith M.", avatar: "/placeholder.svg", rating: 5, date: "1 month ago", text: "Beautiful craftsmanship and vibrant colors. True to size. Will definitely be ordering more from this seller." },
-  { id: "3", author: "Amina K.", avatar: "/placeholder.svg", rating: 4, date: "2 months ago", text: "Lovely dress! The pattern is even more beautiful in person. Slightly longer than expected but still works perfectly with heels." },
-]
-
-const relatedProducts = [
-  { id: "2", name: "Handcrafted Beaded Statement Necklace", price: 3200, comparePrice: null, images: [], rating: 4.6, reviewCount: 89, isNew: true, discount: null, sellerName: "Makena Accessories", slug: "handcrafted-beaded-statement-necklace" },
-  { id: "3", name: "Kente Print Wrap Skirt", price: 4800, comparePrice: null, images: [], rating: 4.8, reviewCount: 98, isNew: true, discount: null, sellerName: "Accra Threads", slug: "kente-print-wrap-skirt" },
-  { id: "4", name: "Linen Blend Tailored Blazer", price: 9500, comparePrice: null, images: [], rating: 4.7, reviewCount: 67, isNew: true, discount: null, sellerName: "Safari Chic", slug: "linen-blend-tailored-blazer" },
-  { id: "5", name: "Leather Crossbody Bag", price: 6200, comparePrice: 7800, images: [], rating: 4.5, reviewCount: 143, isNew: false, discount: 21, sellerName: "Urban Leather Co.", slug: "leather-crossbody-bag" },
-]
+interface ReviewData {
+  id: string
+  author: string
+  avatar: string
+  rating: number
+  date: string
+  text: string
+}
 
 export default function ProductDetailPage() {
   const params = useParams()
   const slug = params.slug as string
 
-  const [selectedColor, setSelectedColor] = useState(product.variants.colors[0] ?? product.variants.colors[0])
-  const [selectedSize, setSelectedSize] = useState(product.variants.sizes[2] ?? product.variants.sizes[2])
+  const [product, setProduct] = useState<ProductData | null>(null)
+  const [reviews, setReviews] = useState<ReviewData[]>([])
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+  const [selectedColor, setSelectedColor] = useState("")
+  const [selectedSize, setSelectedSize] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+
+  useEffect(() => {
+    setProduct(null)
+    setReviews([])
+    setRelatedProducts([])
+    setSelectedColor("")
+    setSelectedSize("")
+    setQuantity(1)
+    setSelectedImageIndex(0)
+  }, [slug])
 
   function handleQuantityChange(delta: number) {
     setQuantity((prev) => Math.max(1, prev + delta))
@@ -103,11 +102,25 @@ export default function ProductDetailPage() {
 
   function handleImageNav(direction: -1 | 1) {
     setSelectedImageIndex((prev) => {
+      const images = product?.images ?? []
       const next = prev + direction
-      if (next < 0) return product.images.length - 1
-      if (next >= product.images.length) return 0
+      if (next < 0) return images.length - 1
+      if (next >= images.length) return 0
       return next
     })
+  }
+
+  if (!product) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+        <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Product not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">This product could not be loaded.</p>
+        <Button asChild className="mt-6">
+          <Link href="/">Browse Products</Link>
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -206,7 +219,7 @@ export default function ProductDetailPage() {
                 </Link>
               </div>
               <div className="mt-4">
-                <Price amount={product.price} compareAt={product.comparePrice} variant="sale" size="lg" />
+                <Price amount={product.price} compareAt={product.comparePrice ?? undefined} variant="sale" size="lg" />
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { Label } from "../../../components/ui/label";
 import { Separator } from "../../../components/ui/separator";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { createSupabaseBrowserClient } from "../../../lib/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -19,7 +21,9 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -28,8 +32,19 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (_data: LoginForm) => {
-    // Will connect to Supabase auth
+  const onSubmit = async (data: LoginForm) => {
+    setAuthError(null);
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+    router.push("/");
+    router.refresh();
   };
 
   return (
@@ -78,6 +93,11 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {authError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {authError}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">

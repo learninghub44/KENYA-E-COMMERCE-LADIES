@@ -1,6 +1,6 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -31,7 +31,7 @@ interface OrderPageProps {
   params: Promise<{ id: string }>
 }
 
-const MOCK_ORDER: {
+interface OrderDetail {
   id: string
   orderNumber: string
   date: string
@@ -44,52 +44,6 @@ const MOCK_ORDER: {
   tax: number
   total: number
   estimatedDelivery: string
-} = {
-  id: "1",
-  orderNumber: "ORD-2024-001",
-  date: "2024-12-15",
-  status: "shipped",
-  items: [
-    {
-      id: "1",
-      name: "Premium Ankara Maxi Dress",
-      variant: "Size M / Red",
-      price: 4500,
-      quantity: 1,
-      image: "/placeholder.svg",
-    },
-    {
-      id: "2",
-      name: "Handwoven Kente Blazer",
-      variant: "Size L / Gold",
-      price: 8900,
-      quantity: 2,
-      image: "/placeholder.svg",
-    },
-    {
-      id: "3",
-      name: "Beaded Evening Gown",
-      variant: "Size S / Black",
-      price: 12500,
-      quantity: 1,
-      image: "/placeholder.svg",
-    },
-  ],
-  shippingAddress: {
-    name: "Jane Akinyi",
-    street: "45 Moi Avenue",
-    city: "Nairobi",
-    state: "Nairobi County",
-    zip: "00100",
-    country: "Kenya",
-    phone: "+254 712 345 678",
-  },
-  paymentMethod: "Credit Card (VISA ending in 4242)",
-  subtotal: 30400,
-  shipping: 500,
-  tax: 2472,
-  total: 33372,
-  estimatedDelivery: "2024-12-22",
 }
 
 const STEPS = [
@@ -116,8 +70,26 @@ function formatDate(dateStr: string) {
 
 export default function OrderDetailPage({ params }: OrderPageProps) {
   const { id } = use(params)
-  const order = MOCK_ORDER
-  const currentStep = STATUS_STEP_MAP[order.status] ?? 0
+  const [order, setOrder] = useState<OrderDetail | null>(null)
+
+  useEffect(() => {
+    setOrder(null)
+  }, [id])
+
+  const currentStep = order ? (STATUS_STEP_MAP[order.status] ?? 0) : 0
+
+  if (!order) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Order not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">This order could not be loaded.</p>
+        <Button asChild className="mt-6">
+          <Link href="/orders">Back to Orders</Link>
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">

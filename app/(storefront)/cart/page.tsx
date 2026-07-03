@@ -31,41 +31,11 @@ interface CartItem {
   maxQuantity: number
 }
 
-const INITIAL_CART: CartItem[] = [
-  {
-    id: "1",
-    name: "Premium Ankara Maxi Dress",
-    variant: "Size M / Red",
-    price: 4500,
-    quantity: 1,
-    image: "/placeholder.svg",
-    maxQuantity: 10,
-  },
-  {
-    id: "2",
-    name: "Handwoven Kente Blazer",
-    variant: "Size L / Gold",
-    price: 8900,
-    quantity: 2,
-    image: "/placeholder.svg",
-    maxQuantity: 5,
-  },
-  {
-    id: "3",
-    name: "Beaded Evening Gown",
-    variant: "Size S / Black",
-    price: 12500,
-    quantity: 1,
-    image: "/placeholder.svg",
-    maxQuantity: 3,
-  },
-]
-
 const SHIPPING_ESTIMATE = 500
 const TAX_RATE = 0.08
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>(INITIAL_CART)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [promoCode, setPromoCode] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
   const [savedForLater, setSavedForLater] = useState<CartItem[]>([])
