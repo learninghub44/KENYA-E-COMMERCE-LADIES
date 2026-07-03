@@ -18,6 +18,13 @@ export const taxInformationSchema = z.object({
   registrationNumber: z.string().trim().max(80).optional()
 });
 
+export const socialLinksSchema = z.object({
+  instagram: z.string().trim().url().max(300).optional().or(z.literal("")),
+  facebook: z.string().trim().url().max(300).optional().or(z.literal("")),
+  twitter: z.string().trim().url().max(300).optional().or(z.literal("")),
+  whatsapp: z.string().trim().max(32).optional().or(z.literal(""))
+});
+
 export const storePoliciesSchema = z.object({
   returns: z.string().trim().max(4000).optional(),
   shipping: z.string().trim().max(4000).optional(),
@@ -59,6 +66,7 @@ export const storeProfileSchema = z.object({
   supportPhone: z.string().trim().min(7).max(32).nullable().optional(),
   businessAddress: storeAddressSchema.optional(),
   storePolicies: storePoliciesSchema.optional(),
+  socialLinks: socialLinksSchema.optional(),
   businessHours: businessHoursSchema.optional(),
   visibility: z.enum(["public", "private", "paused"]).optional()
 });
