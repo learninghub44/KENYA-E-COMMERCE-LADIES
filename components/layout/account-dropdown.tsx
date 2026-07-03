@@ -39,13 +39,13 @@ function AccountDropdown({ isLoggedIn = false, className }: AccountDropdownProps
           <DropdownMenuLabel>Welcome</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/sign-in" className="cursor-pointer">
+            <Link href="/auth/login" className="cursor-pointer">
               <LogIn className="mr-2 h-4 w-4" />
               Sign In
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/register" className="cursor-pointer">
+            <Link href="/auth/register" className="cursor-pointer">
               <UserPlus className="mr-2 h-4 w-4" />
               Register
             </Link>
@@ -79,25 +79,25 @@ function AccountDropdown({ isLoggedIn = false, className }: AccountDropdownProps
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account/orders" className="cursor-pointer">
+          <Link href="/orders" className="cursor-pointer">
             <Package className="mr-2 h-4 w-4" />
             Orders
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account/wishlist" className="cursor-pointer">
+          <Link href="/wishlist" className="cursor-pointer">
             <Heart className="mr-2 h-4 w-4" />
             Wishlist
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account/messages" className="cursor-pointer">
+          <Link href="/messages" className="cursor-pointer">
             <MessageSquare className="mr-2 h-4 w-4" />
             Messages
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account/settings" className="cursor-pointer">
+          <Link href="/account/security" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
             Settings
           </Link>

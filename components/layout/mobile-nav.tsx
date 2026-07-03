@@ -134,12 +134,12 @@ function MobileNav({ open, onOpenChange, categories = [] }: MobileNavProps) {
         <div className="border-t p-4">
           <div className="flex flex-col gap-2">
             <Button variant="default" asChild className="w-full">
-              <Link href="/sign-in" onClick={close}>
+              <Link href="/auth/login" onClick={close}>
                 Sign In
               </Link>
             </Button>
             <Button variant="outline" asChild className="w-full">
-              <Link href="/register" onClick={close}>
+              <Link href="/auth/register" onClick={close}>
                 Register
               </Link>
             </Button>
