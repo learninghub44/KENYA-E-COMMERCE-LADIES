@@ -146,6 +146,12 @@ export function createSellerService(deps: SellerServiceDependencies) {
       return { ok: true, data: updated };
     },
 
+    async getBySlug(slug: string): Promise<SellerResult<SellerRecord>> {
+      const seller = await deps.sellers.findBySlug(slug);
+      if (!seller) return failure("SELLER_NOT_FOUND", "Seller not found.", 404);
+      return { ok: true, data: seller };
+    },
+
     async getDashboard(sellerId: string, actorUserId: string): Promise<SellerResult<SellerDashboard>> {
       const seller = await deps.sellers.findById(sellerId);
       if (!seller) return failure("SELLER_NOT_FOUND", "Seller account was not found.", 404);

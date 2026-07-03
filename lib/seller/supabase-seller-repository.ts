@@ -61,6 +61,12 @@ export function createSupabaseSellerRepository(client: SupabaseClient): SellerRe
       return data ? toSellerRecord(data as SellerRow) : null;
     },
 
+    async findBySlug(slug: string): Promise<SellerRecord | null> {
+      const { data, error } = await client.from("sellers").select("*").eq("slug", slug).maybeSingle();
+      if (error) throw new Error(`Failed to load seller by slug: ${error.message}`);
+      return data ? toSellerRecord(data as SellerRow) : null;
+    },
+
     async createSeller(input): Promise<SellerRecord> {
       const { data, error } = await client
         .from("sellers")

@@ -44,6 +44,20 @@ export type SupabaseAuthPort = {
 export type ProfileRepository = {
   createProfile(input: { id: string; email: string; fullName?: string }): Promise<void>;
   setProfileStatus(userId: string, status: "active" | "inactive" | "deleted"): Promise<void>;
+  updateProfile(input: {
+    userId: string;
+    displayName?: string;
+    email?: string;
+    phone?: string;
+    avatarUrl?: string | null;
+  }): Promise<void>;
+  findByUserId(userId: string): Promise<{
+    id: string;
+    email: string;
+    displayName: string | null;
+    phone: string | null;
+    avatarUrl: string | null;
+  } | null>;
 };
 
 export type RoleRepository = {

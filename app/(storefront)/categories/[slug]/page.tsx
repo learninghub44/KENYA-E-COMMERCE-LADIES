@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useParams } from "next/navigation"
@@ -42,17 +42,22 @@ import {
   DrawerTrigger,
 } from "../../../../components/ui/drawer"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
-import { ProductCard, type Product as ProductCardType } from "../../../../components/shared/product-card"
+import { ProductCard, type Product, type ProductSummaryLike, toCardProduct } from "../../../../components/shared/product-card"
 import { EmptyState } from "../../../../components/shared/empty-state"
+import type { CategoryRecord } from "../../../../lib/marketplace/types"
 
-const categoriesData: Record<string, { name: string; description: string; image: string }> = {
-  fashion: { name: "Fashion", description: "Trendy clothing, dresses, tops, bottoms, and outerwear for every occasion.", image: "/placeholder.svg" },
-  beauty: { name: "Beauty", description: "Premium makeup, fragrances, and beauty essentials from top brands.", image: "/placeholder.svg" },
-  skincare: { name: "Skincare", description: "Nourishing skincare products for a radiant, healthy glow.", image: "/placeholder.svg" },
-  accessories: { name: "Accessories", description: "Statement jewelry, handbags, scarves, and more to complete your look.", image: "/placeholder.svg" },
-  wellness: { name: "Wellness", description: "Self-care and wellness products to nurture your mind and body.", image: "/placeholder.svg" },
-  lifestyle: { name: "Lifestyle", description: "Curated home d\u00e9cor, gifts, and lifestyle pieces for the modern woman.", image: "/placeholder.svg" },
-}
+const COLOR_SWATCHES = [
+  { name: "Black", class: "bg-black" },
+  { name: "Red", class: "bg-red-600" },
+  { name: "Gold", class: "bg-yellow-500" },
+  { name: "Blue", class: "bg-blue-700" },
+  { name: "Green", class: "bg-green-700" },
+  { name: "White", class: "bg-white border" },
+  { name: "Brown", class: "bg-amber-800" },
+  { name: "Purple", class: "bg-purple-700" },
+]
+
+const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"]
 
 const sortOptions = [
   { value: "newest", label: "Newest" },
@@ -61,43 +66,16 @@ const sortOptions = [
   { value: "rating", label: "Top Rated" },
 ]
 
-const brands = ["African Heritage", "Nairobi Luxe", "Safari Chic", "Coastal Vibes", "Urban Edge", "Makena Style"]
-const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL"]
-const colors = ["Black", "White", "Red", "Blue", "Green", "Gold", "Silver", "Pink", "Purple", "Brown"]
-
-function generateMockProducts(count: number): ProductCardType[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: String(i + 1),
-    name: [
-      "Premium Ankara Print Dress",
-      "Linen Blend Wide Leg Pants",
-      "Handwoven Kente Scarf",
-      "Beaded Leather Sandals",
-      "Organic Cotton Kimono",
-      "Statement Beaded Earrings",
-      "Silk Blend Wrap Dress",
-      "Embroidered Linen Top",
-      "Leather Crossbody Bag",
-      "Batik Print Jumpsuit",
-    ][i % 10] ?? "",
-    price: [4500, 6200, 2800, 3900, 5500, 1800, 8500, 4200, 7200, 5800][i % 10] ?? 0,
-    comparePrice: [null, 7800, null, null, 7200, null, 11000, null, 9000, null][i % 10] as number | null | undefined,
-    images: [],
-    rating: [4.5, 4.7, 4.3, 4.8, 4.6, 4.4, 4.9, 4.2, 4.7, 4.5][i % 10] ?? 0,
-    reviewCount: [56, 89, 34, 112, 67, 45, 203, 28, 91, 78][i % 10] ?? 0,
-    isNew: i < 4,
-    discount: [null, 21, null, null, 24, null, 23, null, 20, null][i % 10] as number | null | undefined,
-    sellerName: ["Nairobi Styles", "Safari Chic", "Makena Accessories", "Coastal Crafts", "Urban Leather Co.", "Accra Threads", "PureGlow Kenya", "Safari Chic", "Urban Leather Co.", "Coastal Crafts"][i % 10] ?? "",
-    slug: `product-${i + 1}`,
-  }))
-}
-
-const allProducts = generateMockProducts(24)
-
 export default function CategoryPage() {
   const params = useParams()
   const slug = params.slug as string
-  const category = categoriesData[slug]
+
+  const [category, setCategory] = useState<CategoryRecord | null>(null)
+  const [categoryLoading, setCategoryLoading] = useState(true)
+  const [categoryError, setCategoryError] = useState(false)
+
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
 
   const [sortBy, setSortBy] = useState("newest")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 20000])
@@ -109,6 +87,69 @@ export default function CategoryPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const itemsPerPage = 12
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setCategoryLoading(true)
+      setCategoryError(false)
+      try {
+        const res = await fetch(`/api/catalog/categories/${slug}`)
+        if (!res.ok) {
+          if (!cancelled) setCategoryError(true)
+          return
+        }
+        const data = await res.json()
+        if (!cancelled) setCategory(data)
+      } catch {
+        if (!cancelled) setCategoryError(true)
+      } finally {
+        if (!cancelled) setCategoryLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [slug])
+
+  useEffect(() => {
+    const cat = category
+    if (!cat) return
+    const catId = cat.id
+    let cancelled = false
+    async function load() {
+      setProductsLoading(true)
+      try {
+        const res = await fetch(`/api/products/search?categoryId=${catId}&limit=200`)
+        if (!res.ok) {
+          if (!cancelled) setProducts([])
+          return
+        }
+        const data = await res.json() as { items: ProductSummaryLike[] }
+        if (!cancelled) setProducts(data.items.map(toCardProduct))
+      } catch {
+        if (!cancelled) setProducts([])
+      } finally {
+        if (!cancelled) setProductsLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [category])
+
+  const brands = useMemo(() => {
+    const unique = new Set(products.map(p => p.sellerName).filter(Boolean))
+    return Array.from(unique).sort()
+  }, [products])
+
+  const priceBounds = useMemo(() => {
+    if (products.length === 0) return { min: 0, max: 20000 }
+    const prices = products.map(p => p.price)
+    return { min: Math.min(...prices), max: Math.max(...prices) }
+  }, [products])
+
+  useEffect(() => {
+    setPriceRange([priceBounds.min, priceBounds.max])
+  }, [priceBounds.min, priceBounds.max])
 
   function toggleBrand(brand: string) {
     setSelectedBrands((prev) =>
@@ -132,7 +173,7 @@ export default function CategoryPage() {
   }
 
   function clearFilters() {
-    setPriceRange([0, 20000])
+    setPriceRange([priceBounds.min, priceBounds.max])
     setSelectedBrands([])
     setSelectedSizes([])
     setSelectedColors([])
@@ -140,25 +181,34 @@ export default function CategoryPage() {
     setCurrentPage(1)
   }
 
-  const sorted = [...allProducts].sort((a, b) => {
-    switch (sortBy) {
-      case "price-asc": return a.price - b.price
-      case "price-desc": return b.price - a.price
-      case "rating": return b.rating - a.rating
-      default: return 0
-    }
-  })
+  const isLoading = categoryLoading || productsLoading
 
-  const filtered = sorted.filter((p) => {
-    if (p.price < priceRange[0] || p.price > priceRange[1]) return false
-    if (minRating > 0 && p.rating < minRating) return false
-    return true
-  })
+  const sorted = useMemo(() => {
+    return [...products].sort((a, b) => {
+      switch (sortBy) {
+        case "price-asc": return a.price - b.price
+        case "price-desc": return b.price - a.price
+        case "rating": return b.rating - a.rating
+        default: return 0
+      }
+    })
+  }, [products, sortBy])
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage)
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-  const hasActiveFilters = priceRange[0] > 0 || priceRange[1] < 20000 || selectedBrands.length > 0 || selectedSizes.length > 0 || selectedColors.length > 0 || minRating > 0
-  const filterCount = [selectedBrands.length, selectedSizes.length, selectedColors.length, minRating > 0 ? 1 : 0, (priceRange[0] > 0 || priceRange[1] < 20000) ? 1 : 0].reduce((a, b) => a + b, 0)
+  const filtered = useMemo(() => {
+    return sorted.filter((p) => {
+      if (p.price < priceRange[0] || p.price > priceRange[1]) return false
+      if (selectedBrands.length > 0 && !selectedBrands.includes(p.sellerName)) return false
+      if (minRating > 0 && p.rating < minRating) return false
+      return true
+    })
+  }, [sorted, priceRange, selectedBrands, minRating])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const paginated = useMemo(() => {
+    return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  }, [filtered, currentPage])
+  const hasActiveFilters = priceRange[0] > priceBounds.min || priceRange[1] < priceBounds.max || selectedBrands.length > 0 || selectedSizes.length > 0 || selectedColors.length > 0 || minRating > 0
+  const filterCount = [selectedBrands.length, selectedSizes.length, selectedColors.length, minRating > 0 ? 1 : 0, (priceRange[0] > priceBounds.min || priceRange[1] < priceBounds.max) ? 1 : 0].reduce((a, b) => a + b, 0)
 
   const FilterContent = () => (
     <div className="space-y-6" role="form" aria-label="Filter products">
@@ -168,8 +218,8 @@ export default function CategoryPage() {
           <Slider
             value={priceRange}
             onValueChange={(val) => { setPriceRange(val as [number, number]); setCurrentPage(1) }}
-            min={0}
-            max={20000}
+            min={priceBounds.min}
+            max={priceBounds.max}
             step={500}
             aria-label="Price range"
           />
@@ -203,7 +253,7 @@ export default function CategoryPage() {
       <div>
         <h4 className="mb-3 text-sm font-medium">Size</h4>
         <div className="flex flex-wrap gap-2">
-          {sizes.map((size) => (
+          {SIZES.map((size) => (
             <button
               key={size}
               type="button"
@@ -228,21 +278,21 @@ export default function CategoryPage() {
       <div>
         <h4 className="mb-3 text-sm font-medium">Color</h4>
         <div className="flex flex-wrap gap-2">
-          {colors.map((color) => (
+          {COLOR_SWATCHES.map((color) => (
             <button
-              key={color}
+              key={color.name}
               type="button"
-              onClick={() => toggleColor(color)}
+              onClick={() => toggleColor(color.name)}
               className={cn(
                 "inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium transition-colors",
-                selectedColors.includes(color)
+                selectedColors.includes(color.name)
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
               )}
-              aria-pressed={selectedColors.includes(color)}
-              aria-label={`Color ${color}`}
+              aria-pressed={selectedColors.includes(color.name)}
+              aria-label={`Color ${color.name}`}
             >
-              {color}
+              {color.name}
             </button>
           ))}
         </div>
@@ -276,7 +326,17 @@ export default function CategoryPage() {
     </div>
   )
 
-  if (!category) {
+  if (categoryLoading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    )
+  }
+
+  if (categoryError || !category) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <EmptyState
@@ -306,7 +366,7 @@ export default function CategoryPage() {
           />
           <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 to-primary/5">
             <Image
-              src={category.image}
+              src="/placeholder.svg"
               alt={category.name}
               fill
               className="object-cover opacity-30"

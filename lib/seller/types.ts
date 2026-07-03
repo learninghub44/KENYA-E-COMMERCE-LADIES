@@ -134,6 +134,7 @@ export type SellerResult<T> =
 export type SellerRepository = {
   findByOwnerId(userId: string): Promise<SellerRecord | null>;
   findById(sellerId: string): Promise<SellerRecord | null>;
+  findBySlug(slug: string): Promise<SellerRecord | null>;
   createSeller(input: {
     ownerId: string;
     storeName: string;

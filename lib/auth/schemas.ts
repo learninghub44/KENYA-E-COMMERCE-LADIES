@@ -35,3 +35,9 @@ export const passwordUpdateSchema = z.object({
 export const emailUpdateSchema = z.object({
   email: emailSchema
 });
+
+export const profileUpdateSchema = z.object({
+  displayName: z.string().trim().min(1).max(120).optional(),
+  email: emailSchema.optional(),
+  phone: z.string().trim().min(10).optional(),
+});
