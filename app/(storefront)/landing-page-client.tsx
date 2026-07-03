@@ -6,19 +6,10 @@ import Link from "next/link"
 import {
   Sparkles,
   ShoppingBag,
-  Palette,
-  Heart,
-  ShieldCheck,
-  Truck,
-  Lock,
-  RefreshCw,
   ArrowRight,
   ChevronRight,
-  Tag,
 } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
 
-import { cn } from "../../lib/utils"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Card, CardContent } from "../../components/ui/card"
@@ -32,29 +23,43 @@ export interface CategoryDisplay {
   count: number
 }
 
-const CATEGORY_STYLE_BY_SLUG: Record<string, { icon: LucideIcon; color: string }> = {
-  fashion: { icon: ShoppingBag, color: "from-pink-500 to-rose-500" },
-  beauty: { icon: Sparkles, color: "from-purple-500 to-violet-500" },
-  skincare: { icon: Palette, color: "from-green-400 to-emerald-500" },
-  accessories: { icon: Heart, color: "from-amber-400 to-orange-500" },
-  wellness: { icon: ShieldCheck, color: "from-sky-400 to-blue-500" },
-  lifestyle: { icon: Sparkles, color: "from-teal-400 to-cyan-500" },
+// Photos sourced from Unsplash (free license, unsplash.com/license). Category tiles and the
+// trust-badge row use photography instead of icons for a more editorial, less "template" feel.
+const CATEGORY_IMAGE_BY_SLUG: Record<string, string> = {
+  fashion: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80&auto=format&fit=crop",
+  beauty: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&q=80&auto=format&fit=crop",
+  skincare: "https://images.unsplash.com/photo-1580870069867-74c57ee1bb07?w=800&q=80&auto=format&fit=crop",
+  accessories: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=800&q=80&auto=format&fit=crop",
+  wellness: "https://images.unsplash.com/photo-1620733723572-11c53f73a416?w=800&q=80&auto=format&fit=crop",
+  lifestyle: "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?w=800&q=80&auto=format&fit=crop",
 }
-const FALLBACK_STYLES = [
-  { icon: Tag, color: "from-fuchsia-500 to-pink-500" },
-  { icon: Tag, color: "from-indigo-500 to-blue-500" },
-  { icon: Tag, color: "from-orange-400 to-amber-500" },
-]
+const FALLBACK_CATEGORY_IMAGE = CATEGORY_IMAGE_BY_SLUG.fashion!
 
-function styleForCategory(slug: string, index: number) {
-  return CATEGORY_STYLE_BY_SLUG[slug] ?? FALLBACK_STYLES[index % FALLBACK_STYLES.length]!
+function imageForCategory(slug: string) {
+  return CATEGORY_IMAGE_BY_SLUG[slug] ?? FALLBACK_CATEGORY_IMAGE
 }
 
 const features = [
-  { icon: Truck, title: "Free Delivery", description: "Free shipping on orders over KES 5,000 across Kenya" },
-  { icon: Lock, title: "Secure Payments", description: "Protected payments via M-Pesa, card, or bank transfer" },
-  { icon: ShieldCheck, title: "Authentic Products", description: "Every item verified for quality and authenticity" },
-  { icon: RefreshCw, title: "Easy Returns", description: "30-day return policy, no questions asked" },
+  {
+    image: "https://images.unsplash.com/photo-1577705998148-6da4f3963bc8?w=400&q=80&auto=format&fit=crop",
+    title: "Free Delivery",
+    description: "Free shipping on orders over KES 5,000 across Kenya",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1742836531239-1fe146bf7e3f?w=400&q=80&auto=format&fit=crop",
+    title: "Secure Payments",
+    description: "Protected payments via M-Pesa, card, or bank transfer",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1652766540048-de0a878a3266?w=400&q=80&auto=format&fit=crop",
+    title: "Authentic Products",
+    description: "Every item verified for quality and authenticity",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1512418490979-92798cec1380?w=400&q=80&auto=format&fit=crop",
+    title: "Easy Returns",
+    description: "30-day return policy, no questions asked",
+  },
 ]
 
 function AnimatedSection({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
@@ -141,15 +146,21 @@ export default function LandingPageClient({ categories, trendingProducts }: Land
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
           >
-            {categories.map((category, index) => {
-              const { icon: Icon, color } = styleForCategory(category.slug, index)
+            {categories.map((category) => {
+              const image = imageForCategory(category.slug)
               return (
                 <motion.div key={category.slug} variants={itemVariants}>
                   <Link href={`/categories/${category.slug}`} className="group block">
                     <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                      <div className={cn("bg-gradient-to-br p-6", color)}>
-                        <div className="flex items-center justify-between">
-                          <Icon className="h-10 w-10 text-white" aria-hidden="true" />
+                      <div className="relative h-36 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={image}
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                        <div className="absolute inset-0 flex items-start justify-end p-4">
                           <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm">
                             {category.count.toLocaleString()} items
                           </Badge>
@@ -244,22 +255,20 @@ export default function LandingPageClient({ categories, trendingProducts }: Land
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
         >
-          {features.map((feature) => {
-            const Icon = feature.icon
-            return (
-              <motion.div key={feature.title} variants={itemVariants}>
-                <Card className="h-full text-center transition-all duration-300 hover:shadow-lg">
-                  <CardContent className="flex flex-col items-center p-6">
-                    <div className="mb-4 rounded-full bg-primary/10 p-3">
-                      <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
-                    </div>
-                    <h3 className="mb-2 font-semibold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
+          {features.map((feature) => (
+            <motion.div key={feature.title} variants={itemVariants}>
+              <Card className="h-full text-center transition-all duration-300 hover:shadow-lg">
+                <CardContent className="flex flex-col items-center p-6">
+                  <div className="mb-4 h-16 w-16 overflow-hidden rounded-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={feature.image} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <h3 className="mb-2 font-semibold">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </motion.div>
       </section>
 
