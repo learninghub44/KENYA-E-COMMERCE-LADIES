@@ -15,6 +15,7 @@ import {
 } from "../ui/drawer"
 import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
+import { Logo } from "./logo"
 import {
   Accordion,
   AccordionItem,
@@ -36,9 +37,8 @@ interface MobileNavProps {
 
 const defaultLinks = [
   { name: "Home", href: "/" },
-  { name: "Shop All", href: "/shop" },
-  { name: "New Arrivals", href: "/new-arrivals" },
-  { name: "Sale", href: "/sale" },
+  { name: "All Products", href: "/search" },
+  { name: "New Arrivals", href: "/search?sort=newest" },
   { name: "Sellers", href: "/sellers" },
 ]
 
@@ -53,10 +53,8 @@ function MobileNav({ open, onOpenChange, categories = [] }: MobileNavProps) {
     <Drawer open={open} onOpenChange={onOpenChange} direction="left">
       <DrawerContent className="inset-x-0 top-0 mt-0 h-full w-full max-w-sm rounded-none border-r">
         <DrawerHeader className="flex items-center justify-between border-b px-4 py-3">
-          <DrawerTitle className="text-lg font-bold tracking-tight">
-            <Link href="/" onClick={close}>
-              ZURI MARKET
-            </Link>
+          <DrawerTitle asChild>
+            <Logo href="/" onClick={close} className="text-lg" />
           </DrawerTitle>
           <DrawerClose asChild>
             <button

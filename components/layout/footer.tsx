@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Instagram, Twitter, Facebook, Youtube } from "lucide-react"
 
 import { cn } from "../../lib/utils"
+import type { CategoryNode } from "../../lib/marketplace/types"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
@@ -15,17 +16,19 @@ interface FooterColumn {
   links: { name: string; href: string }[]
 }
 
-const columns: FooterColumn[] = [
-  {
+function buildShopColumn(categories: CategoryNode[]): FooterColumn {
+  const topLevel = categories.filter((c) => !c.parentId).slice(0, 3)
+  return {
     title: "Shop",
     links: [
-      { name: "All Products", href: "/shop" },
-      { name: "New Arrivals", href: "/new-arrivals" },
-      { name: "Best Sellers", href: "/best-sellers" },
-      { name: "Sale", href: "/sale" },
-      { name: "Collections", href: "/collections" },
+      { name: "All Products", href: "/search" },
+      { name: "New Arrivals", href: "/search?sort=newest" },
+      ...topLevel.map((c) => ({ name: c.name, href: `/categories/${c.slug}` })),
     ],
-  },
+  }
+}
+
+const staticColumns: FooterColumn[] = [
   {
     title: "About",
     links: [
@@ -65,10 +68,15 @@ const socialLinks = [
 
 interface FooterProps {
   className?: string
+  categories?: CategoryNode[]
 }
 
-function Footer({ className }: FooterProps) {
+function Footer({ className, categories = [] }: FooterProps) {
   const [email, setEmail] = React.useState("")
+  const columns = React.useMemo(
+    () => [buildShopColumn(categories), ...staticColumns],
+    [categories]
+  )
 
   function handleNewsletterSubmit(e: React.FormEvent) {
     e.preventDefault()

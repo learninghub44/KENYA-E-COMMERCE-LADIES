@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Menu, Heart } from "lucide-react"
 
 import { cn } from "../../lib/utils"
-import { Button } from "../ui/button"
+import type { CategoryNode } from "../../lib/marketplace/types"
 import { AnnouncementBar } from "./announcement-bar"
 import { MegaMenu, type MegaMenuItem } from "./mega-menu"
 import { AccountDropdown } from "./account-dropdown"
@@ -22,104 +22,51 @@ interface NavLink {
   megaMenu?: MegaMenuItem[]
 }
 
-const navLinks: NavLink[] = [
-  {
-    name: "Shop",
-    href: "/shop",
-    megaMenu: [
-      {
-        name: "Clothing",
-        href: "/category/clothing",
-        children: [
-          { name: "Dresses", href: "/category/dresses" },
-          { name: "Tops", href: "/category/tops" },
-          { name: "Bottoms", href: "/category/bottoms" },
-          { name: "Outerwear", href: "/category/outerwear" },
-          { name: "Kaftans & Maxi", href: "/category/kaftans" },
-        ],
-      },
-      {
-        name: "Accessories",
-        href: "/category/accessories",
-        children: [
-          { name: "Handbags", href: "/category/handbags" },
-          { name: "Jewelry", href: "/category/jewelry" },
-          { name: "Scarves", href: "/category/scarves" },
-          { name: "Belts", href: "/category/belts" },
-        ],
-      },
-      {
-        name: "Shoes",
-        href: "/category/shoes",
-        children: [
-          { name: "Heels", href: "/category/heels" },
-          { name: "Flats", href: "/category/flats" },
-          { name: "Sandals", href: "/category/sandals" },
-          { name: "Boots", href: "/category/boots" },
-        ],
-      },
-      {
-        name: "Beauty",
-        href: "/category/beauty",
-        children: [
-          { name: "Skincare", href: "/category/skincare" },
-          { name: "Fragrance", href: "/category/fragrance" },
-          { name: "Makeup", href: "/category/makeup" },
-        ],
-      },
-    ],
-  },
-  {
-    name: "Categories",
-    href: "/categories",
-    megaMenu: [
-      {
-        name: "Trending",
-        href: "/trending",
-        children: [
-          { name: "New In", href: "/new-arrivals" },
-          { name: "Best Sellers", href: "/best-sellers" },
-          { name: "Sale", href: "/sale" },
-          { name: "Collections", href: "/collections" },
-        ],
-      },
-      {
-        name: "By Occasion",
-        href: "/occasion",
-        children: [
-          { name: "Wedding Guest", href: "/occasion/wedding" },
-          { name: "Work Wear", href: "/occasion/work" },
-          { name: "Evening", href: "/occasion/evening" },
-          { name: "Casual", href: "/occasion/casual" },
-        ],
-      },
-      {
-        name: "African Fashion",
-        href: "/african-fashion",
-        children: [
-          { name: "Kitenge", href: "/african-fashion/kitenge" },
-          { name: "Dashiki", href: "/african-fashion/dashiki" },
-          { name: "Ankara", href: "/african-fashion/ankara" },
-          { name: "Kente", href: "/african-fashion/kente" },
-        ],
-      },
-    ],
-  },
-  { name: "New Arrivals", href: "/new-arrivals" },
-  { name: "Sale", href: "/sale" },
-  { name: "Sellers", href: "/sellers" },
-]
+/** Turn a real category tree (top-level categories with children) into nav entries. */
+function buildCategoryNavLinks(categories: CategoryNode[]): NavLink[] {
+  const topLevel = categories.filter((c) => !c.parentId)
+  return topLevel.map((category) => {
+    if (!category.children || category.children.length === 0) {
+      return { name: category.name, href: `/categories/${category.slug}` }
+    }
+    return {
+      name: category.name,
+      href: `/categories/${category.slug}`,
+      megaMenu: [
+        {
+          name: `All ${category.name}`,
+          href: `/categories/${category.slug}`,
+          children: category.children.map((child) => ({
+            name: child.name,
+            href: `/categories/${child.slug}`,
+          })),
+        },
+      ],
+    }
+  })
+}
 
 interface NavbarProps {
   className?: string
+  categories?: CategoryNode[]
 }
 
-function Navbar({ className }: NavbarProps) {
+function Navbar({ className, categories = [] }: NavbarProps) {
   const pathname = usePathname()
   const [openMegaMenu, setOpenMegaMenu] = React.useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
   const menuTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const navLinks: NavLink[] = React.useMemo(
+    () => [
+      { name: "All Products", href: "/search" },
+      ...buildCategoryNavLinks(categories),
+      { name: "New Arrivals", href: "/search?sort=newest" },
+      { name: "Sellers", href: "/sellers" },
+    ],
+    [categories]
+  )
 
   function handleMenuEnter(name: string) {
     if (menuTimerRef.current) clearTimeout(menuTimerRef.current)
@@ -202,13 +149,13 @@ function Navbar({ className }: NavbarProps) {
             <ThemeToggle />
             <SearchTrigger onClick={() => setSearchOpen(true)} />
             <AccountDropdown />
-            <button
-              type="button"
+            <Link
+              href="/wishlist"
               className="hidden p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
               aria-label="Wishlist"
             >
               <Heart className="h-5 w-5" />
-            </button>
+            </Link>
             <CartButton itemCount={3} />
           </div>
         </div>
@@ -217,15 +164,16 @@ function Navbar({ className }: NavbarProps) {
       <MobileNav
         open={mobileOpen}
         onOpenChange={setMobileOpen}
-        categories={navLinks
-          .filter((l) => l.megaMenu)
-          .flatMap((l) =>
-            (l.megaMenu ?? []).map((m) => ({
-              name: m.name,
-              href: m.href,
-              children: m.children,
-            }))
-          )}
+        categories={categories
+          .filter((c) => !c.parentId)
+          .map((c) => ({
+            name: c.name,
+            href: `/categories/${c.slug}`,
+            children: (c.children ?? []).map((child) => ({
+              name: child.name,
+              href: `/categories/${child.slug}`,
+            })),
+          }))}
       />
     </header>
   )

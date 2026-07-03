@@ -9,9 +9,10 @@ import { cn } from "../../lib/utils"
 interface LogoProps {
   className?: string
   href?: string
+  onClick?: () => void
 }
 
-function Logo({ className, href = "/" }: LogoProps) {
+function Logo({ className, href = "/", onClick }: LogoProps) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
@@ -26,7 +27,7 @@ function Logo({ className, href = "/" }: LogoProps) {
   // and Next's image optimizer refuses to process SVGs unless dangerouslyAllowSVG
   // is enabled globally (a security tradeoff not worth it for one static asset).
   return (
-    <Link href={href} className={cn("flex items-center", className)} aria-label="Zuri Market home">
+    <Link href={href} onClick={onClick} className={cn("flex items-center", className)} aria-label="Zuri Market home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
