@@ -39,6 +39,22 @@ export function createSupabaseProductReader(client: SupabaseClient): ProductRead
 
       const seller = Array.isArray((product as any).sellers) ? (product as any).sellers[0] : (product as any).sellers;
 
+      let imageQuery = client
+        .from("product_images")
+        .select("url, is_primary, sort_order, variant_id")
+        .eq("product_id", productId);
+      const { data: images, error: imageError } = await imageQuery;
+      if (imageError) throw new Error(`Failed to load product images: ${imageError.message}`);
+
+      const candidates = (images ?? []).filter((img) =>
+        variantId ? img.variant_id === variantId || img.variant_id === null : img.variant_id === null
+      );
+      const pool = candidates.length > 0 ? candidates : images ?? [];
+      const sorted = [...pool].sort((a, b) =>
+        a.is_primary === b.is_primary ? a.sort_order - b.sort_order : a.is_primary ? -1 : 1
+      );
+      const imageUrl = sorted[0]?.url ?? null;
+
       return {
         productId: product.id,
         variantId: variant?.id ?? null,
@@ -51,7 +67,8 @@ export function createSupabaseProductReader(client: SupabaseClient): ProductRead
         unitPriceMinor: variant?.price_minor ?? product.base_price_minor,
         currency: variant?.currency ?? product.currency,
         isPublished: product.status === "active",
-        inStock: variant ? variant.is_active && inStock : inStock
+        inStock: variant ? variant.is_active && inStock : inStock,
+        imageUrl
       };
     }
   };

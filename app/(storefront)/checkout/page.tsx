@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -44,6 +45,7 @@ interface CartItemView {
   variant: string | null
   quantity: number
   unitPriceMinor: number
+  imageUrl: string | null
 }
 
 interface CartSummaryView {
@@ -98,6 +100,7 @@ export default function CheckoutPage() {
             variant: item.productSnapshot?.variantTitle ?? null,
             quantity: item.quantity,
             unitPriceMinor: item.unitPriceMinor,
+            imageUrl: item.productSnapshot?.imageUrl ?? null,
           })),
           subtotalMinor: data.subtotalMinor,
           shippingMinor: data.shippingMinor,
@@ -324,8 +327,12 @@ export default function CheckoutPage() {
               <CardContent className="space-y-4">
                 {activeItems.map((item) => (
                   <div key={item.id} className="flex gap-3">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-muted">
-                      <ImageOff className="h-4 w-4 text-muted-foreground" />
+                    <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                      {item.imageUrl ? (
+                        <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />
+                      ) : (
+                        <ImageOff className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
