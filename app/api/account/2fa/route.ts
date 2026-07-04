@@ -48,26 +48,40 @@ function generateTOTPUri(secret: string, email: string, issuer: string = "Zuri M
   return `otpauth://totp/${encodedIssuer}:${encodedEmail}?secret=${secret}&issuer=${encodedIssuer}&algorithm=SHA1&digits=6&period=30`
 }
 
-// Generate HMAC-SHA1 TOTP code
+// Generate HMAC-SHA1 TOTP code (RFC 4226 / RFC 6238 compliant)
 function generateHOTP(secret: string, counter: number): string {
   const key = base32Decode(secret)
-  const counterBuffer = Buffer.alloc(8)
-  counterBuffer.writeBigInt64BE(BigInt(counter))
+
+  // Write counter as 8-byte big-endian
+  const counterBuffer = Buffer.alloc(8, 0)
+  let temp = counter
+  for (let i = 7; i >= 0; i--) {
+    counterBuffer[i] = temp & 0xff
+    temp = Math.floor(temp / 256)
+  }
 
   const hmac = crypto.createHmac("sha1", key)
   hmac.update(counterBuffer)
   const hash = hmac.digest()
 
+  // Dynamic truncation per RFC 4226
   const lastByte = hash[hash.length - 1]
   if (lastByte === undefined) return "000000"
   const offset = lastByte & 0x0f
-  const code =
-    (((hash[offset] ?? 0) & 0x7f) << 24) |
-    (((hash[offset + 1] ?? 0) & 0xff) << 16) |
-    (((hash[offset + 2] ?? 0) & 0xff) << 8) |
-    ((hash[offset + 3] ?? 0) & 0xff)
 
-  return (code % 1000000).toString().padStart(6, "0")
+  const b1 = hash[offset] ?? 0
+  const b2 = hash[offset + 1] ?? 0
+  const b3 = hash[offset + 2] ?? 0
+  const b4 = hash[offset + 3] ?? 0
+
+  const binary =
+    ((b1 & 0x7f) << 24) |
+    ((b2 & 0xff) << 16) |
+    ((b3 & 0xff) << 8) |
+    (b4 & 0xff)
+
+  const otp = binary % 1000000
+  return otp.toString().padStart(6, "0")
 }
 
 // Verify TOTP code (check current and adjacent time windows)
