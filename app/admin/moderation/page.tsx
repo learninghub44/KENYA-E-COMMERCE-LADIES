@@ -1,16 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
   AlertTriangle,
   MoreHorizontal,
-  XCircle,
   Ban,
   MessageSquare,
   Shield,
   ShoppingBag,
   Star,
   Store,
+  Loader2,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
@@ -31,47 +31,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../../../components/ui/dialog"
 
-interface Report {
+type ReportRow = {
   id: string
-  item: string
-  reporter: string
+  targetType: "product" | "seller" | "buyer" | "message" | "store"
+  targetId: string
+  reporterId: string
   reason: string
-  date: string
-  status: "Pending" | "Reviewed" | "Dismissed"
+  status: "open" | "assigned" | "in_review" | "resolved" | "dismissed"
+  createdAt: string
 }
 
-const productsReports: Report[] = [
-  { id: "r1", item: "Kente Scarf", reporter: "Jane W.", reason: "Counterfeit product", date: "2025-06-30", status: "Pending" },
-  { id: "r2", item: "Ankara Jumpsuit", reporter: "Faith N.", reason: "Inappropriate images", date: "2025-06-29", status: "Pending" },
-  { id: "r3", item: "Beaded Sandals", reporter: "Grace A.", reason: "Wrong size listed", date: "2025-06-28", status: "Reviewed" },
-]
+type ReviewReportRow = {
+  id: string
+  reviewId: string
+  reviewType: string
+  reporterId: string
+  reason: string
+  status: string
+  createdAt: string
+}
 
-const reviewsReports: Report[] = [
-  { id: "r4", item: "Review on Mrembo Fashions", reporter: "System", reason: "Spam review", date: "2025-06-30", status: "Pending" },
-  { id: "r5", item: "Review on Dada Cosmetics", reporter: "Nancy W.", reason: "Fake review", date: "2025-06-27", status: "Pending" },
-]
-
-const sellersReports: Report[] = [
-  { id: "r6", item: "Amani Collections", reporter: "Mary W.", reason: "Fraudulent activity", date: "2025-06-29", status: "Pending" },
-  { id: "r7", item: "Kiki Accessories", reporter: "System", reason: "Policy violation", date: "2025-06-25", status: "Reviewed" },
-]
-
-const messagesReports: Report[] = [
-  { id: "r8", item: "Message from User #1234", reporter: "System", reason: "Harassment", date: "2025-06-28", status: "Pending" },
-]
-
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  Pending: "destructive",
-  Reviewed: "secondary",
-  Dismissed: "outline",
+type MessageRow = {
+  id: string
+  conversationId: string
+  senderId: string
+  body: string | null
+  deletedAt: string | null
+  reportCount: number
+  createdAt: string
 }
 
 const tabIcons: Record<string, React.ElementType> = {
@@ -81,19 +69,118 @@ const tabIcons: Record<string, React.ElementType> = {
   messages: MessageSquare,
 }
 
+const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  open: "destructive",
+  assigned: "secondary",
+  in_review: "secondary",
+  resolved: "outline",
+  dismissed: "outline",
+}
+
+const targetTypeByTab: Record<string, ReportRow["targetType"]> = {
+  products: "product",
+  sellers: "seller",
+}
+
 export default function ModerationPage() {
   const [activeTab, setActiveTab] = useState("products")
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [reports, setReports] = useState<ReportRow[]>([])
+  const [reviewReports, setReviewReports] = useState<ReviewReportRow[]>([])
+  const [messages, setMessages] = useState<MessageRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [actingId, setActingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const reportsMap: Record<string, Report[]> = {
-    products: productsReports,
-    reviews: reviewsReports,
-    sellers: sellersReports,
-    messages: messagesReports,
+  const loadTab = useCallback(async (tab: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      if (tab === "messages") {
+        const res = await fetch("/api/admin/moderation/messages")
+        if (!res.ok) throw new Error("Failed to load reported messages")
+        const data = await res.json()
+        setMessages(data.items ?? [])
+      } else if (tab === "reviews") {
+        const res = await fetch("/api/admin/moderation/reviews")
+        if (!res.ok) throw new Error("Failed to load review reports")
+        const data = await res.json()
+        setReviewReports(data.items ?? [])
+      } else {
+        const targetType = targetTypeByTab[tab]
+        const res = await fetch(`/api/admin/reports?targetType=${targetType}`)
+        if (!res.ok) throw new Error("Failed to load reports")
+        const data = await res.json()
+        setReports(data.items ?? [])
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadTab(activeTab)
+  }, [activeTab, loadTab])
+
+  async function handleReportAction(reportId: string, action: "dismiss" | "resolve") {
+    setActingId(reportId)
+    try {
+      const res = await fetch("/api/admin/reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, action }),
+      })
+      if (!res.ok) throw new Error("Action failed")
+      await loadTab(activeTab)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed")
+    } finally {
+      setActingId(null)
+    }
   }
 
-  const currentReports = reportsMap[activeTab] || []
+  async function handleReviewReportAction(reportId: string, action: "dismiss" | "resolve") {
+    setActingId(reportId)
+    try {
+      const res = await fetch("/api/admin/moderation/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, action }),
+      })
+      if (!res.ok) throw new Error("Action failed")
+      await loadTab("reviews")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed")
+    } finally {
+      setActingId(null)
+    }
+  }
+
+  async function handleMessageAction(
+    messageId: string,
+    senderId: string,
+    action: "delete_message" | "warn_user" | "suspend_messaging"
+  ) {
+    setActingId(messageId)
+    try {
+      const res = await fetch("/api/admin/moderation/messages", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          messageId: action === "delete_message" ? messageId : undefined,
+          userId: action !== "delete_message" ? senderId : undefined,
+        }),
+      })
+      if (!res.ok) throw new Error("Action failed")
+      await loadTab("messages")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed")
+    } finally {
+      setActingId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -101,6 +188,12 @@ export default function ModerationPage() {
         <h1 className="text-2xl font-bold tracking-tight">Content Moderation</h1>
         <p className="text-sm text-muted-foreground">Review and moderate reported content</p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4 lg:w-auto">
@@ -112,14 +205,18 @@ export default function ModerationPage() {
           ))}
         </TabsList>
 
-        {Object.entries(reportsMap).map(([key, reports]) => (
+        {(["products", "sellers"] as const).map((key) => (
           <TabsContent key={key} value={key}>
             <Card>
               <CardHeader>
                 <CardTitle className="capitalize">{key} Reports</CardTitle>
               </CardHeader>
               <CardContent>
-                {reports.length === 0 ? (
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : reports.length === 0 ? (
                   <div className="flex flex-col items-center py-12 text-center">
                     <Shield className="mb-2 h-12 w-12 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground">No reports yet</p>
@@ -128,7 +225,7 @@ export default function ModerationPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Item</TableHead>
+                        <TableHead>Target ID</TableHead>
                         <TableHead>Reporter</TableHead>
                         <TableHead>Reason</TableHead>
                         <TableHead>Date</TableHead>
@@ -142,33 +239,32 @@ export default function ModerationPage() {
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="h-4 w-4 text-destructive" />
-                              {report.item}
+                              <span className="truncate max-w-[160px]">{report.targetId}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{report.reporter}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{report.reason}</TableCell>
-                          <TableCell className="text-muted-foreground">{report.date}</TableCell>
+                          <TableCell className="truncate max-w-[140px]">{report.reporterId}</TableCell>
+                          <TableCell className="max-w-[200px] truncate capitalize">{report.reason.replace(/_/g, " ")}</TableCell>
+                          <TableCell className="text-muted-foreground">{new Date(report.createdAt).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
+                            <Badge variant={statusVariant[report.status]}>{report.status.replace(/_/g, " ")}</Badge>
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" disabled={actingId === report.id}>
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Dismiss Report</DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <AlertTriangle className="mr-2 h-4 w-4" /> Warn User
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  <XCircle className="mr-2 h-4 w-4" /> Remove Content
+                                <DropdownMenuItem onClick={() => handleReportAction(report.id, "dismiss")}>
+                                  Dismiss Report
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
-                                  <Ban className="mr-2 h-4 w-4" /> Ban User
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => handleReportAction(report.id, "resolve")}
+                                >
+                                  Mark Resolved
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -182,36 +278,160 @@ export default function ModerationPage() {
             </Card>
           </TabsContent>
         ))}
-      </Tabs>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Report Details</DialogTitle>
-            <DialogDescription>Review the reported content</DialogDescription>
-          </DialogHeader>
-          {selectedReport && (
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-muted-foreground">Item</p>
-                <p className="font-medium">{selectedReport.item}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Reporter</p>
-                <p className="font-medium">{selectedReport.reporter}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Reason</p>
-                <p className="font-medium">{selectedReport.reason}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date</p>
-                <p className="font-medium">{selectedReport.date}</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reviews Reports</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : reviewReports.length === 0 ? (
+                <div className="flex flex-col items-center py-12 text-center">
+                  <Shield className="mb-2 h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No reports yet</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Review</TableHead>
+                      <TableHead>Reporter</TableHead>
+                      <TableHead>Reason</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reviewReports.map((report) => (
+                      <TableRow key={report.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                            <span className="truncate max-w-[160px] capitalize">{report.reviewType} review</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="truncate max-w-[140px]">{report.reporterId}</TableCell>
+                        <TableCell className="max-w-[200px] truncate capitalize">{report.reason.replace(/_/g, " ")}</TableCell>
+                        <TableCell className="text-muted-foreground">{new Date(report.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusVariant[report.status] ?? "secondary"}>{report.status.replace(/_/g, " ")}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={actingId === report.id}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleReviewReportAction(report.id, "dismiss")}>
+                                Dismiss Report
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleReviewReportAction(report.id, "resolve")}
+                              >
+                                Mark Resolved
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <Card>
+            <CardHeader>
+              <CardTitle>Messages Reports</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center py-12 text-center">
+                  <Shield className="mb-2 h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No reports yet</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Sender</TableHead>
+                      <TableHead>Reports</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {messages.map((message) => (
+                      <TableRow key={message.id}>
+                        <TableCell className="font-medium max-w-[220px] truncate">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                            {message.body ?? "[attachment]"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="truncate max-w-[140px]">{message.senderId}</TableCell>
+                        <TableCell>{message.reportCount}</TableCell>
+                        <TableCell className="text-muted-foreground">{new Date(message.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={message.deletedAt ? "outline" : "destructive"}>
+                            {message.deletedAt ? "Removed" : "Pending"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={actingId === message.id}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleMessageAction(message.id, message.senderId, "warn_user")}>
+                                <AlertTriangle className="mr-2 h-4 w-4" /> Warn User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                disabled={Boolean(message.deletedAt)}
+                                onClick={() => handleMessageAction(message.id, message.senderId, "delete_message")}
+                              >
+                                <Shield className="mr-2 h-4 w-4" /> Remove Content
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleMessageAction(message.id, message.senderId, "suspend_messaging")}
+                              >
+                                <Ban className="mr-2 h-4 w-4" /> Suspend Messaging
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
