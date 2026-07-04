@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Price } from "../../../components/shared/price"
 import { EmptyState } from "../../../components/shared/empty-state"
 import { Breadcrumbs } from "../../../components/shared/breadcrumbs"
+import { emitCartUpdated } from "../../../lib/cart/use-cart-count"
 
 interface CartItemView {
   id: string
@@ -112,6 +113,7 @@ export default function CartPage() {
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not update quantity.")
       await loadCart()
+      emitCartUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update quantity.")
     } finally {
@@ -125,6 +127,7 @@ export default function CartPage() {
       const res = await fetch(`/api/cart/${itemId}`, { method: "DELETE" })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not remove item.")
       await loadCart()
+      emitCartUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove item.")
     } finally {
@@ -138,6 +141,7 @@ export default function CartPage() {
       const res = await fetch(`/api/cart/${itemId}/save-for-later`, { method: "POST" })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not save item for later.")
       await loadCart()
+      emitCartUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save item for later.")
     } finally {
@@ -151,6 +155,7 @@ export default function CartPage() {
       const res = await fetch(`/api/cart/${itemId}/move-to-cart`, { method: "POST" })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not move item to cart.")
       await loadCart()
+      emitCartUpdated()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not move item to cart.")
     } finally {
