@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   BadgeCheck,
   RotateCcw,
-  Star,
 } from "lucide-react"
 
 import { Button } from "../../components/ui/button"
@@ -408,32 +407,7 @@ export default function LandingPageClient({
         </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="border-t border-gray-200 bg-white py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-gray-900">50+</div>
-              <div className="mt-1 text-xs text-gray-500">Counties Served</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">20+</div>
-              <div className="mt-1 text-xs text-gray-500">Product Categories</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                <Star className="inline h-5 w-5 fill-[#D9A441] text-[#D9A441]" />
-                4.8
-              </div>
-              <div className="mt-1 text-xs text-gray-500">Average Rating</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-[#1C5C56]">KES 10M+</div>
-              <div className="mt-1 text-xs text-gray-500">Facilitated</div>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </div>
   )
 }
