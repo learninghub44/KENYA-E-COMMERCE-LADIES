@@ -28,6 +28,7 @@ import { cn } from "../../../../lib/utils"
 import { Button } from "../../../../components/ui/button"
 import { Badge } from "../../../../components/ui/badge"
 import { Input } from "../../../../components/ui/input"
+import { Textarea } from "../../../../components/ui/textarea"
 import { Separator } from "../../../../components/ui/separator"
 import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../../components/ui/tabs"
@@ -103,6 +104,12 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [reviewableOrderItems, setReviewableOrderItems] = useState<{ orderItemId: string; productId: string }[]>([])
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewTitle, setReviewTitle] = useState("")
+  const [reviewBody, setReviewBody] = useState("")
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
   const loadProduct = useCallback(async () => {
     setIsLoading(true)
@@ -164,6 +171,25 @@ export default function ProductDetailPage() {
       })
       .catch(() => {
         if (!cancelled) setIsWishlisted(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [product, user])
+
+  useEffect(() => {
+    if (!product || !user) {
+      setReviewableOrderItems([])
+      return
+    }
+    let cancelled = false
+    fetch("/api/reviews/eligibility")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((items: { orderItemId: string; productId: string }[]) => {
+        if (!cancelled) setReviewableOrderItems(items.filter((item) => item.productId === product.id))
+      })
+      .catch(() => {
+        if (!cancelled) setReviewableOrderItems([])
       })
     return () => {
       cancelled = true
@@ -243,6 +269,48 @@ export default function ProductDetailPage() {
       toast.error(err instanceof Error ? err.message : "Could not update your wishlist.")
     } finally {
       setIsTogglingWishlist(false)
+    }
+  }
+
+  async function handleSubmitReview() {
+    if (!product || !user) return
+    const orderItem = reviewableOrderItems[0]
+    if (!orderItem) return
+    if (reviewRating < 1) {
+      toast.error("Please select a star rating.")
+      return
+    }
+    if (reviewTitle.trim().length < 3 || reviewBody.trim().length < 10) {
+      toast.error("Please add a title (3+ characters) and a review (10+ characters).")
+      return
+    }
+    setIsSubmittingReview(true)
+    try {
+      const res = await fetch("/api/reviews/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderItemId: orderItem.orderItemId,
+          rating: reviewRating,
+          title: reviewTitle.trim(),
+          body: reviewBody.trim(),
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not submit your review.")
+      }
+      toast.success("Review submitted")
+      setReviewableOrderItems((prev) => prev.filter((item) => item.orderItemId !== orderItem.orderItemId))
+      setIsReviewFormOpen(false)
+      setReviewRating(0)
+      setReviewTitle("")
+      setReviewBody("")
+      loadProduct()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit your review.")
+    } finally {
+      setIsSubmittingReview(false)
     }
   }
 
@@ -657,6 +725,57 @@ export default function ProductDetailPage() {
                   <p className="mt-1 text-xs text-muted-foreground">{product.reviewCount} reviews</p>
                 </div>
               </div>
+              {reviewableOrderItems.length > 0 && (
+                <div className="rounded-lg border p-4">
+                  {!isReviewFormOpen ? (
+                    <Button variant="outline" onClick={() => setIsReviewFormOpen(true)}>
+                      Write a review
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium">Write a review</h4>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setReviewRating(i + 1)}
+                            aria-label={`Rate ${i + 1} out of 5 stars`}
+                          >
+                            <Star
+                              className={cn(
+                                "h-6 w-6 transition-colors",
+                                i < reviewRating ? "fill-yellow-400 text-yellow-400" : "fill-none text-muted-foreground/30"
+                              )}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Review title"
+                        value={reviewTitle}
+                        onChange={(e) => setReviewTitle(e.target.value)}
+                        maxLength={120}
+                      />
+                      <Textarea
+                        placeholder="Share details about your experience with this product"
+                        value={reviewBody}
+                        onChange={(e) => setReviewBody(e.target.value)}
+                        rows={4}
+                        maxLength={5000}
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={handleSubmitReview} disabled={isSubmittingReview}>
+                          {isSubmittingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit review"}
+                        </Button>
+                        <Button variant="ghost" onClick={() => setIsReviewFormOpen(false)} disabled={isSubmittingReview}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <Separator />
               <div className="space-y-6">
                 {reviews.map((review) => (
