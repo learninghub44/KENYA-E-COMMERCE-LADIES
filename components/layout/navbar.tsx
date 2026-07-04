@@ -12,6 +12,7 @@ import { MegaMenu, type MegaMenuItem } from "./mega-menu"
 import { AccountDropdown } from "./account-dropdown"
 import { SearchTrigger } from "./search-trigger"
 import { CartButton } from "./cart-button"
+import { useCartCount } from "../../lib/cart/use-cart-count"
 import { ThemeToggle } from "./theme-toggle"
 import { MobileNav } from "./mobile-nav"
 import { Logo } from "./logo"
@@ -57,6 +58,7 @@ function Navbar({ className, categories = [] }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
   const menuTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cartCount = useCartCount()
 
   const navLinks: NavLink[] = React.useMemo(
     () => [
@@ -156,7 +158,7 @@ function Navbar({ className, categories = [] }: NavbarProps) {
             >
               <Heart className="h-5 w-5" />
             </Link>
-            <CartButton itemCount={3} />
+            <CartButton itemCount={cartCount} />
           </div>
         </div>
       </div>

@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { motion } from "framer-motion"
+import { toast } from "sonner"
 import {
   Heart,
   Share2,
@@ -17,6 +17,7 @@ import {
   X,
   Star,
   Check,
+  Loader2,
   MessageCircle,
   Twitter,
   Facebook,
@@ -40,9 +41,22 @@ import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
 import { ProductCard, type Product } from "../../../../components/shared/product-card"
 import { Rating } from "../../../../components/shared/rating"
 import { Price } from "../../../../components/shared/price"
+import { useAuth } from "../../../../lib/auth/auth-context"
+import { emitCartUpdated } from "../../../../lib/cart/use-cart-count"
+
+interface ProductVariant {
+  id: string
+  sku: string | null
+  title: string | null
+  priceMinor: number | null
+  compareAtPriceMinor: number | null
+  currency: string
+  options: { color?: string; size?: string; [key: string]: string | undefined }
+}
 
 interface ProductData {
   id: string
+  sellerId?: string
   name: string
   slug: string
   price: number
@@ -53,8 +67,8 @@ interface ProductData {
   reviewCount: number
   discount?: number | null
   isNew?: boolean
-  seller: { name: string; slug: string; avatar: string; rating: number; productCount: number; memberSince: string }
-  variants: { colors: string[]; sizes: string[] }
+  seller: { id: string; name: string; slug: string; avatar: string; rating: number; productCount: number; memberSince: string }
+  variants: { colors: string[]; sizes: string[]; list: ProductVariant[] }
   category: { name: string; slug: string }
   tags: string[]
 }
@@ -71,6 +85,7 @@ interface ReviewData {
 export default function ProductDetailPage() {
   const params = useParams()
   const slug = params.slug as string
+  const { user } = useAuth()
 
   const [product, setProduct] = useState<ProductData | null>(null)
   const [reviews, setReviews] = useState<ReviewData[]>([])
@@ -81,23 +96,102 @@ export default function ProductDetailPage() {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+
+  const loadProduct = useCallback(async () => {
+    setIsLoading(true)
+    setNotFound(false)
+    try {
+      const res = await fetch(`/api/products/${slug}`)
+      if (res.status === 404) {
+        setProduct(null)
+        setNotFound(true)
+        return
+      }
+      if (!res.ok) throw new Error("Failed to load product.")
+      const data = await res.json()
+      setProduct({
+        id: data.id,
+        sellerId: data.seller?.id,
+        name: data.name,
+        slug: data.slug,
+        price: data.price,
+        comparePrice: data.comparePrice,
+        description: data.description,
+        images: data.images,
+        rating: data.rating,
+        reviewCount: data.reviewCount,
+        discount: data.discount,
+        isNew: data.isNew,
+        seller: data.seller,
+        variants: data.variants,
+        category: data.category,
+        tags: data.tags ?? [],
+      })
+      setReviews(data.reviews ?? [])
+      setRelatedProducts(data.relatedProducts ?? [])
+      setSelectedColor(data.variants?.colors?.[0] ?? "")
+      setSelectedSize(data.variants?.sizes?.[0] ?? "")
+      setQuantity(1)
+      setSelectedImageIndex(0)
+    } catch (err) {
+      setNotFound(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [slug])
 
   useEffect(() => {
-    setProduct(null)
-    setReviews([])
-    setRelatedProducts([])
-    setSelectedColor("")
-    setSelectedSize("")
-    setQuantity(1)
-    setSelectedImageIndex(0)
-  }, [slug])
+    loadProduct()
+  }, [loadProduct])
 
   function handleQuantityChange(delta: number) {
     setQuantity((prev) => Math.max(1, prev + delta))
   }
 
-  function handleAddToCart() {
-    // placeholder
+  function resolveSelectedVariant(): ProductVariant | null {
+    if (!product) return null
+    const list = product.variants.list ?? []
+    if (list.length === 0) return null
+    const match = list.find((v) => {
+      const colorOk = !product.variants.colors.length || v.options?.color === selectedColor
+      const sizeOk = !product.variants.sizes.length || v.options?.size === selectedSize
+      return colorOk && sizeOk
+    })
+    return match ?? list[0] ?? null
+  }
+
+  async function handleAddToCart() {
+    if (!product) return
+    if (!user) {
+      toast.error("Please sign in to add items to your cart.")
+      return
+    }
+    const variant = resolveSelectedVariant()
+    setIsAddingToCart(true)
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          variantId: variant?.id ?? undefined,
+          quantity,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not add item to cart.")
+      }
+      emitCartUpdated()
+      toast.success("Added to cart")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add item to cart.")
+    } finally {
+      setIsAddingToCart(false)
+    }
   }
 
   function handleImageNav(direction: -1 | 1) {
@@ -110,7 +204,15 @@ export default function ProductDetailPage() {
     })
   }
 
-  if (!product) {
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 text-center">
         <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -315,8 +417,18 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button size="lg" className="flex-1 gap-2" onClick={handleAddToCart} aria-label="Add to cart">
-                <ShoppingCart className="h-5 w-5" />
+              <Button
+                size="lg"
+                className="flex-1 gap-2"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+                aria-label="Add to cart"
+              >
+                {isAddingToCart ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-5 w-5" />
+                )}
                 Add to Cart
               </Button>
               <TooltipProvider>

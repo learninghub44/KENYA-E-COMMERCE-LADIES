@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Truck, ShieldCheck, ChevronRight, Loader2, ImageOff, ShoppingBag } from "lucide-react"
+import { emitCartUpdated } from "../../../lib/cart/use-cart-count"
 
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -139,6 +140,7 @@ export default function CheckoutPage() {
         throw new Error(body.error ?? "Could not place order.")
       }
       const firstOrder = body.orders?.[0]
+      emitCartUpdated()
       router.push(firstOrder ? `/orders/${firstOrder.id}` : "/orders")
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Could not place order.")
