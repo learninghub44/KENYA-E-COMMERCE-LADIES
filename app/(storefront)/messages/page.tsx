@@ -12,6 +12,8 @@ import {
 } from "lucide-react"
 
 import { cn } from "../../../lib/utils"
+import { createSupabaseBrowserClient } from "../../../lib/supabase/client"
+import type { RealtimeChannel } from "@supabase/supabase-js"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar"
@@ -73,6 +75,7 @@ function MessagesPageInner() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const supabaseRef = useRef(createSupabaseBrowserClient())
 
   useEffect(() => {
     fetchConversations()
@@ -88,6 +91,62 @@ function MessagesPageInner() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  // Realtime: refresh the conversation list whenever any conversation the
+  // user can see changes (new message, unread count, etc). RLS scopes rows
+  // to the current user, so no manual filter is needed here.
+  useEffect(() => {
+    const channel = supabaseRef.current
+      .channel("conversations-list")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "conversations" },
+        () => {
+          fetchConversations()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabaseRef.current.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Realtime: subscribe to new messages in the open conversation so replies
+  // show up without a manual reload.
+  useEffect(() => {
+    if (!selectedId) return
+
+    const channel: RealtimeChannel = supabaseRef.current
+      .channel(`conversation-${selectedId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${selectedId}` },
+        (payload) => {
+          const row = payload.new as { id: string; sender_id: string; body: string | null; created_at: string }
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === row.id)) return prev
+            return [
+              ...prev,
+              {
+                id: row.id,
+                senderId: row.sender_id,
+                body: row.body ?? "",
+                createdAt: row.created_at,
+                isMe: row.sender_id === user?.id,
+              },
+            ]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabaseRef.current.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, user?.id])
 
   const fetchConversations = async () => {
     setConversationsLoading(true)
