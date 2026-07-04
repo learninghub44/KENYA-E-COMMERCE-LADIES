@@ -17,8 +17,8 @@ const benefits = [
   },
   {
     icon: Smartphone,
-    title: "M-Pesa payouts",
-    description: "Get paid directly via M-Pesa, card, or bank transfer through secure Paystack/PayHero rails.",
+    title: "Get paid directly by buyers",
+    description: "Buyers pay you straight via M-Pesa — Zuri Market never collects or holds your money, so there's no payout wait.",
   },
   {
     icon: ShieldCheck,
@@ -36,7 +36,7 @@ const steps = [
   "Create your free Zuri Market account",
   "Tell us about your store and complete KYC verification",
   "List your products and set your prices",
-  "Start selling and get paid via M-Pesa",
+  "Start selling — buyers pay you directly via M-Pesa",
 ]
 
 export default function BecomeASellerPage() {
@@ -50,7 +50,7 @@ export default function BecomeASellerPage() {
           </h1>
           <p className="mx-auto mb-8 max-w-xl text-lg text-white/80">
             Join Kenyan sellers reaching new customers with fashion, beauty, and lifestyle products —
-            with M-Pesa payouts and tools built for your business.
+            with direct M-Pesa payments and tools built for your business.
           </p>
           <Button asChild size="lg" className="bg-white text-rose-900 hover:bg-white/90">
             <Link href="/become-a-seller/apply">

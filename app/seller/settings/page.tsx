@@ -32,7 +32,7 @@ const notificationEvents = [
   { id: "new-review", label: "New Reviews", description: "When a customer leaves a new review" },
   { id: "new-message", label: "New Messages", description: "When a customer sends you a message" },
   { id: "low-stock", label: "Low Stock Alerts", description: "When a product runs low on stock" },
-  { id: "payout", label: "Payouts", description: "When a payout is processed or pending" },
+  { id: "payment-confirmed", label: "Buyer Payment Confirmed", description: "When a buyer marks their direct payment to you as sent" },
   { id: "kyc-update", label: "KYC Updates", description: "When your KYC status changes" },
 ]
 
@@ -44,7 +44,7 @@ export default function SettingsPage() {
     "new-review": true,
     "new-message": true,
     "low-stock": true,
-    payout: false,
+    "payment-confirmed": false,
     "kyc-update": true,
   })
 
@@ -98,16 +98,17 @@ export default function SettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-base">Payment Information</CardTitle>
+            <CardTitle className="text-base">Buyer Payment Details</CardTitle>
           </div>
           <CardDescription>
-            Manage your payout methods and banking details.
+            Zuri Market is a listings platform — we never collect, hold, or process payments.
+            Buyers pay you directly, so keep the M-Pesa number shown to them up to date.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="text-sm font-medium">M-Pesa Paybill</p>
+              <p className="text-sm font-medium">M-Pesa number shown to buyers</p>
               <p className="text-xs text-muted-foreground">
                 **** **** 4567
               </p>

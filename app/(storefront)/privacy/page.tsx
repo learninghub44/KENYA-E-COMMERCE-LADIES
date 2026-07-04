@@ -16,7 +16,7 @@ const sections = [
   {
     title: "2. Information we collect",
     content:
-      "We collect information you provide directly: name, email address, phone number, shipping address, and payment information when you create an account or place an order. For sellers, we additionally collect identity verification documents (such as national ID or passport) and business details as required by KYC regulations. We also collect information automatically: device information, IP address, browser type, pages visited, and cookies (see section 6).",
+      "We collect information you provide directly: name, email address, phone number, shipping address, and a store contact number (e.g. M-Pesa number) sellers choose to display for buyers, when you create an account or place an order. Zuri Market is a listings platform only — we do not process, collect, or hold payments, and we never collect card numbers or banking credentials. Buyers and sellers arrange and complete payment directly between themselves. For sellers, we additionally collect identity verification documents (such as national ID or passport) and business details as required by KYC regulations. We also collect information automatically: device information, IP address, browser type, pages visited, and cookies (see section 6).",
   },
   {
     title: "3. How we use your information",
@@ -31,7 +31,7 @@ const sections = [
   {
     title: "5. Data sharing & disclosure",
     content:
-      "We share your order information with the seller who fulfils it. We share payment data with our payment processing partners. We use trusted third-party service providers for hosting, image storage, identity verification, email delivery, and analytics — all bound by data processing agreements. We do not sell your personal data to third parties. We may disclose information if required by law or to protect the rights, property, or safety of Zuri Market, its users, or others.",
+      "We share your order information with the seller who fulfils it, including the store contact details needed to arrange payment and delivery directly with them. Because Zuri Market does not process or hold payments, we have no payment processing partners and do not share payment data with any such party. We use trusted third-party service providers for hosting, image storage, identity verification, email delivery, and analytics — all bound by data processing agreements. We do not sell your personal data to third parties. We may disclose information if required by law or to protect the rights, property, or safety of Zuri Market, its users, or others.",
   },
   {
     title: "6. Cookies & tracking",
