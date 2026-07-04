@@ -24,6 +24,7 @@ import {
   User,
   SearchIcon,
   FileCheck,
+  HeadphonesIcon,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { createSupabaseBrowserClient } from "../../lib/supabase/client"
@@ -95,6 +96,12 @@ const navSections: NavSection[] = [
       { label: "Health", href: "/admin/platform/health", icon: HeartPulse, permission: "admin.role.manage" },
       { label: "Diagnostics", href: "/admin/platform/diagnostics", icon: Stethoscope, permission: "admin.role.manage" },
       { label: "Feature Flags", href: "/admin/platform/feature-flags", icon: Flag, permission: "admin.role.manage" },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { label: "Tickets", href: "/admin/support", icon: HeadphonesIcon, permission: "admin.moderate" },
     ],
   },
   {

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navbar } from "../../components/layout/navbar";
 import { Footer } from "../../components/layout/footer";
+import { ChatWidgetWrapper } from "../../components/support/chat-widget-wrapper";
 import { createSupabaseCategoryRepository } from "../../lib/marketplace/supabase-catalog-repository";
 import { createCatalogService } from "../../lib/marketplace/catalog-service";
 import { createSupabaseClient } from "../../lib/supabase/server";
@@ -34,6 +35,7 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
       <Navbar categories={categories} />
       <main id="main-content" className="flex-1">{children}</main>
       <Footer categories={categories} />
+      <ChatWidgetWrapper />
     </div>
   );
 }
