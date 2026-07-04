@@ -97,6 +97,7 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -150,6 +151,25 @@ export default function ProductDetailPage() {
     loadProduct()
   }, [loadProduct])
 
+  useEffect(() => {
+    if (!product || !user) {
+      setIsWishlisted(false)
+      return
+    }
+    let cancelled = false
+    fetch("/api/wishlist")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((items: Array<{ id: string }>) => {
+        if (!cancelled) setIsWishlisted(items.some((item) => item.id === product.id))
+      })
+      .catch(() => {
+        if (!cancelled) setIsWishlisted(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [product, user])
+
   function handleQuantityChange(delta: number) {
     setQuantity((prev) => Math.max(1, prev + delta))
   }
@@ -194,6 +214,35 @@ export default function ProductDetailPage() {
       toast.error(err instanceof Error ? err.message : "Could not add item to cart.")
     } finally {
       setIsAddingToCart(false)
+    }
+  }
+
+  async function handleToggleWishlist() {
+    if (!product) return
+    if (!user) {
+      toast.error("Please sign in to use your wishlist.")
+      return
+    }
+    setIsTogglingWishlist(true)
+    const wasWishlisted = isWishlisted
+    try {
+      const res = wasWishlisted
+        ? await fetch(`/api/wishlist/${product.id}`, { method: "DELETE" })
+        : await fetch("/api/wishlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: product.id }),
+          })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not update your wishlist.")
+      }
+      setIsWishlisted(!wasWishlisted)
+      toast.success(wasWishlisted ? "Removed from wishlist" : "Added to wishlist")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update your wishlist.")
+    } finally {
+      setIsTogglingWishlist(false)
     }
   }
 
@@ -471,11 +520,16 @@ export default function ProductDetailPage() {
                       variant="outline"
                       size="icon"
                       className="h-12 w-12 flex-shrink-0"
-                      onClick={() => setIsWishlisted(!isWishlisted)}
+                      onClick={handleToggleWishlist}
+                      disabled={isTogglingWishlist}
                       aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
                       aria-pressed={isWishlisted}
                     >
-                      <Heart className={cn("h-5 w-5 transition-colors", isWishlisted && "fill-red-500 text-red-500")} />
+                      {isTogglingWishlist ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Heart className={cn("h-5 w-5 transition-colors", isWishlisted && "fill-red-500 text-red-500")} />
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
