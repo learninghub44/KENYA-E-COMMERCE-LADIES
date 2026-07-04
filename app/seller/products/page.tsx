@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   Search,
@@ -42,91 +42,20 @@ import { EmptyState } from "../../../components/shared/empty-state"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "../../../components/ui/card"
 
-type ProductStatus = "Active" | "Draft" | "Out of Stock"
-
-const mockProducts = [
-  {
-    id: "1",
-    name: "Kitenge Maxi Dress",
-    sku: "KMD-001",
-    price: 3500,
-    stock: 45,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "2",
-    name: "Beaded Sandals",
-    sku: "BS-002",
-    price: 1800,
-    stock: 22,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "3",
-    name: "Ankara Blazer",
-    sku: "AB-003",
-    price: 5200,
-    stock: 0,
-    status: "Out of Stock" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "4",
-    name: "Kente Scarf Set",
-    sku: "KSS-004",
-    price: 2450,
-    stock: 18,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "5",
-    name: "Dashiki Top",
-    sku: "DT-005",
-    price: 1950,
-    stock: 7,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "6",
-    name: "Maasai Shuka Blanket",
-    sku: "MSB-006",
-    price: 4200,
-    stock: 12,
-    status: "Draft" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "7",
-    name: "Leather Tote Bag",
-    sku: "LTB-007",
-    price: 6800,
-    stock: 9,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "8",
-    name: "Cotton Kimono",
-    sku: "CK-008",
-    price: 2800,
-    stock: 0,
-    status: "Out of Stock" as ProductStatus,
-    image: null,
-  },
-]
+import {
+  getMockProducts,
+  deleteMockProduct,
+  addMockProduct,
+  updateMockProduct,
+  type MockProduct,
+} from "../../../lib/products/mock-store"
 
 const statusFilterOptions = ["All", "Active", "Draft", "Out of Stock"] as const
 
-function StatusBadge({ status }: { status: ProductStatus }) {
-  const variantMap: Record<ProductStatus, "default" | "secondary" | "destructive"> = {
+function StatusBadge({ status }: { status: MockProduct["status"] }) {
+  const variantMap: Record<MockProduct["status"], "default" | "secondary" | "destructive"> = {
     Active: "default",
     Draft: "secondary",
     "Out of Stock": "destructive",
@@ -135,13 +64,57 @@ function StatusBadge({ status }: { status: ProductStatus }) {
 }
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<MockProduct[]>([])
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
-  const filtered = mockProducts.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
+  // Load from localStorage mock store
+  useEffect(() => {
+    setProducts(getMockProducts())
+  }, [])
+
+  const handleRefresh = () => {
+    setProducts(getMockProducts())
+  }
+
+  const handleDelete = (id: string) => {
+    deleteMockProduct(id)
+    handleRefresh()
+  }
+
+  const handleArchive = (id: string) => {
+    const prod = products.find((p) => p.id === id)
+    if (prod) {
+      const newStatus = prod.status === "Active" ? "Draft" : "Active"
+      updateMockProduct(id, { status: newStatus })
+      handleRefresh()
+    }
+  }
+
+  const handleDuplicate = (id: string) => {
+    const prod = products.find((p) => p.id === id)
+    if (prod) {
+      addMockProduct({
+        name: `${prod.name} - Copy`,
+        sku: `${prod.sku}-COPY`,
+        price: prod.price,
+        comparePrice: prod.comparePrice,
+        stock: prod.stock,
+        status: "Draft",
+        category: prod.category,
+        description: prod.description,
+        images: prod.images,
+        variants: prod.variants.map((v) => ({ ...v, id: crypto.randomUUID() })),
+      })
+      handleRefresh()
+    }
+  }
+
+  const filtered = products.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.sku.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = statusFilter === "All" || p.status === statusFilter
     return matchesSearch && matchesStatus
@@ -163,7 +136,7 @@ export default function ProductsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/products/new">
+          <Link href="/seller/products/new">
             <Plus className="mr-2 h-4 w-4" />
             New Product
           </Link>
@@ -176,11 +149,20 @@ export default function ProductsPage() {
           <Input
             placeholder="Search products..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setCurrentPage(1)
+            }}
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => {
+            setStatusFilter(v)
+            setCurrentPage(1)
+          }}
+        >
           <SelectTrigger className="w-[160px]">
             <SelectValue />
           </SelectTrigger>
@@ -196,14 +178,14 @@ export default function ProductsPage() {
 
       {paginated.length === 0 ? (
         <Card>
-          <CardContent>
+          <CardContent className="py-12">
             <EmptyState
               icon={Package}
-              title="No products yet"
-              description="Get started by adding your first product to the catalog."
+              title="No products found"
+              description="Get started by adding your first product to the catalog, or adjust your filters."
               action={
                 <Button asChild>
-                  <Link href="/products/new">
+                  <Link href="/seller/products/new">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Product
                   </Link>
@@ -232,19 +214,30 @@ export default function ProductsPage() {
                   {paginated.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>
-                        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
-                          <Package className="h-5 w-5" />
+                        <div className="relative h-12 w-12 overflow-hidden rounded-md bg-muted">
+                          {product.images && product.images[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.images[0]}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                              <Package className="h-5 w-5" />
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Link
-                          href={`/products/${product.id}`}
-                          className="font-medium hover:underline"
+                          href={`/seller/products/${product.id}`}
+                          className="font-medium hover:underline text-[#1C5C56]"
                         >
                           {product.name}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground font-mono text-xs">
                         {product.sku}
                       </TableCell>
                       <TableCell>KES {product.price.toLocaleString()}</TableCell>
@@ -262,21 +255,24 @@ export default function ProductsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link href={`/products/${product.id}/edit`}>
+                              <Link href={`/seller/products/${product.id}/edit`}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicate(product.id)}>
                               <Copy className="mr-2 h-4 w-4" />
                               Duplicate
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleArchive(product.id)}>
                               <Archive className="mr-2 h-4 w-4" />
-                              Archive
+                              {product.status === "Active" ? "Archive" : "Activate"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDelete(product.id)}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>

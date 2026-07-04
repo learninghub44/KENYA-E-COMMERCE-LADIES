@@ -31,7 +31,7 @@ import {
   CardTitle,
   CardDescription,
 } from "../../../../components/ui/card"
-import { Separator } from "../../../../components/ui/separator"
+import { addMockProduct } from "../../../../lib/products/mock-store"
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -92,8 +92,25 @@ export default function NewProductPage() {
 
   function onSave(status: "draft" | "published") {
     handleSubmit((data) => {
-      console.log({ ...data, variants, status })
-      router.push("/products")
+      addMockProduct({
+        name: data.name,
+        sku: data.sku,
+        price: data.regularPrice,
+        comparePrice: data.salePrice || null,
+        stock: data.stockQuantity,
+        status: status === "published" ? "Active" : "Draft",
+        category: data.category,
+        description: data.description,
+        images: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80"], // Default dress image
+        variants: variants.map((v) => ({
+          id: v.id,
+          name: `${v.size} / ${v.color}`,
+          size: v.size,
+          color: v.color,
+          stock: Math.round(data.stockQuantity / (variants.length || 1)),
+        })),
+      })
+      router.push("/seller/products")
     })()
   }
 
@@ -155,11 +172,12 @@ export default function NewProductPage() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dresses">Dresses</SelectItem>
-                      <SelectItem value="tops">Tops</SelectItem>
-                      <SelectItem value="bottoms">Bottoms</SelectItem>
-                      <SelectItem value="accessories">Accessories</SelectItem>
-                      <SelectItem value="shoes">Shoes</SelectItem>
+                      <SelectItem value="Fashion">Fashion</SelectItem>
+                      <SelectItem value="Beauty">Beauty</SelectItem>
+                      <SelectItem value="Skincare">Skincare</SelectItem>
+                      <SelectItem value="Accessories">Accessories</SelectItem>
+                      <SelectItem value="Footwear">Footwear</SelectItem>
+                      <SelectItem value="Jewelry">Jewelry</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.category && (
@@ -322,13 +340,12 @@ export default function NewProductPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="metaTitle">Meta Title</Label>
-                <Input id="metaTitle" {...register("metaTitle")} placeholder="SEO title" />
+                <Input id="metaTitle" placeholder="SEO title" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="metaDescription">Meta Description</Label>
                 <Textarea
                   id="metaDescription"
-                  {...register("metaDescription")}
                   placeholder="SEO description"
                   rows={4}
                 />

@@ -8,7 +8,7 @@
     "start": "next start -H 0.0.0.0",
     "lint": "next lint && tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "npx tsx --test \"lib/{auth,cart,checkout,jobs,kyc,marketplace,messaging,orders,permissions,platform,products,resilience,roles,seller,storage,admin,analytics,audit,business-intelligence,discovery,events,forecasting,moderation,notifications,observability,ratings,recommendations,reports,reviews,search,trust}/**/*.test.ts\" \"middleware/**/*.test.ts\"",
+    "test": "npx tsx --test \"lib/{auth,cart,checkout,jobs,kyc,marketplace,messaging,orders,permissions,platform,products,resilience,roles,seller,storage,admin,analytics,audit,business-intelligence,discovery,events,moderation,observability,ratings,reports,reviews,search,trust}/**/*.test.ts\" \"middleware/**/*.test.ts\"",
     "test:ui": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest"

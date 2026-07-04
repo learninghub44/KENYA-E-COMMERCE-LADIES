@@ -1,15 +1,17 @@
-"use client";
+"use client"
 
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "../../../../../components/ui/button";
-import { Input } from "../../../../../components/ui/input";
-import { Textarea } from "../../../../../components/ui/textarea";
-import { Label } from "../../../../../components/ui/label";
-import { ArrowLeft, Save } from "lucide-react";
+import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "../../../../../components/ui/button"
+import { Input } from "../../../../../components/ui/input"
+import { Textarea } from "../../../../../components/ui/textarea"
+import { Label } from "../../../../../components/ui/label"
+import { ArrowLeft, Save } from "lucide-react"
+import { getMockProducts, updateMockProduct, type MockProduct } from "../../../../../lib/products/mock-store"
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -17,39 +19,75 @@ const productSchema = z.object({
   price: z.coerce.number().positive("Price must be positive"),
   comparePrice: z.coerce.number().optional(),
   sku: z.string().min(1, "SKU is required"),
-  stock: z.coerce.number().int().positive("Stock must be positive"),
+  stock: z.coerce.number().int().nonnegative("Stock cannot be negative"),
   category: z.string().min(1, "Category is required"),
-});
+})
 
-type ProductForm = z.infer<typeof productSchema>;
-
-const defaultValues: ProductForm = {
-  name: "Premium Dashiki Dress",
-  description:
-    "Beautiful handcrafted dashiki dress made from premium African wax print fabric.",
-  price: 4500,
-  comparePrice: 5000,
-  sku: "DR-001",
-  stock: 25,
-  category: "Fashion",
-};
+type ProductForm = z.infer<typeof productSchema>
 
 export default function EditProductPage() {
-  const params = useParams();
-  const router = useRouter();
+  const params = useParams()
+  const router = useRouter()
+  const [product, setProduct] = useState<MockProduct | null>(null)
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
-    defaultValues,
-  });
+  })
 
-  const onSubmit = async (_data: ProductForm) => {
-    router.push("/seller/products");
-  };
+  // Load from local storage mock store
+  useEffect(() => {
+    if (params.id) {
+      const products = getMockProducts()
+      const found = products.find((p) => p.id === params.id)
+      if (found) {
+        setProduct(found)
+        reset({
+          name: found.name,
+          description: found.description,
+          price: found.price,
+          comparePrice: found.comparePrice || undefined,
+          sku: found.sku,
+          stock: found.stock,
+          category: found.category,
+        })
+      }
+    }
+  }, [params.id, reset])
+
+  const onSubmit = async (data: ProductForm) => {
+    if (params.id) {
+      updateMockProduct(params.id as string, {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        comparePrice: data.comparePrice || null,
+        sku: data.sku,
+        stock: data.stock,
+        category: data.category,
+        status: data.stock === 0 ? "Out of Stock" : "Active",
+      })
+      router.push("/seller/products")
+    }
+  }
+
+  if (!product) {
+    return (
+      <div className="space-y-6 text-center py-12">
+        <h2 className="text-xl font-semibold">Product not found</h2>
+        <Button asChild>
+          <Link href="/seller/products">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Products
+          </Link>
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -61,7 +99,7 @@ export default function EditProductPage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Edit Product</h1>
-          <p className="text-sm text-muted-foreground">Product ID: {params.id}</p>
+          <p className="text-sm text-muted-foreground font-mono">Product ID: {params.id}</p>
         </div>
       </div>
 
@@ -146,5 +184,5 @@ export default function EditProductPage() {
         </div>
       </form>
     </div>
-  );
+  )
 }
