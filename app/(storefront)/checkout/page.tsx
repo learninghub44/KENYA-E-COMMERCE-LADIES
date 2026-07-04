@@ -1,24 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Truck, CreditCard, ShieldCheck, ChevronRight } from "lucide-react"
+import { Truck, ShieldCheck, ChevronRight, Loader2, ImageOff, ShoppingBag } from "lucide-react"
 
-import { cn } from "../../../lib/utils"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select"
 import { Separator } from "../../../components/ui/separator"
 import {
   Card,
@@ -27,35 +19,52 @@ import {
   CardTitle,
   CardDescription,
 } from "../../../components/ui/card"
-import { RadioGroup, RadioGroupItem } from "../../../components/ui/radio-group"
 import { Price } from "../../../components/shared/price"
+import { EmptyState } from "../../../components/shared/empty-state"
 import { Breadcrumbs } from "../../../components/shared/breadcrumbs"
 
 const shippingSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  recipientName: z.string().min(1, "Full name is required"),
   phone: z.string().min(10, "Valid phone number required"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
+  line1: z.string().min(5, "Address must be at least 5 characters"),
+  line2: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zip: z.string().min(3, "ZIP code is required"),
-  country: z.string().min(1, "Country is required"),
-  email: z.string().email("Valid email is required"),
+  region: z.string().optional(),
+  postalCode: z.string().optional(),
+  countryCode: z.string().length(2, "Use a 2-letter country code, e.g. KE"),
+  notes: z.string().max(500).optional(),
 })
 
 type ShippingFormData = z.infer<typeof shippingSchema>
 
-const SHIPPING_METHODS = [
-  { id: "standard", name: "Standard Shipping", price: 500, days: "5-7" },
-  { id: "express", name: "Express Shipping", price: 1200, days: "2-3" },
-  { id: "next-day", name: "Next Day Delivery", price: 2500, days: "1" },
-]
+interface CartItemView {
+  id: string
+  name: string
+  variant: string | null
+  quantity: number
+  unitPriceMinor: number
+}
+
+interface CartSummaryView {
+  cart: { id: string }
+  activeItems: CartItemView[]
+  subtotalMinor: number
+  shippingMinor: number
+  taxMinor: number
+  totalMinor: number
+  currency: string
+}
+
+function toMajor(minor: number) {
+  return minor / 100
+}
 
 export default function CheckoutPage() {
-  const [cartItems, setCartItems] = useState<
-    { id: string; name: string; variant: string; price: number; quantity: number; image: string }[]
-  >([])
-  const [shippingMethod, setShippingMethod] = useState("standard")
+  const router = useRouter()
+  const [summary, setSummary] = useState<CartSummaryView | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [signedOut, setSignedOut] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
@@ -65,29 +74,127 @@ export default function CheckoutPage() {
   } = useForm<ShippingFormData>({
     resolver: zodResolver(shippingSchema),
     defaultValues: {
-      country: "Kenya",
+      countryCode: "KE",
     },
   })
 
-  const selectedShipping = SHIPPING_METHODS.find(
-    (m) => m.id === shippingMethod
-  )!
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/cart")
+        if (res.status === 401) {
+          setSignedOut(true)
+          setLoading(false)
+          return
+        }
+        if (!res.ok) throw new Error("Failed to load cart.")
+        const data = await res.json()
+        setSummary({
+          cart: data.cart,
+          activeItems: (data.activeItems ?? []).map((item: any) => ({
+            id: item.id,
+            name: item.productSnapshot?.productName ?? "Product",
+            variant: item.productSnapshot?.variantTitle ?? null,
+            quantity: item.quantity,
+            unitPriceMinor: item.unitPriceMinor,
+          })),
+          subtotalMinor: data.subtotalMinor,
+          shippingMinor: data.shippingMinor,
+          taxMinor: data.taxMinor,
+          totalMinor: data.totalMinor,
+          currency: data.currency,
+        })
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : "Failed to load cart.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  )
-  const shippingCost = selectedShipping.price
-  const tax = (subtotal + shippingCost) * 0.08
-  const total = subtotal + shippingCost + tax
-
-  const onSubmit = (data: ShippingFormData) => {
+  const onSubmit = async (data: ShippingFormData) => {
     setIsSubmitting(true)
-    setTimeout(() => {
+    setSubmitError(null)
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shippingAddress: {
+            recipientName: data.recipientName,
+            phone: data.phone,
+            line1: data.line1,
+            line2: data.line2 || undefined,
+            city: data.city,
+            region: data.region || undefined,
+            postalCode: data.postalCode || undefined,
+            countryCode: data.countryCode.toUpperCase(),
+          },
+          notes: data.notes || undefined,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not place order.")
+      }
+      const firstOrder = body.orders?.[0]
+      router.push(firstOrder ? `/orders/${firstOrder.id}` : "/orders")
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Could not place order.")
       setIsSubmitting(false)
-      window.location.href = "/order-success/ORD-2024-001"
-    }, 1500)
+    }
   }
+
+  if (loading) {
+    return (
+      <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (signedOut) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16">
+        <EmptyState
+          icon={ShoppingBag}
+          title="Sign in to check out"
+          description="Sign in to your account to complete your order."
+          action={
+            <Button asChild>
+              <Link href="/auth/login">Sign In</Link>
+            </Button>
+          }
+        />
+      </div>
+    )
+  }
+
+  const activeItems = summary?.activeItems ?? []
+
+  if (activeItems.length === 0) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16">
+        <EmptyState
+          icon={ShoppingBag}
+          title="Your cart is empty"
+          description="Add something to your cart before checking out."
+          action={
+            <Button asChild>
+              <Link href="/">Start Shopping</Link>
+            </Button>
+          }
+        />
+      </div>
+    )
+  }
+
+  const currency = summary?.currency ?? "KES"
+  const subtotal = toMajor(summary?.subtotalMinor ?? 0)
+  const shipping = toMajor(summary?.shippingMinor ?? 0)
+  const tax = toMajor(summary?.taxMinor ?? 0)
+  const total = toMajor(summary?.totalMinor ?? 0)
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -101,6 +208,12 @@ export default function CheckoutPage() {
 
       <h1 className="mb-8 text-2xl font-bold tracking-tight">Checkout</h1>
 
+      {submitError && (
+        <div className="mb-6 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {submitError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1 space-y-6">
@@ -113,55 +226,33 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" {...register("firstName")} />
-                    {errors.firstName && (
-                      <p className="text-xs text-destructive">
-                        {errors.firstName.message}
-                      </p>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="recipientName">Full Name</Label>
+                    <Input id="recipientName" {...register("recipientName")} />
+                    {errors.recipientName && (
+                      <p className="text-xs text-destructive">{errors.recipientName.message}</p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" {...register("lastName")} />
-                    {errors.lastName && (
-                      <p className="text-xs text-destructive">
-                        {errors.lastName.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" {...register("email")} />
-                    {errors.email && (
-                      <p className="text-xs text-destructive">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 col-span-2">
                     <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" type="tel" {...register("phone")} />
+                    <Input id="phone" type="tel" placeholder="+254 700 000 000" {...register("phone")} />
                     {errors.phone && (
-                      <p className="text-xs text-destructive">
-                        {errors.phone.message}
-                      </p>
+                      <p className="text-xs text-destructive">{errors.phone.message}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input id="address" {...register("address")} />
-                  {errors.address && (
-                    <p className="text-xs text-destructive">
-                      {errors.address.message}
-                    </p>
+                  <Label htmlFor="line1">Address</Label>
+                  <Input id="line1" {...register("line1")} />
+                  {errors.line1 && (
+                    <p className="text-xs text-destructive">{errors.line1.message}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="line2">Apartment, suite, etc. (optional)</Label>
+                  <Input id="line2" {...register("line2")} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -169,50 +260,32 @@ export default function CheckoutPage() {
                     <Label htmlFor="city">City</Label>
                     <Input id="city" {...register("city")} />
                     {errors.city && (
-                      <p className="text-xs text-destructive">
-                        {errors.city.message}
-                      </p>
+                      <p className="text-xs text-destructive">{errors.city.message}</p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input id="state" {...register("state")} />
-                    {errors.state && (
-                      <p className="text-xs text-destructive">
-                        {errors.state.message}
-                      </p>
-                    )}
+                    <Label htmlFor="region">County / Region</Label>
+                    <Input id="region" {...register("region")} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="zip">ZIP Code</Label>
-                    <Input id="zip" {...register("zip")} />
-                    {errors.zip && (
-                      <p className="text-xs text-destructive">
-                        {errors.zip.message}
-                      </p>
-                    )}
+                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Input id="postalCode" {...register("postalCode")} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Select
-                      defaultValue="Kenya"
-                      onValueChange={() => {}}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Kenya">Kenya</SelectItem>
-                        <SelectItem value="Uganda">Uganda</SelectItem>
-                        <SelectItem value="Tanzania">Tanzania</SelectItem>
-                        <SelectItem value="Rwanda">Rwanda</SelectItem>
-                        <SelectItem value="Ethiopia">Ethiopia</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="countryCode">Country Code</Label>
+                    <Input id="countryCode" placeholder="KE" maxLength={2} {...register("countryCode")} />
+                    {errors.countryCode && (
+                      <p className="text-xs text-destructive">{errors.countryCode.message}</p>
+                    )}
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Order notes (optional)</Label>
+                  <Input id="notes" placeholder="Delivery instructions..." {...register("notes")} />
                 </div>
               </CardContent>
             </Card>
@@ -220,89 +293,23 @@ export default function CheckoutPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Truck className="h-5 w-5" />
-                  Shipping Method
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={shippingMethod}
-                  onValueChange={setShippingMethod}
-                  className="space-y-3"
-                >
-                  {SHIPPING_METHODS.map((method) => (
-                    <div
-                      key={method.id}
-                      className={cn(
-                        "flex items-center justify-between rounded-lg border p-4",
-                        shippingMethod === method.id && "border-primary bg-primary/5"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem
-                          value={method.id}
-                          id={method.id}
-                        />
-                        <Label htmlFor={method.id} className="font-medium">
-                          {method.name}
-                          <span className="ml-2 text-sm text-muted-foreground">
-                            ({method.days} business days)
-                          </span>
-                        </Label>
-                      </div>
-                      <Price amount={method.price} size="sm" />
-                    </div>
-                  ))}
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <CreditCard className="h-5 w-5" />
+                  <ShieldCheck className="h-5 w-5" />
                   Payment
                 </CardTitle>
                 <CardDescription>
-                  Secure payment. Your card details are encrypted.
+                  Payment is collected after your order is confirmed. You'll receive payment instructions by message.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cardName">Name on Card</Label>
-                  <Input id="cardName" placeholder="John Doe" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    placeholder="4242 4242 4242 4242"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expiry">Expiry Date</Label>
-                    <Input id="expiry" placeholder="MM/YY" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input id="cvv" placeholder="123" type="password" />
-                  </div>
-                </div>
+              <CardContent>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <ShieldCheck className="h-4 w-4 text-green-600" />
-                  Payments are processed securely. We do not store card details.
+                  No card details are collected on this page.
                 </div>
               </CardContent>
             </Card>
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Processing..." : "Place Order"}
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? "Placing order..." : "Place Order"}
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -313,26 +320,18 @@ export default function CheckoutPage() {
                 <CardTitle className="text-lg">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cartItems.map((item) => (
+                {activeItems.map((item) => (
                   <div key={item.id} className="flex gap-3">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        sizes="64px"
-                      />
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-muted">
+                      <ImageOff className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.variant}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Qty: {item.quantity}
-                      </p>
-                      <Price amount={item.price * item.quantity} size="sm" />
+                      {item.variant && (
+                        <p className="text-xs text-muted-foreground">{item.variant}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                      <Price amount={toMajor(item.unitPriceMinor * item.quantity)} currency={currency} size="sm" />
                     </div>
                   </div>
                 ))}
@@ -342,23 +341,29 @@ export default function CheckoutPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <Price amount={subtotal} size="sm" />
+                    <Price amount={subtotal} currency={currency} size="sm" />
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
-                    <Price amount={shippingCost} size="sm" />
+                    <span>
+                      {shipping === 0
+                        ? "Free"
+                        : new Intl.NumberFormat("en-KE", { style: "currency", currency }).format(shipping)}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax (8%)</span>
-                    <Price amount={tax} size="sm" />
-                  </div>
+                  {tax > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tax</span>
+                      <Price amount={tax} currency={currency} size="sm" />
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
 
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">Total</span>
-                  <Price amount={total} size="md" className="font-bold" />
+                  <Price amount={total} currency={currency} size="md" className="font-bold" />
                 </div>
               </CardContent>
             </Card>
