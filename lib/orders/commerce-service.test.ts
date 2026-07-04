@@ -383,7 +383,7 @@ describe("commerce engine", () => {
     await orderDeps.orderRepository.addItems(created.id, []);
     const service = createOrderService({ orders: orderDeps.orderRepository });
 
-    const result = await service.transition({ orderId: created.id, actorId: sellerA, to: "delivered" });
+    const result = await service.transition({ orderId: created.id, actorId: sellerA, to: "delivered" }, ["seller"]);
 
     assert.equal(result.ok, false);
     if (!result.ok) assert.equal(result.code, "INVALID_TRANSITION");
