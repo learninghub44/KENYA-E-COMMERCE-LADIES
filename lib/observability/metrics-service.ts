@@ -53,7 +53,7 @@ export function createAppMetricRepository(client: MetricsRepositoryClient): AppM
     async query(metricName: string, startDate: string, endDate: string) {
       const result = await client
         .from("app_metrics")
-        .select("*")
+        .select("id, metric_name, metric_value, tags, recorded_at")
         .gte("recorded_at", startDate)
         .lte("recorded_at", endDate);
       const { data, error } = result as { data: unknown; error: unknown };
@@ -101,7 +101,7 @@ export function createDbMetricRepository(client: MetricsRepositoryClient): DbMet
     async query(startDate: string, endDate: string) {
       const result = await client
         .from("db_metrics")
-        .select("*")
+        .select("id, query_source, query_count, total_duration_ms, slow_query_count, failed_query_count, recorded_at")
         .gte("recorded_at", startDate)
         .lte("recorded_at", endDate);
       const { data, error } = result as { data: unknown; error: unknown };
@@ -152,7 +152,7 @@ export function createCacheMetricRepository(client: MetricsRepositoryClient): Ca
     async query(cacheName: string, startDate: string, endDate: string) {
       const result = await client
         .from("cache_metrics")
-        .select("*")
+        .select("id, cache_name, hits, misses, hit_ratio, recorded_at")
         .gte("recorded_at", startDate)
         .lte("recorded_at", endDate);
       const { data, error } = result as { data: unknown; error: unknown };
@@ -196,7 +196,7 @@ export function createStorageMetricRepository(client: MetricsRepositoryClient): 
     async query(startDate: string, endDate: string) {
       const result = await client
         .from("storage_metrics")
-        .select("*")
+        .select("id, storage_type, total_images, total_bytes, recorded_at")
         .gte("recorded_at", startDate)
         .lte("recorded_at", endDate);
       const { data, error } = result as { data: unknown; error: unknown };

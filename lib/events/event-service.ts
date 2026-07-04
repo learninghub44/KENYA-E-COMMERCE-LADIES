@@ -16,10 +16,10 @@ export function createEventService(deps: EventServiceDependencies) {
     },
 
     async createEvents(inputs: CreateEventInput[]): Promise<InternalEvent[]> {
+      const parsed = inputs.map((input) => createEventSchema.parse(input));
       const results: InternalEvent[] = [];
-      for (const input of inputs) {
-        const parsed = createEventSchema.parse(input);
-        results.push(await repository.create(parsed as CreateEventInput));
+      for (const p of parsed) {
+        results.push(await repository.create(p as CreateEventInput));
       }
       return results;
     },

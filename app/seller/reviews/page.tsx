@@ -111,7 +111,6 @@ export default function ReviewsPage() {
   const products = [...new Set(reviews.map((r) => r.product))]
 
   function handleReply(reviewId: string) {
-    console.log("Reply to review", reviewId, replyText)
     setReplyText("")
     setReplyingTo(null)
   }

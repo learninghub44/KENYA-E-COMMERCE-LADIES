@@ -93,7 +93,7 @@ export function createMaintenanceService(deps: MaintenanceDependencies): Mainten
   async function isActive(): Promise<MaintenanceWindow | null> {
     const { data, error } = await supabaseClient
       .from("platform_maintenance_windows")
-      .select("*")
+      .select("id, maintenance_type, is_active, message, scheduled_start, scheduled_end, started_at, ended_at, created_by, created_at, updated_at")
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(1);
@@ -129,7 +129,7 @@ export function createMaintenanceService(deps: MaintenanceDependencies): Mainten
   async function list(): Promise<MaintenanceWindow[]> {
     const { data, error } = await supabaseClient
       .from("platform_maintenance_windows")
-      .select("*")
+      .select("id, maintenance_type, is_active, message, scheduled_start, scheduled_end, started_at, ended_at, created_by, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(50);
 

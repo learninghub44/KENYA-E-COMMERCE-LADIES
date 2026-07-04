@@ -12,26 +12,33 @@ import {
 export interface EventsDbClient {
   from: (table: string) => {
     insert: (values: Record<string, unknown>) => { select: () => Promise<{ data: unknown; error: unknown }> };
-    select: (columns: string) => {
-      eq: (col: string, val: unknown) => {
-        single: () => Promise<{ data: unknown; error: unknown }>;
-      };
-      order: (col: string, opts: { ascending: boolean }) => {
-        limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
-      };
-      gte: (col: string, val: unknown) => {
-        lte: (col: string, val: unknown) => {
-          order: (col: string, opts: { ascending: boolean }) => {
-            limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
-          };
-        };
-        order: (col: string, opts: { ascending: boolean }) => {
-          limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
-        };
-      };
-    };
+    select: (columns: string) => QueryChain;
   };
   rpc: (name: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+}
+
+interface QueryChain extends Promise<{ data: unknown; error: unknown }> {
+  eq: (col: string, val: unknown) => QueryChain;
+  neq: (col: string, val: unknown) => QueryChain;
+  gt: (col: string, val: unknown) => QueryChain;
+  gte: (col: string, val: unknown) => QueryChain;
+  lt: (col: string, val: unknown) => QueryChain;
+  lte: (col: string, val: unknown) => QueryChain;
+  in: (col: string, val: unknown[]) => QueryChain;
+  order: (col: string, opts: { ascending: boolean }) => LimitChain;
+  limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
+  single: () => Promise<{ data: unknown; error: unknown }>;
+}
+
+interface LimitChain extends Promise<{ data: unknown; error: unknown }> {
+  eq: (col: string, val: unknown) => LimitChain;
+  neq: (col: string, val: unknown) => LimitChain;
+  gt: (col: string, val: unknown) => LimitChain;
+  gte: (col: string, val: unknown) => LimitChain;
+  lt: (col: string, val: unknown) => LimitChain;
+  lte: (col: string, val: unknown) => LimitChain;
+  in: (col: string, val: unknown[]) => LimitChain;
+  limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
 }
 
 function mapRow(row: Record<string, unknown>): InternalEvent {
@@ -86,7 +93,7 @@ export function createEventRepository(client: EventsDbClient): EventRepository {
   async function findById(id: string): Promise<InternalEvent | null> {
     const { data, error } = await client
       .from("internal_events")
-      .select("*")
+      .select("id, event_type, event_version, user_id, seller_id, session_id, request_id, entity_type, entity_id, metadata, device_info, ip_hash, user_agent, source, platform, created_at, archived_at")
       .eq("id", id)
       .single();
 
@@ -95,12 +102,44 @@ export function createEventRepository(client: EventsDbClient): EventRepository {
   }
 
   async function list(filters: EventFilters, cursor?: string, limit = 50): Promise<CursorPage<InternalEvent>> {
-    const { data, error } = await client
+    const EVENT_COLUMNS = "id, event_type, event_version, user_id, seller_id, session_id, request_id, entity_type, entity_id, metadata, device_info, ip_hash, user_agent, source, platform, created_at, archived_at";
+    const cappedLimit = Math.min(limit, 100);
+    let query = client
       .from("internal_events")
-      .select("*")
-      .gte("created_at", cursor ?? "1970-01-01")
+      .select(EVENT_COLUMNS)
+      .gte("created_at", cursor ?? "1970-01-01");
+
+    if (filters.eventTypes?.length) {
+      query = query.eq("event_type", filters.eventTypes[0]);
+    }
+    if (filters.userId) {
+      query = query.eq("user_id", filters.userId);
+    }
+    if (filters.sellerId) {
+      query = query.eq("seller_id", filters.sellerId);
+    }
+    if (filters.sessionId) {
+      query = query.eq("session_id", filters.sessionId);
+    }
+    if (filters.entityType) {
+      query = query.eq("entity_type", filters.entityType);
+    }
+    if (filters.entityId) {
+      query = query.eq("entity_id", filters.entityId);
+    }
+    if (filters.source) {
+      query = query.eq("source", filters.source);
+    }
+    if (filters.startDate) {
+      query = query.gte("created_at", filters.startDate);
+    }
+    if (filters.endDate) {
+      query = query.lte("created_at", filters.endDate);
+    }
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(cappedLimit);
 
     if (error) throw new Error(`Failed to list events: ${JSON.stringify(error)}`);
     const rows = data as Record<string, unknown>[];
@@ -110,14 +149,14 @@ export function createEventRepository(client: EventsDbClient): EventRepository {
   }
 
   async function listEventTypes(): Promise<string[]> {
-    const { data, error } = await client.rpc("get_event_statistics", {
-      p_start_date: "2000-01-01",
-      p_end_date: "2099-12-31",
-    });
+    const { data, error } = await client
+      .from("internal_events")
+      .select("event_type")
+      .order("event_type", { ascending: true });
 
     if (error) throw new Error(`Failed to list event types: ${JSON.stringify(error)}`);
-    const stat = data as { eventsByType: Array<{ eventType: string }> } | null;
-    return stat?.eventsByType?.map((e) => e.eventType) ?? [];
+    const rows = data as Array<{ event_type: string }> ?? [];
+    return [...new Set(rows.map((r) => r.event_type))];
   }
 
   async function getStatistics(startDate: string, endDate: string): Promise<EventStatistics> {

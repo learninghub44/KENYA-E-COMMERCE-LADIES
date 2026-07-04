@@ -121,7 +121,6 @@ export default function MessagesPage() {
 
   function handleSend() {
     if (!reply.trim()) return
-    console.log("Send message:", reply)
     setReply("")
   }
 

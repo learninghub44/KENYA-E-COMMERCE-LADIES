@@ -92,7 +92,6 @@ export default function NewProductPage() {
 
   function onSave(status: "draft" | "published") {
     handleSubmit((data) => {
-      console.log({ ...data, variants, status })
       router.push("/products")
     })()
   }

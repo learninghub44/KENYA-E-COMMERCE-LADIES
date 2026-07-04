@@ -214,7 +214,8 @@ export default function OrdersPage() {
                         <DropdownMenuItem>
                           <Select
                             onValueChange={(v) =>
-                              console.log(`Order ${order.id} -> ${v}`)
+                              // Order status update handler
+                              void v
                             }
                           >
                             <SelectTrigger className="border-0 p-0 text-sm font-normal">

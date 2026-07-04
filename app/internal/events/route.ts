@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
     };
 
     const cursor = searchParams.get("cursor") ?? undefined;
-    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
+    const rawLimit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
+    const limit = rawLimit ? Math.min(rawLimit, 100) : undefined;
 
     const result = await service.listEvents(
       Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined)) as any,

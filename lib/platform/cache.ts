@@ -90,7 +90,7 @@ export function createCache(deps?: CacheDependencies): Cache {
     if (deps?.supabaseClient) {
       const { data, error } = await deps.supabaseClient
         .from("platform_cache_entries")
-        .select("*")
+        .select("cache_value, expires_at")
         .eq("cache_key", k)
         .single();
 
@@ -184,17 +184,10 @@ export function createCache(deps?: CacheDependencies): Cache {
 
     if (deps?.supabaseClient) {
       if (namespace) {
-        const { data } = await deps.supabaseClient
+        await deps.supabaseClient
           .from("platform_cache_entries")
-          .select("*")
+          .delete()
           .eq("cache_namespace", namespace);
-
-        if (data) {
-          const rows = data as Record<string, unknown>[];
-          for (const row of rows) {
-            await deps.supabaseClient.from("platform_cache_entries").delete().eq("cache_key", row.cache_key as string);
-          }
-        }
       } else {
         await deps.supabaseClient.rpc("platform_clear_expired_cache");
       }

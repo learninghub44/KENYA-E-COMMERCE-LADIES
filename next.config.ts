@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.googletagmanager.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://*.googleusercontent.com https://avatars.githubusercontent.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://images.unsplash.com",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.supabase.co",
               "frame-src 'none'",
@@ -57,6 +57,18 @@ const nextConfig: NextConfig = {
               "form-action 'self'"
             ].join("; ")
           },
+        ],
+      },
+      {
+        source: "/_next/static/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/placeholder.svg",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400" },
         ],
       },
     ];

@@ -23,7 +23,7 @@ export function createSupabaseRatingRepository(client: SupabaseClient): RatingRe
     async getProductRating(productId: string): Promise<RatingAnalytics | null> {
       const { data, error } = await client
         .from('rating_summaries')
-        .select('*')
+        .select('average_rating, review_count, distribution')
         .eq('target_id', productId)
         .eq('target_type', 'product')
         .maybeSingle();
@@ -57,7 +57,7 @@ export function createSupabaseRatingRepository(client: SupabaseClient): RatingRe
     async getSellerRating(sellerId: string): Promise<RatingAnalytics | null> {
       const { data, error } = await client
         .from('rating_summaries')
-        .select('*')
+        .select('average_rating, review_count, distribution')
         .eq('target_id', sellerId)
         .eq('target_type', 'seller')
         .maybeSingle();

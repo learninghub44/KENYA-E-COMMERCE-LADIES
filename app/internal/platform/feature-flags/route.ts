@@ -24,11 +24,13 @@ export async function GET(request: Request) {
   }
 
   const flags = await ff.listFlags();
-  const results: Record<string, unknown>[] = [];
-  for (const flag of flags) {
-    const enabled = await ff.isEnabled(flag.key);
-    results.push({ key: flag.key, enabled, defaultValue: flag.defaultValue, description: flag.description });
-  }
+  const dbFlags = await configService.getFeatureFlags();
+  const results: Record<string, unknown>[] = flags.map((flag) => ({
+    key: flag.key,
+    enabled: dbFlags[`feature.${flag.key}`] ?? flag.defaultValue,
+    defaultValue: flag.defaultValue,
+    description: flag.description,
+  }));
 
   return Response.json({ flags: results });
 }

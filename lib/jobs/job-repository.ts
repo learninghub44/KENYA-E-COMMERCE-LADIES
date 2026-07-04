@@ -3,14 +3,7 @@ import { CreateJobInput, JobRecord, JobRepository, JobStatus } from "./types";
 export interface JobsDbClient {
   from: (table: string) => {
     insert: (values: Record<string, unknown>) => { select: () => Promise<{ data: unknown; error: unknown }> };
-    select: (columns: string) => {
-      eq: (col: string, val: unknown) => {
-        single: () => Promise<{ data: unknown; error: unknown }>;
-      };
-      order: (col: string, opts: { ascending: boolean }) => {
-        limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
-      };
-    };
+    select: (columns: string) => JobsQueryChain;
     update: (values: Record<string, unknown>) => {
       eq: (col: string, val: unknown) => {
         select: () => Promise<{ data: unknown; error: unknown }>;
@@ -18,6 +11,20 @@ export interface JobsDbClient {
     };
   };
   rpc: (name: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+}
+
+interface JobsQueryChain extends Promise<{ data: unknown; error: unknown }> {
+  eq: (col: string, val: unknown) => JobsQueryChain;
+  neq: (col: string, val: unknown) => JobsQueryChain;
+  order: (col: string, opts: { ascending: boolean }) => JobsLimitChain;
+  limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
+  single: () => Promise<{ data: unknown; error: unknown }>;
+}
+
+interface JobsLimitChain extends Promise<{ data: unknown; error: unknown }> {
+  eq: (col: string, val: unknown) => JobsLimitChain;
+  neq: (col: string, val: unknown) => JobsLimitChain;
+  limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
 }
 
 function mapJobRow(row: Record<string, unknown>): JobRecord {
@@ -85,7 +92,7 @@ export function createJobRepository(client: JobsDbClient): JobRepository {
   async function getById(jobId: string): Promise<JobRecord | null> {
     const { data, error } = await client
       .from("platform_jobs")
-      .select("*")
+      .select("id, job_type, queue, priority, payload, status, attempts, max_attempts, scheduled_at, started_at, completed_at, error_message, error_stack, dead_letter_at, recurring_cron, timeout_seconds, created_at, updated_at")
       .eq("id", jobId)
       .single();
 
@@ -94,12 +101,19 @@ export function createJobRepository(client: JobsDbClient): JobRepository {
   }
 
   async function list(filters: { status?: JobStatus; queue?: string; jobType?: string }, cursor?: string, limit = 50) {
-    let query = client.from("platform_jobs").select("*").order("created_at", { ascending: false });
+    const JOB_COLUMNS = "id, job_type, queue, priority, payload, status, attempts, max_attempts, scheduled_at, started_at, completed_at, error_message, error_stack, dead_letter_at, recurring_cron, timeout_seconds, created_at, updated_at";
+    let query = client.from("platform_jobs").select(JOB_COLUMNS).order("created_at", { ascending: false });
 
     if (filters.status) {
-      query = client.from("platform_jobs").select("*").order("created_at", { ascending: false });
+      query = query.eq("status", filters.status);
     }
-    const result = await query.limit(limit);
+    if (filters.queue) {
+      query = query.eq("queue", filters.queue);
+    }
+    if (filters.jobType) {
+      query = query.eq("job_type", filters.jobType);
+    }
+    const result = await query.limit(Math.min(limit, 100));
     const { data, error } = result as unknown as { data: unknown; error: unknown };
 
     if (error) throw new Error(`Failed to list jobs: ${JSON.stringify(error)}`);
@@ -133,7 +147,7 @@ export function createJobRepository(client: JobsDbClient): JobRepository {
     let count = 0;
     const { data, error } = await client
       .from("platform_jobs")
-      .select("*")
+      .select("id, status, queue")
       .order("created_at", { ascending: false })
       .limit(1000);
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useCallback } from "react"
+import { useMemo, useState, useCallback, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -162,6 +162,7 @@ export default function SearchPage() {
   const pageParam = Number.parseInt(searchParams.get("page") || "1", 10)
 
   const [searchInput, setSearchInput] = useState(query)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [filters, setFilters] = useState<Filters>({
     categories: [],
     minPrice: "",
@@ -171,6 +172,26 @@ export default function SearchPage() {
     colors: [],
   })
   const [showMobileFilters, setShowMobileFilters] = useState(false)
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      if (searchInput !== query) {
+        const sp = new URLSearchParams()
+        if (searchInput) sp.set("q", searchInput)
+        const sort = searchParams.get("sort")
+        if (sort) sp.set("sort", sort)
+        router.push(`/search${sp.toString() ? `?${sp.toString()}` : ""}`)
+      }
+    }, 300)
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [searchInput, query, searchParams, router])
 
   const updateURL = useCallback(
     (params: Record<string, string | undefined>) => {

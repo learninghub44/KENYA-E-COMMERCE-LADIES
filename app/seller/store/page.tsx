@@ -64,7 +64,7 @@ export default function StoreProfilePage() {
   })
 
   function onSubmit(data: StoreFormData) {
-    console.log("Store profile saved:", data)
+    // Store profile saved
   }
 
   return (

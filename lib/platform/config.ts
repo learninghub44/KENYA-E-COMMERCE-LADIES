@@ -65,7 +65,7 @@ export function createConfigService(deps?: ConfigDependencies): ConfigService {
 
     const { data, error } = await deps.supabaseClient
       .from("platform_config")
-      .select("*")
+      .select("config_value, config_type")
       .eq("config_key", key)
       .single();
 
@@ -117,7 +117,7 @@ export function createConfigService(deps?: ConfigDependencies): ConfigService {
 
     const { data, error } = await deps.supabaseClient
       .from("platform_config")
-      .select("*")
+      .select("config_key, config_value")
       .eq("is_feature_flag", true);
 
     if (error || !data) return {};
@@ -135,7 +135,7 @@ export function createConfigService(deps?: ConfigDependencies): ConfigService {
 
     const { data, error } = await deps.supabaseClient
       .from("platform_config")
-      .select("*");
+      .select("config_key, config_value, config_type, description, is_feature_flag, is_encrypted, created_at, updated_at");
 
     if (error || !data) return [];
 

@@ -128,7 +128,7 @@ export function createFileService(deps: FileDependencies): FileService {
   async function getFile(fileId: string): Promise<FileRecord | null> {
     const { data, error } = await supabaseClient
       .from("platform_files")
-      .select("*")
+      .select("id, file_path, file_name, mime_type, file_size_bytes, storage_provider, storage_bucket, public_url, checksum, entity_type, entity_id, uploaded_by, is_deleted, deleted_at, metadata, created_at")
       .eq("id", fileId)
       .single();
 
@@ -139,7 +139,7 @@ export function createFileService(deps: FileDependencies): FileService {
   async function findByChecksum(checksum: string): Promise<FileRecord | null> {
     const { data, error } = await supabaseClient
       .from("platform_files")
-      .select("*")
+      .select("id, file_path, file_name, mime_type, file_size_bytes, storage_provider, storage_bucket, public_url, checksum, entity_type, entity_id, uploaded_by, is_deleted, deleted_at, metadata, created_at")
       .eq("checksum", checksum)
       .single();
 
@@ -150,7 +150,7 @@ export function createFileService(deps: FileDependencies): FileService {
   async function findByEntity(entityType: string, entityId: string): Promise<FileRecord[]> {
     const { data, error } = await supabaseClient
       .from("platform_files")
-      .select("*")
+      .select("id, file_path, file_name, mime_type, file_size_bytes, storage_provider, storage_bucket, public_url, checksum, entity_type, entity_id, uploaded_by, is_deleted, deleted_at, metadata, created_at")
       .eq("entity_type", entityType)
       .eq("entity_id", entityId);
 
@@ -161,7 +161,7 @@ export function createFileService(deps: FileDependencies): FileService {
   async function findOrphans(): Promise<FileRecord[]> {
     const { data, error } = await supabaseClient
       .from("platform_files")
-      .select("*")
+      .select("id, file_path, file_name, mime_type, file_size_bytes, storage_provider, storage_bucket, public_url, checksum, entity_type, entity_id, uploaded_by, is_deleted, deleted_at, metadata, created_at")
       .eq("is_deleted", false)
       .eq("entity_type", null);
 
@@ -172,7 +172,7 @@ export function createFileService(deps: FileDependencies): FileService {
   async function getStorageMetrics(): Promise<StorageMetrics[]> {
     const { data, error } = await supabaseClient
       .from("platform_storage_metrics")
-      .select("*")
+      .select("storage_provider, total_bytes, total_files, orphan_files, recorded_at")
       .order("recorded_at", { ascending: false })
       .limit(100);
 
