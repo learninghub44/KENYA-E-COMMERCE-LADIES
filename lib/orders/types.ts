@@ -32,6 +32,7 @@ export type PurchasableItem = {
   currency: string;
   isPublished: boolean;
   inStock: boolean;
+  imageUrl?: string | null | undefined;
 };
 
 export type CartStatus = "active" | "converted" | "abandoned";

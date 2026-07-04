@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import {
   Trash2,
@@ -29,6 +30,7 @@ interface CartItemView {
   variant: string | null
   unitPriceMinor: number
   quantity: number
+  imageUrl: string | null
 }
 
 interface CartSummaryView {
@@ -56,6 +58,7 @@ function mapItem(raw: any): CartItemView {
     variant: raw.productSnapshot?.variantTitle ?? null,
     unitPriceMinor: raw.unitPriceMinor,
     quantity: raw.quantity,
+    imageUrl: raw.productSnapshot?.imageUrl ?? null,
   }
 }
 
@@ -247,8 +250,12 @@ export default function CartPage() {
                   return (
                     <div key={item.id}>
                       <div className="flex gap-4">
-                        <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-muted">
-                          <ImageOff className="h-6 w-6 text-muted-foreground" />
+                        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                          {item.imageUrl ? (
+                            <Image src={item.imageUrl} alt={item.name} fill sizes="96px" className="object-cover" />
+                          ) : (
+                            <ImageOff className="h-6 w-6 text-muted-foreground" />
+                          )}
                         </div>
                         <div className="flex flex-1 flex-col justify-between">
                           <div>
@@ -340,8 +347,12 @@ export default function CartPage() {
                   return (
                     <div key={item.id}>
                       <div className="flex gap-4">
-                        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-muted">
-                          <ImageOff className="h-5 w-5 text-muted-foreground" />
+                        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                          {item.imageUrl ? (
+                            <Image src={item.imageUrl} alt={item.name} fill sizes="80px" className="object-cover" />
+                          ) : (
+                            <ImageOff className="h-5 w-5 text-muted-foreground" />
+                          )}
                         </div>
                         <div className="flex flex-1 flex-col justify-between">
                           <div>

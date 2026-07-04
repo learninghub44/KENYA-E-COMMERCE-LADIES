@@ -1,6 +1,7 @@
 "use client"
 
 import { use, useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import {
   Package,
@@ -37,6 +38,7 @@ interface OrderItemView {
   quantity: number
   unitPriceMinor: number
   totalMinor: number
+  imageUrl: string | null
 }
 
 interface OrderDetail {
@@ -129,6 +131,7 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
             quantity: item.quantity,
             unitPriceMinor: item.unitPriceMinor,
             totalMinor: item.totalMinor,
+            imageUrl: item.productSnapshot?.imageUrl ?? null,
           })),
           shippingAddress: data.shippingAddress,
           subtotalMinor: data.subtotalMinor,
@@ -309,8 +312,12 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
               {order.items.map((item) => (
                 <div key={item.id}>
                   <div className="flex gap-4">
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-muted">
-                      <ImageOff className="h-5 w-5 text-muted-foreground" />
+                    <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                      {item.imageUrl ? (
+                        <Image src={item.imageUrl} alt={item.name} fill sizes="80px" className="object-cover" />
+                      ) : (
+                        <ImageOff className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
                     <div className="flex flex-1 items-center justify-between">
                       <div>
