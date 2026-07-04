@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   Heart,
@@ -19,6 +19,7 @@ import {
   Check,
   Loader2,
   MessageCircle,
+  MessageSquare,
   Twitter,
   Facebook,
 } from "lucide-react"
@@ -86,8 +87,10 @@ export default function ProductDetailPage() {
   const params = useParams()
   const slug = params.slug as string
   const { user } = useAuth()
+  const router = useRouter()
 
   const [product, setProduct] = useState<ProductData | null>(null)
+  const [isContactingSeller, setIsContactingSeller] = useState(false)
   const [reviews, setReviews] = useState<ReviewData[]>([])
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [selectedColor, setSelectedColor] = useState("")
@@ -191,6 +194,36 @@ export default function ProductDetailPage() {
       toast.error(err instanceof Error ? err.message : "Could not add item to cart.")
     } finally {
       setIsAddingToCart(false)
+    }
+  }
+
+  async function handleContactSeller() {
+    if (!product) return
+    if (!user) {
+      toast.error("Please sign in to message the seller.")
+      return
+    }
+    setIsContactingSeller(true)
+    try {
+      const variant = resolveSelectedVariant()
+      const res = await fetch("/api/messaging/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId: product.seller.id,
+          productId: product.id,
+          variantId: variant?.id ?? undefined,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not start a conversation with this seller.")
+      }
+      router.push(`/messages?conversationId=${body.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start a conversation with this seller.")
+    } finally {
+      setIsContactingSeller(false)
     }
   }
 
@@ -469,9 +502,24 @@ export default function ProductDetailPage() {
                     <span>Since {product.seller.memberSince}</span>
                   </div>
                 </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/sellers/${product.seller.slug}`}>Visit Store</Link>
-                </Button>
+                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleContactSeller}
+                    disabled={isContactingSeller}
+                  >
+                    {isContactingSeller ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                    )}
+                    Message Seller
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/sellers/${product.seller.slug}`}>Visit Store</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
