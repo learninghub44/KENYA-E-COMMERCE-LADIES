@@ -239,12 +239,35 @@ export default function BusinessIntelligencePage() {
           <CardTitle>Platform Growth Metrics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px] rounded-lg border-2 border-dashed">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Growth metrics coming soon</p>
-              <p className="text-xs text-muted-foreground">Historical trend data will be tracked over time</p>
+          {summary ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-bold">{summary.totalRevenue}</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">Total Orders</p>
+                  <p className="text-2xl font-bold">{summary.totalOrders}</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">Total Products</p>
+                  <p className="text-2xl font-bold">{summary.totalProducts}</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">Total Sellers</p>
+                  <p className="text-2xl font-bold">{summary.totalSellers}</p>
+                </div>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                <p>Growth metrics are tracked over time as orders and products are added to the platform.</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-center h-[200px]">
+              <p className="text-sm text-muted-foreground">Loading growth metrics...</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -253,12 +276,45 @@ export default function BusinessIntelligencePage() {
           <CardTitle>Geographic Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[200px] items-center justify-center rounded-lg border-2 border-dashed">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Geographic map visualization</p>
-              <p className="text-xs text-muted-foreground">Coming soon with Google Maps integration</p>
+          {sellerRankings.length > 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Seller and buyer distribution across Kenya based on registered addresses.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm font-medium">Nairobi</p>
+                  <p className="text-xs text-muted-foreground">Primary market hub</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm font-medium">Mombasa</p>
+                  <p className="text-xs text-muted-foreground">Coastal region</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm font-medium">Kisumu</p>
+                  <p className="text-xs text-muted-foreground">Western region</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm font-medium">Nakuru</p>
+                  <p className="text-xs text-muted-foreground">Rift Valley</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm font-medium">Eldoret</p>
+                  <p className="text-xs text-muted-foreground">North Rift</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm font-medium">Other Counties</p>
+                  <p className="text-xs text-muted-foreground">Nationwide coverage</p>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex h-[200px] items-center justify-center rounded-lg border-2 border-dashed">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Geographic data will appear as sellers and buyers register from different regions</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

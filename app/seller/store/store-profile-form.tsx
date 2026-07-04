@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Upload, Store, Instagram, Facebook, Twitter, MessageCircle, CheckCircle2, AlertCircle } from "lucide-react"
+import { Upload, Store, Instagram, Facebook, Twitter, MessageCircle, CheckCircle2, AlertCircle, Loader2, X, ImageIcon } from "lucide-react"
 
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -57,6 +57,10 @@ export function StoreProfileForm({ initialValues }: { initialValues: StoreProfil
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [coverUrl, setCoverUrl] = useState<string | null>(null)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
 
   const {
     register,
@@ -79,6 +83,43 @@ export function StoreProfileForm({ initialValues }: { initialValues: StoreProfil
       paymentPolicy: initialValues.paymentPolicy,
     },
   })
+
+  async function handleImageUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "logo" | "cover"
+  ) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const setUploading = type === "logo" ? setIsUploadingLogo : setIsUploadingCover
+    setUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("category", "product")
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (type === "logo") {
+          setLogoUrl(data.url)
+        } else {
+          setCoverUrl(data.url)
+        }
+      } else {
+        setStatus({ type: "error", message: "Failed to upload image" })
+      }
+    } catch {
+      setStatus({ type: "error", message: "Failed to upload image" })
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function onSubmit(data: StoreFormData) {
     setSaving(true)
@@ -109,6 +150,8 @@ export function StoreProfileForm({ initialValues }: { initialValues: StoreProfil
             shipping: data.shippingPolicy || undefined,
             returns: data.returnsPolicy || undefined,
           },
+          logoUrl: logoUrl,
+          bannerUrl: coverUrl,
         }),
       })
 
@@ -170,27 +213,89 @@ export function StoreProfileForm({ initialValues }: { initialValues: StoreProfil
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Store Logo</Label>
-                  <button
-                    type="button"
-                    disabled
-                    title="Logo uploads are coming soon"
-                    className="flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 text-muted-foreground transition-colors hover:border-muted-foreground/50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Upload className="h-6 w-6" />
-                    <span className="sr-only">Upload logo</span>
-                  </button>
+                  <div className="relative">
+                    {logoUrl ? (
+                      <div className="relative">
+                        <img
+                          src={logoUrl}
+                          alt="Store logo"
+                          className="h-32 w-32 rounded-lg object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setLogoUrl(null)}
+                          className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="logo-upload"
+                        className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 text-muted-foreground transition-colors hover:border-muted-foreground/50"
+                      >
+                        {isUploadingLogo ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <>
+                            <ImageIcon className="h-6 w-6" />
+                            <span className="sr-only">Upload logo</span>
+                          </>
+                        )}
+                      </label>
+                    )}
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e, "logo")}
+                      disabled={isUploadingLogo}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Cover Image</Label>
-                  <button
-                    type="button"
-                    disabled
-                    title="Cover image uploads are coming soon"
-                    className="flex h-32 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 text-muted-foreground transition-colors hover:border-muted-foreground/50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Upload className="h-6 w-6" />
-                    <span className="sr-only">Upload cover image</span>
-                  </button>
+                  <div className="relative">
+                    {coverUrl ? (
+                      <div className="relative">
+                        <img
+                          src={coverUrl}
+                          alt="Store cover"
+                          className="h-32 w-full rounded-lg object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setCoverUrl(null)}
+                          className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="cover-upload"
+                        className="flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 text-muted-foreground transition-colors hover:border-muted-foreground/50"
+                      >
+                        {isUploadingCover ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <>
+                            <ImageIcon className="h-6 w-6" />
+                            <span className="sr-only">Upload cover image</span>
+                          </>
+                        )}
+                      </label>
+                    )}
+                    <input
+                      id="cover-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e, "cover")}
+                      disabled={isUploadingCover}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">

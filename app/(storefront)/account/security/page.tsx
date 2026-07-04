@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Shield, Smartphone, Save, Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { Shield, Smartphone, Save, Loader2, AlertCircle, CheckCircle, Copy, QrCode, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "../../../../components/ui/button"
@@ -44,6 +44,11 @@ export default function SecurityPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false)
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
+  const [twoFactorSecret, setTwoFactorSecret] = useState("")
+  const [twoFactorUri, setTwoFactorUri] = useState("")
+  const [verifyCode, setVerifyCode] = useState("")
 
   const {
     register,
@@ -53,6 +58,20 @@ export default function SecurityPage() {
   } = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
   })
+
+  // Check 2FA status on mount
+  useEffect(() => {
+    fetch("/api/account/2fa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "status" }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setTwoFactorEnabled(data.enabled ?? false)
+      })
+      .catch(() => {})
+  }, [])
 
   const onSubmit = async (data: PasswordFormData) => {
     setIsSaving(true)
@@ -89,12 +108,87 @@ export default function SecurityPage() {
     }
   }
 
-  const handleTwoFactorToggle = (checked: boolean) => {
-    if (checked) {
-      toast.info("Two-factor authentication coming soon")
+  const handleTwoFactorToggle = async (checked: boolean) => {
+    if (!checked && twoFactorEnabled) {
+      // Disable 2FA
+      setTwoFactorLoading(true)
+      try {
+        const res = await fetch("/api/account/2fa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "disable" }),
+        })
+
+        if (res.ok) {
+          setTwoFactorEnabled(false)
+          toast.success("Two-factor authentication disabled")
+        } else {
+          toast.error("Failed to disable 2FA")
+        }
+      } catch {
+        toast.error("Failed to disable 2FA")
+      } finally {
+        setTwoFactorLoading(false)
+      }
+    } else if (checked && !twoFactorEnabled) {
+      // Start 2FA setup
+      setTwoFactorLoading(true)
+      try {
+        const res = await fetch("/api/account/2fa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "setup" }),
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setTwoFactorSecret(data.secret)
+          setTwoFactorUri(data.uri)
+          setShowTwoFactorSetup(true)
+        } else {
+          toast.error("Failed to setup 2FA")
+        }
+      } catch {
+        toast.error("Failed to setup 2FA")
+      } finally {
+        setTwoFactorLoading(false)
+      }
+    }
+  }
+
+  const handleVerifyCode = async () => {
+    if (!verifyCode || verifyCode.length !== 6) {
+      toast.error("Please enter a 6-digit code")
       return
     }
-    setTwoFactorEnabled(false)
+
+    setTwoFactorLoading(true)
+    try {
+      const res = await fetch("/api/account/2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", code: verifyCode }),
+      })
+
+      if (res.ok) {
+        setTwoFactorEnabled(true)
+        setShowTwoFactorSetup(false)
+        setVerifyCode("")
+        toast.success("Two-factor authentication enabled successfully!")
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Invalid code. Please try again.")
+      }
+    } catch {
+      toast.error("Failed to verify code")
+    } finally {
+      setTwoFactorLoading(false)
+    }
+  }
+
+  const copySecret = () => {
+    navigator.clipboard.writeText(twoFactorSecret)
+    toast.success("Secret copied to clipboard")
   }
 
   return (
@@ -210,20 +304,102 @@ export default function SecurityPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                Coming Soon
+              <Badge variant="outline" className={twoFactorEnabled ? "bg-green-100 text-green-700" : ""}>
+                {twoFactorEnabled ? "Enabled" : "Disabled"}
               </Badge>
               <Switch
                 checked={twoFactorEnabled}
                 onCheckedChange={handleTwoFactorToggle}
-                disabled
+                disabled={twoFactorLoading}
               />
             </div>
           </div>
-          <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
-            <CheckCircle className="mb-2 h-4 w-4" />
-            Two-factor authentication will be available in a future update.
-          </div>
+
+          {twoFactorLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </div>
+          )}
+
+          {/* 2FA Setup Modal */}
+          {showTwoFactorSetup && (
+            <div className="rounded-lg border-2 border-dashed border-[#1C5C56] bg-muted/50 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Setup Two-Factor Authentication</h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowTwoFactorSetup(false)
+                    setVerifyCode("")
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <p>1. Install an authenticator app like Google Authenticator or Authy.</p>
+                <p>2. Scan this QR code or enter the secret key manually:</p>
+                
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-white p-2">
+                    {/* Simple text-based representation - in production use a QR code library */}
+                    <div className="flex h-32 w-32 items-center justify-center bg-gray-100 text-xs text-gray-500">
+                      <QrCode className="h-16 w-16 text-gray-300" />
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs text-muted-foreground">Secret key:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 rounded bg-muted px-2 py-1 text-xs break-all">
+                        {twoFactorSecret}
+                      </code>
+                      <Button variant="ghost" size="sm" onClick={copySecret}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <p>3. Enter the 6-digit code from your authenticator app:</p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
+                    className="w-32 font-mono text-lg"
+                  />
+                  <Button
+                    onClick={handleVerifyCode}
+                    disabled={verifyCode.length !== 6 || twoFactorLoading}
+                  >
+                    {twoFactorLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Verify & Enable
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {twoFactorEnabled && !showTwoFactorSetup && (
+            <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
+              <CheckCircle className="mb-2 h-4 w-4" />
+              Two-factor authentication is enabled. Your account is protected with an additional layer of security.
+            </div>
+          )}
+
+          {!twoFactorEnabled && !showTwoFactorSetup && (
+            <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
+              <Shield className="mb-2 h-4 w-4" />
+              Two-factor authentication adds an extra layer of security to your account. When enabled, you&apos;ll need to enter a code from your authenticator app when signing in.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
