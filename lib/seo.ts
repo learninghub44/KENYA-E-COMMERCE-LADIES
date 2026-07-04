@@ -102,7 +102,7 @@ function organizationJsonLd() {
     description: siteDescription,
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+254-700-000-000",
+      telephone: "+254-701-059-192",
       contactType: "customer service",
       email: "hello@zurimarket.co.ke",
     },
