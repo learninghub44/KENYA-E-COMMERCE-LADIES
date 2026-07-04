@@ -2,9 +2,9 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "About Zuri Market — Our Story",
+  title: "Our Story — Zuri Market",
   description:
-    "Learn how Zuri Market is connecting buyers and empowering sellers across Kenya through a trusted multi-vendor marketplace.",
+    "Learn how Zuri Market was founded to make buying and selling online easier, more accessible, and more rewarding for everyone across Kenya.",
 }
 
 export default function AboutPage() {
@@ -12,10 +12,10 @@ export default function AboutPage() {
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-          About Zuri Market
+          Our Story
         </h1>
         <p className="mt-3 text-lg font-medium text-[#1C5C56]">
-          Connecting Buyers. Empowering Sellers.
+          Every Great Marketplace Begins with a Simple Idea
         </p>
       </div>
 
@@ -23,209 +23,155 @@ export default function AboutPage() {
         {/* Intro */}
         <section>
           <p>
-            Zuri Market is a modern online marketplace built to make buying and selling simpler, safer, and more accessible across Kenya.
+            Zuri Market was founded with a simple belief: buying and selling online should be easier, more accessible, and more rewarding for everyone.
           </p>
           <p className="mt-3">
-            Our platform brings together independent businesses, entrepreneurs, retailers, wholesalers, and growing brands in one trusted marketplace where they can showcase their products and connect with customers from anywhere in the country.
+            Across Kenya, thousands of businesses offer quality products every day. Many of these businesses are small and medium-sized enterprises, family-owned shops, local retailers, and entrepreneurs with incredible products but limited access to modern e-commerce tools. While social media and messaging apps have opened new opportunities, they often lack the structure needed to efficiently manage products, orders, customer communication, and business growth.
           </p>
           <p className="mt-3">
-            Whether you&apos;re looking for everyday essentials, electronics, fashion, beauty products, home goods, office supplies, or unique locally made products, Zuri Market provides a convenient place to discover products from a wide range of trusted sellers.
+            We saw an opportunity to create something better.
           </p>
         </section>
 
         <hr className="border-gray-200" />
 
-        {/* Who We Are */}
+        {/* The Beginning */}
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Who We Are</h2>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">The Beginning</h2>
           <p>
-            Zuri Market is a technology company focused on building digital commerce solutions that help businesses grow.
+            The idea for Zuri Market was born from observing the challenges faced by both buyers and sellers in Kenya&apos;s growing digital economy.
           </p>
           <p className="mt-3">
-            Rather than operating as a traditional retailer, we provide the infrastructure that allows independent vendors to create their own online storefronts, manage products, communicate with customers, and grow their businesses.
+            Many businesses wanted to sell online but struggled with the cost of building their own websites, maintaining online stores, or reaching new customers. At the same time, buyers often had to search across multiple platforms, communicate with different sellers individually, and compare products without a centralized marketplace.
           </p>
           <p className="mt-3">
-            Our role is to build, maintain, secure, and continuously improve the marketplace so buyers and sellers can connect with confidence.
+            Rather than creating another online shop, the vision was to build a platform where many independent businesses could thrive together.
           </p>
           <p className="mt-3">
-            We believe technology should create opportunities, reduce barriers, and make commerce accessible to everyone.
+            That vision became Zuri Market.
           </p>
         </section>
 
-        {/* What We Do */}
+        {/* Why We Built Zuri Market */}
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">What We Do</h2>
-          <p>Our marketplace provides a platform where vendors can:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Create professional online stores.</li>
-            <li>List and manage products.</li>
-            <li>Reach customers across Kenya.</li>
-            <li>Receive inquiries from buyers.</li>
-            <li>Build their brand.</li>
-            <li>Manage inventory.</li>
-            <li>Grow their business online.</li>
-          </ul>
-          <p className="mt-4">For buyers, Zuri Market offers:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Thousands of products in one place.</li>
-            <li>Easy product discovery.</li>
-            <li>Powerful search and filtering.</li>
-            <li>Multiple independent sellers.</li>
-            <li>Secure user accounts.</li>
-            <li>Favourite products and wishlists.</li>
-            <li>Vendor ratings and reviews.</li>
-            <li>Responsive browsing on desktop and mobile devices.</li>
-          </ul>
-        </section>
-
-        {/* Our Role */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Our Role</h2>
-          <p>Zuri Market operates as a marketplace platform. We provide the technology, tools, and infrastructure that enable buyers and sellers to connect.</p>
-          <p className="mt-3">We are responsible for:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Maintaining the marketplace.</li>
-            <li>Improving platform performance.</li>
-            <li>Protecting user accounts.</li>
-            <li>Enforcing marketplace policies.</li>
-            <li>Supporting users.</li>
-            <li>Monitoring marketplace activity.</li>
-            <li>Promoting a safe trading environment.</li>
-          </ul>
-          <p className="mt-4">Individual sellers remain responsible for:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Product listings.</li>
-            <li>Pricing.</li>
-            <li>Product quality.</li>
-            <li>Product availability.</li>
-            <li>Shipping and delivery.</li>
-            <li>Customer support.</li>
-            <li>Returns and refunds.</li>
-            <li>Payment arrangements.</li>
-          </ul>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Why We Built Zuri Market</h2>
+          <p>We believe technology should remove barriers, not create them.</p>
           <p className="mt-3">
-            This structure allows businesses of all sizes to reach customers while maintaining control over their own operations.
+            Every entrepreneur deserves access to professional digital tools regardless of the size of their business.
+          </p>
+          <p className="mt-3">
+            Every customer deserves a convenient shopping experience with access to a wide range of products from trusted sellers.
+          </p>
+          <p className="mt-3">
+            Zuri Market was created to bridge that gap by providing a reliable marketplace where businesses can establish their online presence while customers enjoy the convenience of shopping from multiple vendors in one place.
           </p>
         </section>
 
-        {/* Mission */}
+        {/* Our Purpose */}
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Our Mission</h2>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Our Purpose</h2>
+          <p>Our purpose extends beyond selling products.</p>
+          <p className="mt-3">We want to create opportunities.</p>
+          <p className="mt-3">
+            By giving businesses access to a professional marketplace, we hope to support entrepreneurship, encourage innovation, and contribute to the continued growth of Kenya&apos;s digital economy.
+          </p>
+          <p className="mt-3">
+            Whether someone is launching their first online business or expanding an established brand, we want Zuri Market to be a place where growth is possible.
+          </p>
+        </section>
+
+        {/* Technology at the Core */}
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Technology at the Core</h2>
+          <p>At Zuri Market, we see ourselves as a technology company first.</p>
+          <p className="mt-3">
+            Our responsibility is to build and maintain a secure, reliable, and scalable marketplace that enables buyers and sellers to connect efficiently.
+          </p>
+          <p className="mt-3">
+            We continuously improve our platform by introducing new features, strengthening security, improving performance, and simplifying the user experience.
+          </p>
+          <p className="mt-3">
+            As technology evolves, so will Zuri Market.
+          </p>
+        </section>
+
+        {/* Supporting Independent Sellers */}
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Supporting Independent Sellers</h2>
+          <p>Independent businesses are the foundation of our marketplace.</p>
+          <p className="mt-3">
+            Every seller brings unique products, knowledge, and expertise that contribute to the diversity of our platform.
+          </p>
+          <p className="mt-3">
+            Rather than competing with these businesses, we provide the tools they need to succeed online.
+          </p>
+          <p className="mt-3">
+            Our marketplace enables vendors to showcase their products, reach more customers, manage their stores, and build lasting relationships with buyers.
+          </p>
+        </section>
+
+        {/* Putting Customers First */}
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Putting Customers First</h2>
+          <p>Everything we build is designed with our users in mind.</p>
+          <p className="mt-3">
+            We want shopping on Zuri Market to be simple, transparent, and enjoyable.
+          </p>
+          <p className="mt-3">
+            From product discovery and account management to communication with sellers, we continuously look for ways to improve every part of the customer experience.
+          </p>
+          <p className="mt-3">
+            Listening to feedback from our community helps us shape the future of our platform.
+          </p>
+        </section>
+
+        {/* Looking Ahead */}
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Looking Ahead</h2>
+          <p>The journey of Zuri Market is only beginning.</p>
+          <p className="mt-3">
+            As our marketplace grows, we plan to introduce more tools, improve vendor services, enhance customer experiences, strengthen marketplace security, and continue investing in technology that supports businesses across Kenya.
+          </p>
+          <p className="mt-3">
+            We are committed to building a platform that remains reliable, innovative, and responsive to the changing needs of our community.
+          </p>
+          <p className="mt-3">
+            Growth is not measured only by the number of products or vendors on our marketplace but by the success of the businesses and customers who choose to be part of it.
+          </p>
+        </section>
+
+        {/* Founder Message */}
+        <section className="rounded-lg bg-gray-50 p-8">
+          <h2 className="mb-4 text-xl font-semibold text-gray-900">A Message from the Founder</h2>
+          <blockquote className="italic text-gray-600 leading-relaxed">
+            &ldquo;When I started working on Zuri Market, my goal was never simply to create another online marketplace. I wanted to build a platform that gives businesses the opportunity to grow while making online shopping easier and more accessible for everyone.
+          </blockquote>
+          <blockquote className="mt-3 italic text-gray-600 leading-relaxed">
+            Every improvement we make is guided by the belief that technology should empower people. Whether you&apos;re a customer discovering new products or a seller building your business, thank you for being part of this journey.
+          </blockquote>
+          <blockquote className="mt-3 italic text-gray-600 leading-relaxed">
+            The future of Zuri Market will always be shaped by the people who use it, and I&apos;m excited about what we can build together.&rdquo;
+          </blockquote>
+          <p className="mt-4 font-medium text-gray-800">&mdash; Chris Odhiambo</p>
+          <p className="text-sm text-gray-500">Founder, Zuri Market</p>
+        </section>
+
+        {/* Join Our Journey */}
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Join Our Journey</h2>
           <p>
-            Our mission is to empower businesses by providing a reliable digital marketplace that helps them reach more customers while giving shoppers access to quality products from trusted independent sellers. We aim to simplify online commerce through technology, transparency, and continuous innovation.
-          </p>
-        </section>
-
-        {/* Vision */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Our Vision</h2>
-          <p>
-            Our vision is to become one of Kenya&apos;s most trusted and innovative online marketplaces. We aspire to build a thriving digital ecosystem where entrepreneurs, small businesses, established retailers, and consumers can grow together through technology.
-          </p>
-        </section>
-
-        {/* Values */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Our Values</h2>
-
-          <div className="mt-4 space-y-4">
-            <div>
-              <h3 className="mb-1 font-medium text-gray-800">Trust</h3>
-              <p>We believe successful marketplaces are built on trust. We encourage honesty, transparency, and accountability from every member of our community.</p>
-            </div>
-            <div>
-              <h3 className="mb-1 font-medium text-gray-800">Innovation</h3>
-              <p>Technology evolves quickly, and so do we. We continuously improve our platform to better serve buyers and sellers.</p>
-            </div>
-            <div>
-              <h3 className="mb-1 font-medium text-gray-800">Customer Focus</h3>
-              <p>Every decision we make is guided by the needs of our users. We strive to provide an enjoyable, reliable, and user-friendly experience.</p>
-            </div>
-            <div>
-              <h3 className="mb-1 font-medium text-gray-800">Integrity</h3>
-              <p>We are committed to operating our marketplace fairly and professionally while enforcing standards that protect our community.</p>
-            </div>
-            <div>
-              <h3 className="mb-1 font-medium text-gray-800">Growth</h3>
-              <p>We believe every entrepreneur deserves an opportunity to succeed. Our platform is designed to help businesses of all sizes expand their reach and grow sustainably.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Supporting Kenyan Businesses */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Supporting Kenyan Businesses</h2>
-          <p>
-            Kenya is home to thousands of talented entrepreneurs and growing businesses. Many sellers have excellent products but limited access to affordable digital commerce tools.
+            Every order placed, every product listed, and every new business that joins our marketplace contributes to the next chapter of our story.
           </p>
           <p className="mt-3">
-            Zuri Market exists to bridge that gap by giving businesses access to a professional marketplace without the complexity of building and maintaining their own e-commerce platforms.
+            We invite buyers, sellers, partners, and innovators to grow with us as we continue building a marketplace that creates opportunities, supports entrepreneurship, and helps shape the future of digital commerce in Kenya.
           </p>
-          <p className="mt-3">
-            As our marketplace grows, so does the opportunity for local businesses to reach more customers, build stronger brands, and compete in the digital economy.
-          </p>
-        </section>
-
-        {/* Building a Better Marketplace */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Building a Better Marketplace</h2>
-          <p>Our work does not end once the platform is launched. We continue investing in:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-6">
-            <li>Better marketplace features.</li>
-            <li>Improved search and discovery.</li>
-            <li>Enhanced account security.</li>
-            <li>Faster platform performance.</li>
-            <li>Improved vendor tools.</li>
-            <li>Better customer experiences.</li>
-            <li>Marketplace transparency.</li>
-            <li>Long-term platform reliability.</li>
-          </ul>
-          <p className="mt-3">
-            Listening to feedback from buyers and sellers remains central to how we improve our services.
-          </p>
-        </section>
-
-        {/* Our Commitment */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Our Commitment</h2>
-          <p>
-            We are committed to maintaining a marketplace that is secure, transparent, and accessible. By providing reliable technology and encouraging responsible marketplace practices, we aim to create an environment where businesses can thrive and customers can shop with confidence.
-          </p>
-          <p className="mt-3">
-            Every new seller, customer, and partner contributes to the continued growth of Zuri Market, and we are grateful to be part of that journey.
-          </p>
-        </section>
-
-        {/* Founder */}
-        <section className="rounded-lg bg-gray-50 p-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-[#1C5C56]">Founder</p>
-          <h2 className="mt-2 text-2xl font-bold text-gray-900">Chris Odhiambo</h2>
-        </section>
-
-        {/* Contact */}
-        <section>
-          <h2 className="mb-3 text-xl font-semibold text-gray-900">Contact Us</h2>
-          <p>We welcome your questions, suggestions, and feedback.</p>
-          <div className="mt-3">
-            <p className="font-medium text-gray-800">Zuri Market</p>
-            <p className="mt-1">
-              Email:{" "}
-              <a href="mailto:hello@zurimarket.co.ke" className="text-[#1C5C56] underline underline-offset-2">
-                hello@zurimarket.co.ke
-              </a>
-            </p>
-          </div>
           <p className="mt-3 text-sm text-gray-500">
-            Thank you for choosing Zuri Market. We look forward to helping buyers and sellers connect, grow, and succeed together.
+            Thank you for being part of the Zuri Market story.
           </p>
         </section>
 
         {/* CTA */}
         <section className="flex flex-col items-center gap-4 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">Join the Journey</h2>
-          <p className="text-gray-500">
-            Whether you&apos;re shopping or selling, you&apos;re part of our story.
-          </p>
           <div className="flex justify-center gap-4">
             <Link
               href="/search"
