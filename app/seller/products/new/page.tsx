@@ -12,6 +12,8 @@ import {
   Save,
   Send,
   Loader2,
+  X,
+  ImageIcon,
 } from "lucide-react"
 
 import { Button } from "../../../../components/ui/button"
@@ -68,6 +70,8 @@ export default function NewProductPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploadedImages, setUploadedImages] = useState<{ url: string; altText: string }[]>([])
+  const [isUploading, setIsUploading] = useState(false)
 
   const {
     register,
@@ -112,6 +116,41 @@ export default function NewProductPage() {
     )
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("category", "product")
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setUploadedImages((prev) => [
+            ...prev,
+            { url: data.url, altText: file.name.replace(/\.[^/.]+$/, "") },
+          ])
+        }
+      }
+    } catch {
+      setError("Failed to upload image. Please try again.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  function removeImage(index: number) {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
+  }
+
   async function onSave(status: "draft" | "published") {
     setIsSubmitting(true)
     setError(null)
@@ -128,13 +167,13 @@ export default function NewProductPage() {
           lowStockThreshold: data.lowStockThreshold,
           seoTitle: data.metaTitle || undefined,
           seoDescription: data.metaDescription || undefined,
-          images: [
-            {
-              url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80",
-              altText: data.name,
-              isPrimary: true,
-            },
-          ],
+          images: uploadedImages.length > 0
+            ? uploadedImages.map((img, i) => ({
+                url: img.url,
+                altText: img.altText || data.name,
+                isPrimary: i === 0,
+              }))
+            : [{ url: "/placeholder.svg", altText: data.name, isPrimary: true }],
           variants: variants
             .filter((v) => v.size || v.color)
             .map((v) => ({
@@ -267,6 +306,68 @@ export default function NewProductPage() {
                   <Input id="tags" {...register("tags")} placeholder="e.g. kitenge, summer, dress" />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Images</CardTitle>
+              <CardDescription>Upload images for your product. The first image will be the primary display image.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <label
+                  htmlFor="image-upload"
+                  className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground hover:bg-muted"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {isUploading ? "Uploading..." : "Upload Images"}
+                </label>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                />
+              </div>
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {uploadedImages.map((img, index) => (
+                    <div key={index} className="group relative">
+                      <img
+                        src={img.url}
+                        alt={img.altText}
+                        className="h-24 w-full rounded-md object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -right-1 -top-1 hidden rounded-full bg-destructive p-1 text-white group-hover:block"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      {index === 0 && (
+                        <span className="absolute bottom-1 left-1 rounded bg-[#1C5C56] px-1.5 py-0.5 text-xs text-white">
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {uploadedImages.length === 0 && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" />
+                  No images uploaded yet. Click the button above to add product images.
+                </div>
+              )}
             </CardContent>
           </Card>
 
