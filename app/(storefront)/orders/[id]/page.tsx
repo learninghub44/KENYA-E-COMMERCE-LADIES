@@ -3,6 +3,8 @@
 import { use, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import {
   Package,
   Truck,
@@ -33,6 +35,7 @@ interface OrderPageProps {
 
 interface OrderItemView {
   id: string
+  productId: string | null
   name: string
   variant: string | null
   quantity: number
@@ -46,6 +49,7 @@ interface OrderDetail {
   orderNumber: string
   createdAt: string
   status: string
+  sellerId: string | null
   items: OrderItemView[]
   shippingAddress: {
     recipientName: string
@@ -98,11 +102,13 @@ function formatDate(dateStr: string) {
 
 export default function OrderDetailPage({ params }: OrderPageProps) {
   const { id } = use(params)
+  const router = useRouter()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
+  const [isContactingSeller, setIsContactingSeller] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -124,8 +130,10 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
           orderNumber: data.orderNumber,
           createdAt: data.placedAt ?? data.createdAt,
           status: data.status,
+          sellerId: data.sellerId ?? null,
           items: (data.items ?? []).map((item: any) => ({
             id: item.id,
+            productId: item.productId ?? null,
             name: item.productName,
             variant: item.variantTitle,
             quantity: item.quantity,
@@ -167,6 +175,33 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
       setError(err instanceof Error ? err.message : "Could not cancel order.")
     } finally {
       setCancelling(false)
+    }
+  }
+
+  async function handleContactSeller() {
+    if (!order || !order.sellerId) {
+      toast.error("This order has no seller to contact.")
+      return
+    }
+    setIsContactingSeller(true)
+    try {
+      const firstItem = order.items[0]
+      const res = await fetch("/api/messaging/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId: order.sellerId,
+          productId: firstItem?.productId ?? undefined,
+          orderId: order.id,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? "Could not start a conversation with this seller.")
+      router.push(`/messages?conversationId=${body.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start a conversation with this seller.")
+    } finally {
+      setIsContactingSeller(false)
     }
   }
 
@@ -242,11 +277,18 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
               {cancelling ? "Cancelling..." : "Cancel Order"}
             </Button>
           )}
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/messages">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleContactSeller}
+            disabled={isContactingSeller || !order.sellerId}
+          >
+            {isContactingSeller ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
               <MessageSquare className="mr-2 h-4 w-4" />
-              Contact Seller
-            </Link>
+            )}
+            Contact Seller
           </Button>
         </div>
       </div>

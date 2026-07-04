@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { Suspense, useState, useEffect, useRef } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import {
   Search,
   Send,
@@ -56,14 +57,17 @@ function formatTime(dateStr: string) {
   return d.toLocaleDateString("en-KE", { month: "short", day: "numeric" })
 }
 
-export default function MessagesPage() {
+function MessagesPageInner() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const deepLinkId = searchParams.get("conversationId")
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(deepLinkId)
   const [messages, setMessages] = useState<Message[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [messageInput, setMessageInput] = useState("")
-  const [showMobileList, setShowMobileList] = useState(true)
+  const [showMobileList, setShowMobileList] = useState(!deepLinkId)
   const [conversationsLoading, setConversationsLoading] = useState(true)
   const [messagesLoading, setMessagesLoading] = useState(false)
   const [sending, setSending] = useState(false)
@@ -72,6 +76,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchConversations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -91,9 +96,13 @@ export default function MessagesPage() {
       const res = await fetch("/api/messaging/conversations")
       if (!res.ok) throw new Error("Failed to load conversations")
       const data = await res.json()
-      setConversations(data.conversations ?? [])
-      if (data.conversations?.length > 0 && !selectedId) {
-        setSelectedId(data.conversations[0].id)
+      const items: Conversation[] = data.items ?? []
+      setConversations(items)
+      const first = items[0]
+      if (first && !selectedId) {
+        setSelectedId(first.id)
+        setShowMobileList(false)
+      } else if (deepLinkId) {
         setShowMobileList(false)
       }
     } catch (e) {
@@ -110,7 +119,21 @@ export default function MessagesPage() {
       const res = await fetch(`/api/messaging/conversations/${convId}/messages`)
       if (!res.ok) throw new Error("Failed to load messages")
       const data = await res.json()
-      setMessages(data.messages ?? [])
+      const items = (data.items ?? []) as Array<{
+        id: string
+        senderId: string
+        body: string | null
+        createdAt: string
+      }>
+      setMessages(
+        items.map((m) => ({
+          id: m.id,
+          senderId: m.senderId,
+          body: m.body ?? "",
+          createdAt: m.createdAt,
+          isMe: m.senderId === user?.id,
+        }))
+      )
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load messages")
     } finally {
@@ -132,10 +155,10 @@ export default function MessagesPage() {
       setMessages((prev) => [
         ...prev,
         {
-          id: data.message.id,
-          senderId: data.message.senderId,
-          body: data.message.body,
-          createdAt: data.message.createdAt,
+          id: data.id,
+          senderId: data.senderId,
+          body: data.body ?? "",
+          createdAt: data.createdAt,
           isMe: true,
         },
       ])
@@ -221,6 +244,7 @@ export default function MessagesPage() {
                     onClick={() => {
                       setSelectedId(conv.id)
                       setShowMobileList(false)
+                      router.replace(`/messages?conversationId=${conv.id}`, { scroll: false })
                     }}
                   >
                     <div className="relative shrink-0">
@@ -368,5 +392,19 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <p className="text-sm text-muted-foreground">Loading messages...</p>
+        </div>
+      }
+    >
+      <MessagesPageInner />
+    </Suspense>
   )
 }
