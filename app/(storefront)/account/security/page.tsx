@@ -4,7 +4,8 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Shield, Smartphone, Save } from "lucide-react"
+import { Shield, Smartphone, Save, Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "../../../../components/ui/button"
 import { Input } from "../../../../components/ui/input"
@@ -17,8 +18,10 @@ import {
   CardTitle,
   CardDescription,
 } from "../../../../components/ui/card"
+import { Badge } from "../../../../components/ui/badge"
 import { Switch } from "../../../../components/ui/switch"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
+import { createSupabaseBrowserClient } from "../../../../lib/supabase/client"
 
 const passwordSchema = z
   .object({
@@ -39,6 +42,7 @@ type PasswordFormData = z.infer<typeof passwordSchema>
 
 export default function SecurityPage() {
   const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
 
   const {
@@ -50,12 +54,47 @@ export default function SecurityPage() {
     resolver: zodResolver(passwordSchema),
   })
 
-  const onSubmit = (data: PasswordFormData) => {
+  const onSubmit = async (data: PasswordFormData) => {
     setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
+    setError(null)
+
+    try {
+      const supabase = createSupabaseBrowserClient()
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email ?? "",
+        password: data.currentPassword,
+      })
+
+      if (signInError) {
+        setError("Current password is incorrect.")
+        return
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: data.newPassword,
+      })
+
+      if (updateError) {
+        setError(updateError.message)
+        return
+      }
+
+      toast.success("Password updated successfully")
       reset()
-    }, 1000)
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleTwoFactorToggle = (checked: boolean) => {
+    if (checked) {
+      toast.info("Two-factor authentication coming soon")
+      return
+    }
+    setTwoFactorEnabled(false)
   }
 
   return (
@@ -69,6 +108,15 @@ export default function SecurityPage() {
       />
 
       <h1 className="mb-6 text-2xl font-bold tracking-tight">Security Settings</h1>
+
+      {error && (
+        <Card className="mb-6 border-destructive">
+          <CardContent className="flex items-center gap-3 p-4 text-destructive">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-sm">{error}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Card className="mb-6">
@@ -132,7 +180,11 @@ export default function SecurityPage() {
             </div>
 
             <Button type="submit" disabled={isSaving}>
-              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
               {isSaving ? "Updating..." : "Update Password"}
             </Button>
           </CardContent>
@@ -157,24 +209,21 @@ export default function SecurityPage() {
                 Secure your account with an authenticator app.
               </p>
             </div>
-            <Switch
-              checked={twoFactorEnabled}
-              onCheckedChange={setTwoFactorEnabled}
-            />
-          </div>
-          {twoFactorEnabled && (
-            <div className="rounded-md bg-muted p-4 text-sm">
-              <p className="mb-2 font-medium">Setup instructions</p>
-              <ol className="ml-4 list-decimal space-y-1 text-muted-foreground">
-                <li>Download an authenticator app (e.g., Google Authenticator)</li>
-                <li>Scan the QR code below</li>
-                <li>Enter the verification code from the app</li>
-              </ol>
-              <Button variant="outline" className="mt-4" onClick={() => {}}>
-                Set Up Now
-              </Button>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                Coming Soon
+              </Badge>
+              <Switch
+                checked={twoFactorEnabled}
+                onCheckedChange={handleTwoFactorToggle}
+                disabled
+              />
             </div>
-          )}
+          </div>
+          <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
+            <CheckCircle className="mb-2 h-4 w-4" />
+            Two-factor authentication will be available in a future update.
+          </div>
         </CardContent>
       </Card>
     </div>

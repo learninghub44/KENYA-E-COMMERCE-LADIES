@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Download, Warehouse } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Warehouse } from "lucide-react"
 
-import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
 import {
   Table,
@@ -18,86 +17,40 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
 
 type StockStatus = "In Stock" | "Low Stock" | "Out of Stock"
 
-const inventory = [
-  {
-    product: "Kitenge Maxi Dress",
-    sku: "KMD-001",
-    stock: 45,
-    reserved: 3,
-    available: 42,
-    threshold: 10,
-    status: "In Stock" as StockStatus,
-  },
-  {
-    product: "Beaded Sandals",
-    sku: "BS-002",
-    stock: 5,
-    reserved: 1,
-    available: 4,
-    threshold: 15,
-    status: "Low Stock" as StockStatus,
-  },
-  {
-    product: "Ankara Blazer",
-    sku: "AB-003",
-    stock: 0,
-    reserved: 0,
-    available: 0,
-    threshold: 10,
-    status: "Out of Stock" as StockStatus,
-  },
-  {
-    product: "Kente Scarf Set",
-    sku: "KSS-004",
-    stock: 18,
-    reserved: 2,
-    available: 16,
-    threshold: 12,
-    status: "In Stock" as StockStatus,
-  },
-  {
-    product: "Dashiki Top",
-    sku: "DT-005",
-    stock: 7,
-    reserved: 1,
-    available: 6,
-    threshold: 10,
-    status: "Low Stock" as StockStatus,
-  },
-  {
-    product: "Maasai Shuka Blanket",
-    sku: "MSB-006",
-    stock: 12,
-    reserved: 0,
-    available: 12,
-    threshold: 10,
-    status: "In Stock" as StockStatus,
-  },
-  {
-    product: "Leather Tote Bag",
-    sku: "LTB-007",
-    stock: 9,
-    reserved: 2,
-    available: 7,
-    threshold: 10,
-    status: "Low Stock" as StockStatus,
-  },
-  {
-    product: "Cotton Kimono",
-    sku: "CK-008",
-    stock: 0,
-    reserved: 0,
-    available: 0,
-    threshold: 10,
-    status: "Out of Stock" as StockStatus,
-  },
-]
+interface InventoryItem {
+  id: string
+  product_id: string
+  variant_id: string | null
+  quantity_available: number
+  quantity_reserved: number
+  low_stock_threshold: number
+  track_inventory: boolean
+  products: {
+    id: string
+    name: string
+    slug: string
+    base_price_minor: number
+    currency: string
+  }
+  product_variants: {
+    id: string
+    sku: string
+    title: string | null
+    options: Record<string, string> | null
+  } | null
+}
+
+function getStockStatus(item: InventoryItem): StockStatus {
+  const available = item.quantity_available - item.quantity_reserved
+  if (available <= 0) return "Out of Stock"
+  if (available <= item.low_stock_threshold) return "Low Stock"
+  return "In Stock"
+}
 
 function StockStatusBadge({ status }: { status: StockStatus }) {
   const colors: Record<StockStatus, string> = {
@@ -105,37 +58,80 @@ function StockStatusBadge({ status }: { status: StockStatus }) {
     "Low Stock": "bg-yellow-100 text-yellow-800 hover:bg-yellow-100/80",
     "Out of Stock": "bg-red-100 text-red-800 hover:bg-red-100/80",
   }
-  return (
-    <Badge className={colors[status]} variant="outline">
-      {status}
-    </Badge>
-  )
+  return <Badge className={colors[status]} variant="outline">{status}</Badge>
 }
 
 export default function InventoryPage() {
+  const [items, setItems] = useState<InventoryItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState("")
 
-  const filtered = inventory.filter(
+  const fetchInventory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/seller/inventory")
+      if (res.ok) {
+        const data = await res.json()
+        setItems(data.items || [])
+      }
+    } catch (err) {
+      console.error("Failed to fetch inventory:", err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchInventory()
+  }, [fetchInventory])
+
+  async function handleSaveStock(itemId: string) {
+    const newQty = parseInt(editValue, 10)
+    if (isNaN(newQty) || newQty < 0) {
+      setEditingId(null)
+      return
+    }
+
+    const res = await fetch("/api/seller/inventory", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inventoryItemId: itemId, quantityAvailable: newQty }),
+    })
+
+    if (res.ok) {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, quantity_available: newQty } : item
+        )
+      )
+    }
+    setEditingId(null)
+  }
+
+  const filtered = items.filter(
     (item) =>
-      item.product.toLowerCase().includes(search.toLowerCase()) ||
-      item.sku.toLowerCase().includes(search.toLowerCase())
+      item.products.name.toLowerCase().includes(search.toLowerCase()) ||
+      (item.product_variants?.sku || "").toLowerCase().includes(search.toLowerCase())
   )
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div><div className="h-8 w-32 bg-muted rounded animate-pulse" /><div className="h-4 w-48 bg-muted rounded animate-pulse mt-2" /></div>
+        </div>
+        <Card><CardContent className="p-0">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 border-b animate-pulse" />)}</CardContent></Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
-          <p className="text-sm text-muted-foreground">
-            Track stock levels across all products.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button>Update Stock</Button>
+          <p className="text-sm text-muted-foreground">Track stock levels across all products.</p>
         </div>
       </div>
 
@@ -144,11 +140,7 @@ export default function InventoryPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Stock Overview</CardTitle>
             <div className="relative w-64">
-              <Input
-                placeholder="Search inventory..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <Input placeholder="Search inventory..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -166,41 +158,49 @@ export default function InventoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
-                <TableRow key={item.sku}>
-                  <TableCell className="font-medium">{item.product}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.sku}
-                  </TableCell>
-                  <TableCell>{item.stock}</TableCell>
-                  <TableCell>{item.reserved}</TableCell>
-                  <TableCell>
-                    <span
-                      className={
-                        item.available === 0
-                          ? "text-destructive font-medium"
-                          : item.available <= item.threshold
-                          ? "text-yellow-600 font-medium"
-                          : ""
-                      }
-                    >
-                      {item.available}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.threshold}
-                  </TableCell>
-                  <TableCell>
-                    <StockStatusBadge status={item.status} />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filtered.map((item) => {
+                const available = item.quantity_available - item.quantity_reserved
+                const status = getStockStatus(item)
+                const sku = item.product_variants?.sku || "—"
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.products.name}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">{sku}</TableCell>
+                    <TableCell>
+                      {editingId === item.id ? (
+                        <input
+                          type="number"
+                          className="w-20 border rounded px-2 py-1 text-sm"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => handleSaveStock(item.id)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleSaveStock(item.id); if (e.key === "Escape") setEditingId(null) }}
+                          autoFocus
+                          min={0}
+                        />
+                      ) : (
+                        <button
+                          className="hover:underline cursor-pointer"
+                          onClick={() => { setEditingId(item.id); setEditValue(String(item.quantity_available)) }}
+                        >
+                          {item.quantity_available}
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell>{item.quantity_reserved}</TableCell>
+                    <TableCell>
+                      <span className={available === 0 ? "text-destructive font-medium" : available <= item.low_stock_threshold ? "text-yellow-600 font-medium" : ""}>
+                        {available}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{item.low_stock_threshold}</TableCell>
+                    <TableCell><StockStatusBadge status={status} /></TableCell>
+                  </TableRow>
+                )
+              })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="py-12 text-center text-muted-foreground"
-                  >
+                  <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                     <Warehouse className="mx-auto mb-2 h-8 w-8" />
                     No inventory items found
                   </TableCell>

@@ -1,12 +1,69 @@
-import type { Metadata } from "next";
+"use client"
 
-export const metadata: Metadata = {
-  title: "Contact Us — Zuri Market",
-  description:
-    "Get in touch with Zuri Market. Find our Nairobi office address, phone, email, and business hours, or send us a message.",
-};
+import { useState } from "react"
+import type { Metadata } from "next"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Loader2, CheckCircle2 } from "lucide-react"
+
+import { Button } from "../../../components/ui/button"
+import { Input } from "../../../components/ui/input"
+import { Label } from "../../../components/ui/label"
+import { Textarea } from "../../../components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select"
+
+const contactSchema = z.object({
+  name: z.string().min(2, "Name is required"),
+  email: z.string().email("Invalid email"),
+  subject: z.string().min(3, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+})
+
+type ContactFormData = z.infer<typeof contactSchema>
 
 export default function ContactPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+  })
+
+  const onSubmit = async (data: ContactFormData) => {
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to submit message")
+      }
+
+      setIsSuccess(true)
+    } catch {
+      setError("Something went wrong. Please try again later.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mb-10">
@@ -88,78 +145,95 @@ export default function ContactPage() {
         {/* Contact form */}
         <div>
           <h2 className="mb-4 text-lg font-semibold">Send us a message</h2>
-          <form
-            action="mailto:hello@zurimarket.co.ke"
-            method="post"
-            encType="text/plain"
-            className="space-y-4"
-          >
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium">
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+
+          {isSuccess ? (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center dark:border-green-800 dark:bg-green-950">
+              <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-green-600 dark:text-green-400" />
+              <h3 className="mb-1 text-lg font-semibold">Message sent!</h3>
+              <p className="text-sm text-muted-foreground">
+                Thank you for your message. We&apos;ll get back to you within 24
+                hours.
+              </p>
             </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label htmlFor="subject" className="block text-sm font-medium">
-                Subject
-              </label>
-              <select
-                id="subject"
-                name="subject"
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  {...register("name")}
+                  className="mt-1"
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-destructive">{errors.name.message}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register("email")}
+                  className="mt-1"
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="subject">Subject</Label>
+                <Select {...register("subject")}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select a topic" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="order">Order issue</SelectItem>
+                    <SelectItem value="seller">Seller inquiry</SelectItem>
+                    <SelectItem value="feedback">Feedback</SelectItem>
+                    <SelectItem value="seller-application">Seller application</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.subject && (
+                  <p className="mt-1 text-sm text-destructive">{errors.subject.message}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  rows={5}
+                  {...register("message")}
+                  className="mt-1"
+                />
+                {errors.message && (
+                  <p className="mt-1 text-sm text-destructive">{errors.message.message}</p>
+                )}
+              </div>
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
               >
-                <option value="">Select a topic</option>
-                <option value="order">Order issue</option>
-                <option value="seller">Seller inquiry</option>
-                <option value="feedback">Feedback</option>
-                <option value="seller-application">Seller application</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium">
-                Message
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={5}
-                required
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <button
-              type="submit"
-              className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-            >
-              Send message
-            </button>
-            <p className="text-xs text-muted-foreground">
-              This form opens your default email client. Response times are
-              typically within 24 hours on business days.
-            </p>
-          </form>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send message"
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                We typically respond within 24 hours on business days.
+              </p>
+            </form>
+          )}
         </div>
       </div>
     </div>
-  );
+  )
 }

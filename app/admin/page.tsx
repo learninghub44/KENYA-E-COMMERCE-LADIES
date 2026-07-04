@@ -47,6 +47,7 @@ export default async function AdminDashboardPage() {
     { count: orderCount },
     recentOrdersResult,
     { data: recentUsers },
+    revenueResult,
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("sellers").select("*", { count: "exact", head: true }),
@@ -58,17 +59,24 @@ export default async function AdminDashboardPage() {
       .select("id, display_name, email, created_at, avatar_url")
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase.from("orders").select("total_minor, payment_status").eq("payment_status", "paid"),
   ]);
 
   const orders = recentOrdersResult.items ?? [];
 
+  const totalRevenueMinor = (revenueResult.data ?? []).reduce(
+    (sum: number, o: { total_minor: number }) => sum + (o.total_minor ?? 0),
+    0
+  );
+  const platformFeeMinor = Math.round(totalRevenueMinor * 0.05);
+
   const stats = [
-    { label: "Total Users", value: (userCount ?? 0).toLocaleString(), icon: Users, change: "+12%", color: "text-blue-600" },
-    { label: "Total Sellers", value: (sellerCount ?? 0).toLocaleString(), icon: Store, change: "+8%", color: "text-emerald-600" },
-    { label: "Total Products", value: (productCount ?? 0).toLocaleString(), icon: Package, change: "+15%", color: "text-violet-600" },
-    { label: "Total Orders", value: (orderCount ?? 0).toLocaleString(), icon: ShoppingCart, change: "+22%", color: "text-orange-600" },
-    { label: "Revenue (KES)", value: "KES --", icon: TrendingUp, change: "+18%", color: "text-green-600" },
-    { label: "Platform Fee", value: "KES --", icon: DollarSign, change: "+10%", color: "text-rose-600" },
+    { label: "Total Users", value: (userCount ?? 0).toLocaleString(), icon: Users, color: "text-blue-600" },
+    { label: "Total Sellers", value: (sellerCount ?? 0).toLocaleString(), icon: Store, color: "text-emerald-600" },
+    { label: "Total Products", value: (productCount ?? 0).toLocaleString(), icon: Package, color: "text-violet-600" },
+    { label: "Total Orders", value: (orderCount ?? 0).toLocaleString(), icon: ShoppingCart, color: "text-orange-600" },
+    { label: "Revenue", value: `KES ${(totalRevenueMinor / 100).toLocaleString()}`, icon: TrendingUp, color: "text-green-600" },
+    { label: "Platform Fee (5%)", value: `KES ${(platformFeeMinor / 100).toLocaleString()}`, icon: DollarSign, color: "text-rose-600" },
   ];
 
   return (
@@ -89,9 +97,6 @@ export default async function AdminDashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  <span className="text-green-600">{stat.change}</span> from last month
-                </p>
               </CardContent>
             </Card>
           );

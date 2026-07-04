@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   LineChart,
   Line,
@@ -15,10 +15,9 @@ import {
 import {
   TrendingUp,
   TrendingDown,
-  Users,
   DollarSign,
   ShoppingCart,
-  Percent,
+  Loader2,
 } from "lucide-react"
 
 import {
@@ -28,7 +27,6 @@ import {
   CardTitle,
   CardDescription,
 } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
 import {
   Select,
   SelectContent,
@@ -37,51 +35,31 @@ import {
   SelectValue,
 } from "../../../components/ui/select"
 
-const revenue30Days = Array.from({ length: 30 }).map((_, i) => ({
-  day: `Day ${i + 1}`,
-  revenue: Math.floor(Math.random() * 30000) + 5000,
-  orders: Math.floor(Math.random() * 50) + 5,
-}))
+interface AnalyticsData {
+  summary: {
+    totalRevenue: number
+    totalOrders: number
+    completedOrders: number
+    pendingOrders: number
+    cancelledOrders: number
+    avgOrderValue: number
+    revenueTrend: number
+    ordersTrend: number
+  }
+  products: {
+    total: number
+    active: number
+    draft: number
+  }
+  daily: Array<{ date: string; revenue: number; orderCount: number }>
+  orderStatusBreakdown: Array<{ status: string; count: number }>
+  productStatusBreakdown: Array<{ status: string; count: number }>
+}
 
-const topProducts = [
-  { name: "Kitenge Maxi Dress", sales: 184 },
-  { name: "Beaded Sandals", sales: 142 },
-  { name: "Dashiki Top", sales: 98 },
-  { name: "Kente Scarf Set", sales: 76 },
-  { name: "Leather Tote Bag", sales: 65 },
-  { name: "Ankara Blazer", sales: 54 },
-  { name: "Maasai Shuka Blanket", sales: 43 },
-  { name: "Cotton Kimono", sales: 32 },
-  { name: "Kente Headwrap", sales: 28 },
-  { name: "Beaded Necklace", sales: 21 },
-]
-
-const statCards = [
-  {
-    title: "Total Revenue (30d)",
-    value: "KES 482,500",
-    trend: 12.5,
-    icon: DollarSign,
-  },
-  {
-    title: "Total Orders (30d)",
-    value: "1,024",
-    trend: 8.2,
-    icon: ShoppingCart,
-  },
-  {
-    title: "Conversion Rate",
-    value: "3.42%",
-    trend: 0.8,
-    icon: Percent,
-  },
-  {
-    title: "Avg. Order Value",
-    value: "KES 471",
-    trend: 4.1,
-    icon: TrendingUp,
-  },
-]
+function formatKES(minorUnits: number): string {
+  const kES = Math.round(minorUnits / 100)
+  return `KES ${kES.toLocaleString()}`
+}
 
 function StatCard({
   title,
@@ -122,16 +100,77 @@ function StatCard({
   )
 }
 
-const trafficSources = [
-  { source: "Direct", percentage: 35 },
-  { source: "Social Media", percentage: 28 },
-  { source: "Search Engine", percentage: 22 },
-  { source: "Email", percentage: 10 },
-  { source: "Referral", percentage: 5 },
-]
-
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState("30d")
+  const [data, setData] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    fetch(`/api/seller/analytics?range=${dateRange}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load analytics")
+        return r.json()
+      })
+      .then((d: AnalyticsData) => {
+        if (!cancelled) setData(d)
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Error")
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [dateRange])
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+            <p className="text-sm text-muted-foreground">Track your store&apos;s performance.</p>
+          </div>
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted-foreground">Track your store&apos;s performance.</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            {error ?? "No data available"}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const { summary, daily } = data
 
   return (
     <div className="space-y-6">
@@ -156,9 +195,30 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
-        ))}
+        <StatCard
+          title={`Revenue (${dateRange === "7d" ? "7d" : dateRange === "90d" ? "90d" : dateRange === "1y" ? "1y" : "30d"})`}
+          value={formatKES(summary.totalRevenue)}
+          trend={summary.revenueTrend}
+          icon={DollarSign}
+        />
+        <StatCard
+          title={`Orders (${dateRange === "7d" ? "7d" : dateRange === "90d" ? "90d" : dateRange === "1y" ? "1y" : "30d"})`}
+          value={summary.totalOrders.toLocaleString()}
+          trend={summary.ordersTrend}
+          icon={ShoppingCart}
+        />
+        <StatCard
+          title="Avg. Order Value"
+          value={formatKES(summary.avgOrderValue)}
+          trend={0}
+          icon={TrendingUp}
+        />
+        <StatCard
+          title="Products Active"
+          value={`${data.products.active}`}
+          trend={0}
+          icon={ShoppingCart}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -169,21 +229,27 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenue30Days}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} hide />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {daily.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={daily}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} hide />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 100000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: number) => formatKES(v)} />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  No revenue data for this period
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -195,21 +261,27 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenue30Days}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} hide />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="orders"
-                    stroke="hsl(var(--chart-2, 210 80% 50%))"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {daily.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={daily}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} hide />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="orderCount"
+                      stroke="hsl(var(--chart-2, 210 80% 50%))"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  No order data for this period
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -218,51 +290,57 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Top Selling Products</CardTitle>
-            <CardDescription>Best performing products by units sold</CardDescription>
+            <CardTitle className="text-base">Order Status Breakdown</CardTitle>
+            <CardDescription>Orders by status in this period</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topProducts} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-                  <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    width={140}
-                  />
-                  <Tooltip />
-                  <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {data.orderStatusBreakdown.length > 0 ? (
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.orderStatusBreakdown}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="status" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
+                No orders in this period
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Traffic Sources</CardTitle>
-            <CardDescription>Where your visitors come from</CardDescription>
+            <CardTitle className="text-base">Product Status</CardTitle>
+            <CardDescription>Products by status</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {trafficSources.map((source) => (
-              <div key={source.source} className="space-y-1">
+            {data.productStatusBreakdown.map((item) => (
+              <div key={item.status} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span>{source.source}</span>
-                  <span className="font-medium">{source.percentage}%</span>
+                  <span className="capitalize">{item.status.replace("_", " ")}</span>
+                  <span className="font-medium">{item.count}</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary"
-                    style={{ width: `${source.percentage}%` }}
+                    style={{
+                      width: `${data.products.total > 0 ? (item.count / data.products.total) * 100 : 0}%`,
+                    }}
                   />
                 </div>
               </div>
             ))}
+            {data.productStatusBreakdown.length === 0 && (
+              <div className="text-sm text-muted-foreground text-center py-4">
+                No products yet
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

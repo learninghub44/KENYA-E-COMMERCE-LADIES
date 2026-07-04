@@ -10,8 +10,7 @@ import { Button } from "../../../../../components/ui/button"
 import { Input } from "../../../../../components/ui/input"
 import { Textarea } from "../../../../../components/ui/textarea"
 import { Label } from "../../../../../components/ui/label"
-import { ArrowLeft, Save } from "lucide-react"
-import { getMockProducts, updateMockProduct, type MockProduct } from "../../../../../lib/products/mock-store"
+import { ArrowLeft, Save, Loader2 } from "lucide-react"
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -25,57 +24,106 @@ const productSchema = z.object({
 
 type ProductForm = z.infer<typeof productSchema>
 
+interface Product {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  status: string
+  base_price_minor: number
+  compare_at_price_minor: number | null
+  currency: string
+  category_id: string | null
+  product_images: { id: string; url: string; is_primary: boolean }[]
+  product_variants: { id: string; title: string | null; sku: string; price_minor: number; options: Record<string, string> | null }[]
+  inventory_items: { id: string; quantity_available: number; low_stock_threshold: number }[]
+}
+
 export default function EditProductPage() {
   const params = useParams()
   const router = useRouter()
-  const [product, setProduct] = useState<MockProduct | null>(null)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
   })
 
-  // Load from local storage mock store
   useEffect(() => {
     if (params.id) {
-      const products = getMockProducts()
-      const found = products.find((p) => p.id === params.id)
-      if (found) {
-        setProduct(found)
-        reset({
-          name: found.name,
-          description: found.description,
-          price: found.price,
-          comparePrice: found.comparePrice || undefined,
-          sku: found.sku,
-          stock: found.stock,
-          category: found.category,
+      fetch(`/api/seller/products/${params.id}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("Not found")
+          return res.json()
         })
-      }
+        .then((data: Product) => {
+          setProduct(data)
+          const inventory = data.inventory_items?.[0]
+          reset({
+            name: data.name,
+            description: data.description || "",
+            price: data.base_price_minor / 100,
+            comparePrice: data.compare_at_price_minor ? data.compare_at_price_minor / 100 : undefined,
+            sku: data.product_variants?.[0]?.sku || data.slug,
+            stock: inventory?.quantity_available ?? 0,
+            category: data.category_id || "",
+          })
+        })
+        .catch(() => setNotFound(true))
+        .finally(() => setLoading(false))
     }
   }, [params.id, reset])
 
   const onSubmit = async (data: ProductForm) => {
-    if (params.id) {
-      updateMockProduct(params.id as string, {
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const body: Record<string, unknown> = {
         name: data.name,
         description: data.description,
-        price: data.price,
-        comparePrice: data.comparePrice || null,
-        sku: data.sku,
-        stock: data.stock,
-        category: data.category,
-        status: data.stock === 0 ? "Out of Stock" : "Active",
+        basePriceMinor: Math.round(data.price * 100),
+        compareAtPriceMinor: data.comparePrice ? Math.round(data.comparePrice * 100) : null,
+        categoryId: data.category || null,
+        stockQuantity: data.stock,
+      }
+
+      const res = await fetch(`/api/seller/products/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
+
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || "Failed to update product")
+      }
+
       router.push("/seller/products")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  if (!product) {
+  if (loading) {
+    return (
+      <div className="space-y-6 text-center py-12">
+        <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading product...</p>
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
     return (
       <div className="space-y-6 text-center py-12">
         <h2 className="text-xl font-semibold">Product not found</h2>
@@ -102,6 +150,12 @@ export default function EditProductPage() {
           <p className="text-sm text-muted-foreground font-mono">Product ID: {params.id}</p>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid gap-6 md:grid-cols-2">
@@ -135,7 +189,7 @@ export default function EditProductPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price">Price (KES)</Label>
-                <Input id="price" type="number" {...register("price")} />
+                <Input id="price" type="number" step="0.01" {...register("price")} />
                 {errors.price && (
                   <p className="text-sm text-destructive">{errors.price.message}</p>
                 )}
@@ -146,6 +200,7 @@ export default function EditProductPage() {
                 <Input
                   id="comparePrice"
                   type="number"
+                  step="0.01"
                   {...register("comparePrice")}
                 />
               </div>
@@ -174,8 +229,8 @@ export default function EditProductPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button type="submit" disabled={isSubmitting}>
-            <Save className="mr-2 h-4 w-4" />
+          <Button type="submit" disabled={isSubmitting} className="bg-[#1C5C56] hover:bg-[#164a45]">
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             {isSubmitting ? "Saving..." : "Save changes"}
           </Button>
           <Button variant="outline" asChild>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,6 +11,7 @@ import {
   Upload,
   Save,
   Send,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from "../../../../components/ui/button"
@@ -31,7 +32,6 @@ import {
   CardTitle,
   CardDescription,
 } from "../../../../components/ui/card"
-import { addMockProduct } from "../../../../lib/products/mock-store"
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -50,6 +50,12 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
+
 interface Variant {
   id: string
   size: string
@@ -59,6 +65,9 @@ interface Variant {
 export default function NewProductPage() {
   const router = useRouter()
   const [variants, setVariants] = useState<Variant[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const {
     register,
@@ -72,6 +81,19 @@ export default function NewProductPage() {
       stockQuantity: 0,
     },
   })
+
+  useEffect(() => {
+    fetch("/api/catalog/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCategories(data)
+        } else if (data?.categories) {
+          setCategories(data.categories)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   function addVariant() {
     setVariants((prev) => [
@@ -90,28 +112,67 @@ export default function NewProductPage() {
     )
   }
 
-  function onSave(status: "draft" | "published") {
-    handleSubmit((data) => {
-      addMockProduct({
-        name: data.name,
-        sku: data.sku,
-        price: data.regularPrice,
-        comparePrice: data.salePrice || null,
-        stock: data.stockQuantity,
-        status: status === "published" ? "Active" : "Draft",
-        category: data.category,
-        description: data.description,
-        images: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80"], // Default dress image
-        variants: variants.map((v) => ({
-          id: v.id,
-          name: `${v.size} / ${v.color}`,
-          size: v.size,
-          color: v.color,
-          stock: Math.round(data.stockQuantity / (variants.length || 1)),
-        })),
-      })
-      router.push("/seller/products")
-    })()
+  async function onSave(status: "draft" | "published") {
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await handleSubmit(async (data) => {
+        const body: Record<string, unknown> = {
+          name: data.name,
+          description: data.description,
+          categoryId: data.category || undefined,
+          basePriceMinor: Math.round(data.regularPrice * 100),
+          compareAtPriceMinor: data.salePrice ? Math.round(data.salePrice * 100) : undefined,
+          sku: data.sku,
+          stockQuantity: data.stockQuantity,
+          lowStockThreshold: data.lowStockThreshold,
+          seoTitle: data.metaTitle || undefined,
+          seoDescription: data.metaDescription || undefined,
+          images: [
+            {
+              url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80",
+              altText: data.name,
+              isPrimary: true,
+            },
+          ],
+          variants: variants
+            .filter((v) => v.size || v.color)
+            .map((v) => ({
+              title: `${v.size} / ${v.color}`.trim(),
+              sku: `${data.sku}-${v.size || "v"}-${v.color || "c"}`,
+              options: {
+                ...(v.size && { size: v.size }),
+                ...(v.color && { color: v.color }),
+              },
+              priceMinor: Math.round(data.regularPrice * 100),
+            })),
+        }
+
+        const res = await fetch("/api/seller/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+
+        if (!res.ok) {
+          const errData = await res.json()
+          throw new Error(errData.error || "Failed to create product")
+        }
+
+        if (status === "published") {
+          const product = await res.json()
+          await fetch(`/api/seller/products/${product.id}/submit`, {
+            method: "POST",
+          })
+        }
+
+        router.push("/seller/products")
+      })()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -124,16 +185,22 @@ export default function NewProductPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => onSave("draft")}>
-            <Save className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={() => onSave("draft")} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Save Draft
           </Button>
-          <Button onClick={() => onSave("published")}>
-            <Send className="mr-2 h-4 w-4" />
+          <Button onClick={() => onSave("published")} disabled={isSubmitting} className="bg-[#1C5C56] hover:bg-[#164a45]">
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Publish
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -172,12 +239,23 @@ export default function NewProductPage() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Fashion">Fashion</SelectItem>
-                      <SelectItem value="Beauty">Beauty</SelectItem>
-                      <SelectItem value="Skincare">Skincare</SelectItem>
-                      <SelectItem value="Accessories">Accessories</SelectItem>
-                      <SelectItem value="Footwear">Footwear</SelectItem>
-                      <SelectItem value="Jewelry">Jewelry</SelectItem>
+                      {categories.length > 0
+                        ? categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))
+                        : (
+                            <>
+                              <SelectItem value="Fashion">Fashion</SelectItem>
+                              <SelectItem value="Beauty">Beauty</SelectItem>
+                              <SelectItem value="Skincare">Skincare</SelectItem>
+                              <SelectItem value="Accessories">Accessories</SelectItem>
+                              <SelectItem value="Footwear">Footwear</SelectItem>
+                              <SelectItem value="Jewelry">Jewelry</SelectItem>
+                            </>
+                          )
+                      }
                     </SelectContent>
                   </Select>
                   {errors.category && (
@@ -340,12 +418,13 @@ export default function NewProductPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="metaTitle">Meta Title</Label>
-                <Input id="metaTitle" placeholder="SEO title" />
+                <Input id="metaTitle" {...register("metaTitle")} placeholder="SEO title" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="metaDescription">Meta Description</Label>
                 <Textarea
                   id="metaDescription"
+                  {...register("metaDescription")}
                   placeholder="SEO description"
                   rows={4}
                 />

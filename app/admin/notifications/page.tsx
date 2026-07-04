@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, Send } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
@@ -42,13 +42,6 @@ interface Notification {
   sentAt: string
 }
 
-const initialNotifications: Notification[] = [
-  { id: "n1", title: "Welcome to the Platform", message: "Thank you for joining Zuri Market!", audience: "All Users", status: "Sent", sentAt: "2025-06-30 10:00" },
-  { id: "n2", title: "New Seller Guidelines", message: "Please review the updated seller guidelines.", audience: "Sellers", status: "Sent", sentAt: "2025-06-28 14:30" },
-  { id: "n3", title: "Flash Sale Announcement", message: "Get ready for the weekend flash sale!", audience: "All Users", status: "Scheduled", sentAt: "2025-07-01 08:00" },
-  { id: "n4", title: "KYC Reminder", message: "Complete your KYC verification to start selling.", audience: "Sellers", status: "Draft", sentAt: "" },
-]
-
 const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
   Sent: "default",
   Scheduled: "secondary",
@@ -56,27 +49,55 @@ const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(initialNotifications)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [sending, setSending] = useState(false)
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
   const [audience, setAudience] = useState("All")
 
-  const handleSend = () => {
-    if (!title || !message) return
-    const newNotification: Notification = {
-      id: `n${Date.now()}`,
-      title,
-      message,
-      audience: audience === "All" ? "All Users" : audience === "Users" ? "All Users" : "Sellers",
-      status: "Sent",
-      sentAt: new Date().toLocaleString("en-KE"),
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/admin/notifications")
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data.notifications)
+      }
+    } catch {
+      // Ignore
+    } finally {
+      setLoading(false)
     }
-    setNotifications((prev) => [newNotification, ...prev])
-    setTitle("")
-    setMessage("")
-    setAudience("All")
-    setDialogOpen(false)
+  }, [])
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [fetchNotifications])
+
+  const handleSend = async () => {
+    if (!title || !message) return
+    setSending(true)
+    try {
+      const res = await fetch("/api/admin/notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, message, audience }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications((prev) => [data.notification, ...prev])
+      }
+    } catch {
+      // Ignore
+    } finally {
+      setSending(false)
+      setTitle("")
+      setMessage("")
+      setAudience("All")
+      setDialogOpen(false)
+    }
   }
 
   return (
@@ -123,9 +144,9 @@ export default function NotificationsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSend}>
+              <Button onClick={handleSend} disabled={sending}>
                 <Send className="mr-2 h-4 w-4" />
-                Send
+                {sending ? "Sending..." : "Send"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -137,30 +158,41 @@ export default function NotificationsPage() {
           <CardTitle>Notification History</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead>Audience</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sent At</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {notifications.map((n) => (
-                <TableRow key={n.id}>
-                  <TableCell className="font-medium">{n.title}</TableCell>
-                  <TableCell className="max-w-[300px] truncate">{n.message}</TableCell>
-                  <TableCell>{n.audience}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant[n.status]}>{n.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{n.sentAt || "-"}</TableCell>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading notifications...</p>
+          ) : notifications.length === 0 ? (
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">No notifications sent yet</p>
+                <p className="text-xs text-muted-foreground">Create a notification to get started</p>
+              </div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Audience</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Sent At</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {notifications.map((n) => (
+                  <TableRow key={n.id}>
+                    <TableCell className="font-medium">{n.title}</TableCell>
+                    <TableCell className="max-w-[300px] truncate">{n.message}</TableCell>
+                    <TableCell>{n.audience}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusVariant[n.status] ?? "outline"}>{n.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{n.sentAt || "-"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

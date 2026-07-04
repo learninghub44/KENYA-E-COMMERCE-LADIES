@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Clock } from "lucide-react"
 
@@ -9,8 +9,24 @@ import { ProductCard, type Product as ProductCardType } from "../../../../compon
 import { EmptyState } from "../../../../components/shared/empty-state"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
 
+function getRecentlyViewed(): ProductCardType[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem("recently_viewed")
+    if (!stored) return []
+    const items = JSON.parse(stored) as ProductCardType[]
+    return Array.isArray(items) ? items.slice(0, 20) : []
+  } catch {
+    return []
+  }
+}
+
 export default function RecentlyViewedPage() {
-  const [recentlyViewed] = useState<ProductCardType[]>([])
+  const [recentlyViewed, setRecentlyViewed] = useState<ProductCardType[]>([])
+
+  useEffect(() => {
+    setRecentlyViewed(getRecentlyViewed())
+  }, [])
 
   if (recentlyViewed.length === 0) {
     return (

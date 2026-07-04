@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Play, HardDrive, Database, Zap, Cpu } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card"
 import { Button } from "../../../../components/ui/button"
@@ -15,25 +15,49 @@ import {
   TableRow,
 } from "../../../../components/ui/table"
 
-const envInfo = [
-  { key: "Node Version", value: "22.14.0" },
-  { key: "Platform", value: "Linux x64" },
-  { key: "Memory", value: "8 GB / 16 GB" },
-  { key: "CPU", value: "4 vCPUs (Intel Xeon)" },
-  { key: "Uptime", value: "14 days, 6 hours" },
-]
+interface DiagnosticsResponse {
+  environment: Record<string, string>
+  database: {
+    status: string
+    latencyMs: number
+    profileCount: number
+    productCount: number
+    orderCount: number
+    sellerCount: number
+  }
+  generatedAt: string
+}
 
 export default function DiagnosticsPage() {
+  const [data, setData] = useState<DiagnosticsResponse | null>(null)
   const [running, setRunning] = useState(false)
-  const [lastRun, setLastRun] = useState("2025-06-30 15:30:00")
+  const [lastRun, setLastRun] = useState<string>("")
 
-  const runDiagnostics = () => {
+  const runDiagnostics = useCallback(async () => {
     setRunning(true)
-    setTimeout(() => {
-      setLastRun(new Date().toLocaleString("en-KE"))
+    try {
+      const res = await fetch("/api/admin/diagnostics")
+      if (res.ok) {
+        const result = await res.json()
+        setData(result)
+        setLastRun(new Date(result.generatedAt).toLocaleString("en-KE"))
+      }
+    } catch {
+      // Ignore
+    } finally {
       setRunning(false)
-    }, 2000)
-  }
+    }
+  }, [])
+
+  useEffect(() => {
+    runDiagnostics()
+  }, [runDiagnostics])
+
+  const envInfo = data
+    ? Object.entries(data.environment).map(([key, value]) => ({ key, value }))
+    : []
+
+  const dbStats = data?.database
 
   return (
     <div className="space-y-6">
@@ -51,65 +75,33 @@ export default function DiagnosticsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Environment Information</CardTitle>
-          <Badge variant="outline">Last run: {lastRun}</Badge>
+          {lastRun && <Badge variant="outline">Last run: {lastRun}</Badge>}
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Property</TableHead>
-                <TableHead>Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {envInfo.map((info) => (
-                <TableRow key={info.key}>
-                  <TableCell className="font-medium">{info.key}</TableCell>
-                  <TableCell>{info.value}</TableCell>
+          {envInfo.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Property</TableHead>
+                  <TableHead>Value</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {envInfo.map((info) => (
+                  <TableRow key={info.key}>
+                    <TableCell className="font-medium">{info.key}</TableCell>
+                    <TableCell>{info.value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading environment info...</p>
+          )}
         </CardContent>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HardDrive className="h-5 w-5" />
-              Disk Storage
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <div className="mb-1 flex justify-between text-sm">
-                <span>Used: 120 GB</span>
-                <span className="text-muted-foreground">of 200 GB</span>
-              </div>
-              <Progress value={60} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Uploads</p>
-                <p className="font-medium">85 GB</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Logs</p>
-                <p className="font-medium">12 GB</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Backups</p>
-                <p className="font-medium">23 GB</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Free</p>
-                <p className="font-medium">80 GB</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -118,29 +110,51 @@ export default function DiagnosticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <div className="mb-1 flex justify-between text-sm">
-                <span>Used: 4.2 GB</span>
-                <span className="text-muted-foreground">of 10 GB</span>
-              </div>
-              <Progress value={42} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Tables</p>
-                <p className="font-medium">42</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rows</p>
-                <p className="font-medium">2.1M</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Connections</p>
-                <p className="font-medium">23 / 100</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Query Time</p>
-                <p className="font-medium">avg 23ms</p>
+            {dbStats ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <Badge variant={dbStats.status === "healthy" ? "default" : "destructive"}>
+                    {dbStats.status === "healthy" ? "Connected" : "Unreachable"}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">{dbStats.latencyMs}ms latency</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Profiles</p>
+                    <p className="font-medium">{dbStats.profileCount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Products</p>
+                    <p className="font-medium">{dbStats.productCount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Orders</p>
+                    <p className="font-medium">{dbStats.orderCount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Sellers</p>
+                    <p className="font-medium">{dbStats.sellerCount.toLocaleString()}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5" />
+              Storage
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Storage metrics unavailable</p>
+                <p className="text-xs text-muted-foreground">Supabase storage stats not exposed via API</p>
               </div>
             </div>
           </CardContent>
@@ -154,22 +168,10 @@ export default function DiagnosticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Hit Rate</p>
-                <p className="text-2xl font-bold text-green-600">94.5%</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Size</p>
-                <p className="text-2xl font-bold">256 MB</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Entries</p>
-                <p className="font-medium">12,450</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">TTL</p>
-                <p className="font-medium">3600s</p>
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Cache metrics unavailable</p>
+                <p className="text-xs text-muted-foreground">No external cache configured</p>
               </div>
             </div>
           </CardContent>
@@ -183,22 +185,10 @@ export default function DiagnosticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Depth</p>
-                <p className="text-2xl font-bold">234</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Processed</p>
-                <p className="text-2xl font-bold">45.2K</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Failed</p>
-                <p className="font-medium text-destructive">12</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rate</p>
-                <p className="font-medium">34/min</p>
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Queue metrics unavailable</p>
+                <p className="text-xs text-muted-foreground">No queue system configured</p>
               </div>
             </div>
           </CardContent>

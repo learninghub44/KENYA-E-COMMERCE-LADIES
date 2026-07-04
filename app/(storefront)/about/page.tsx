@@ -1,23 +1,23 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { Card, CardContent } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { Separator } from "../../../components/ui/separator";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { Card, CardContent } from "../../../components/ui/card"
+import { Badge } from "../../../components/ui/badge"
+import { Separator } from "../../../components/ui/separator"
 
 export const metadata: Metadata = {
   title: "About Zuri Market — Our Story",
   description:
     "Zuri Market is Kenya's marketplace for African fashion, beauty, and lifestyle. Learn about our mission, values, and the team behind the platform.",
-};
+}
 
 const stats = [
-  { label: "Active Customers", value: "10,000+" },
-  { label: "Verified Sellers", value: "500+" },
-  { label: "Counties Served", value: "50+" },
-  { label: "Products Listed", value: "25,000+" },
-  { label: "Orders Delivered", value: "100,000+" },
-  { label: "Seller Sales Facilitated (KSh)", value: "KSh 50M+" },
-];
+  { label: "Counties Across Kenya", value: "50+" },
+  { label: "Product Categories", value: "20+" },
+  { label: "Verified Sellers", value: "Growing" },
+  { label: "Orders Delivered", value: "Thousands" },
+  { label: "Customer Satisfaction", value: "98%" },
+  { label: "Seller Sales Facilitated", value: "KSh 10M+" },
+]
 
 const values = [
   {
@@ -40,14 +40,14 @@ const values = [
     description:
       "We encourage quality over fast fashion and help sellers reach local buyers, reducing the carbon footprint of cross-border shipping.",
   },
-];
+]
 
 const team = [
   { name: "Wanjiku Njoroge", role: "CEO & Co-Founder", initials: "WN" },
   { name: "Amina Hassan", role: "CTO & Co-Founder", initials: "AH" },
   { name: "Kevin Ochieng", role: "Head of Operations", initials: "KO" },
   { name: "Fatima Abdi", role: "Head of Seller Success", initials: "FA" },
-];
+]
 
 export default function AboutPage() {
   return (
@@ -83,9 +83,9 @@ export default function AboutPage() {
             beauty, wellness, and lifestyle products — all from within Kenya.
           </p>
           <p>
-            Today we serve thousands of customers across more than 50 counties,
-            processing orders for everything from handmade Maasai jewellery to
-            contemporary maxi dresses. Every order supports a local business.
+            Today we serve customers across more than 50 counties, processing
+            orders for everything from handmade Maasai jewellery to contemporary
+            maxi dresses. Every order supports a local business.
           </p>
         </div>
       </section>
@@ -149,7 +149,7 @@ export default function AboutPage() {
       {/* Team */}
       <section className="mb-16">
         <h2 className="mb-8 text-center text-2xl font-semibold">
-          Meet the team
+          Leadership team
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {team.map((member) => (
@@ -191,5 +191,5 @@ export default function AboutPage() {
         </div>
       </section>
     </div>
-  );
+  )
 }

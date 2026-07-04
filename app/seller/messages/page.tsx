@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Search,
   Send,
-  Plus,
   MessageSquare,
-  Check,
   CheckCheck,
-  User,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from "../../../components/ui/button"
@@ -17,366 +15,163 @@ import { Textarea } from "../../../components/ui/textarea"
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar"
 import { Card, CardContent } from "../../../components/ui/card"
 import { cn } from "../../../lib/utils"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-} from "../../../components/ui/dialog"
 
-interface Conversation {
+interface ConversationItem {
   id: string
-  buyerName: string
-  buyerAvatar: string | null
-  product: string
-  lastMessage: string
-  time: string
-  unread: boolean
+  otherParty: { name: string; avatar: string | null }
+  lastMessage: string | null
+  lastMessageAt: string
+  unread: number
+  isBuyer: boolean
+  status: string
+  productId: string | null
+  orderId: string | null
+  createdAt: string
 }
 
 interface ChatMessage {
   id: string
-  sender: "buyer" | "seller"
-  text: string
-  time: string
-  read: boolean
+  senderId: string
+  body: string | null
+  createdAt: string
+  readAt: string | null
+  deletedAt: string | null
 }
-
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: "1",
-    buyerName: "Jane Muthoni",
-    buyerAvatar: null,
-    product: "Kitenge Luxury Maxi Dress",
-    lastMessage: "Is this available in size L?",
-    time: "2 min ago",
-    unread: true,
-  },
-  {
-    id: "2",
-    buyerName: "Akinyi Ochieng",
-    buyerAvatar: null,
-    product: "Maasai Beaded Leather Sandals",
-    lastMessage: "Thank you! I received the package.",
-    time: "1 hour ago",
-    unread: false,
-  },
-  {
-    id: "3",
-    buyerName: "Wanjiku Kimani",
-    buyerAvatar: null,
-    product: "Ankara Fitted Blazer",
-    lastMessage: "Can I get a discount on bulk order?",
-    time: "3 hours ago",
-    unread: true,
-  },
-  {
-    id: "4",
-    buyerName: "Amina Hassan",
-    buyerAvatar: null,
-    product: "Satin Hair Bonnet & Pillowcase Set",
-    lastMessage: "What colors are available?",
-    time: "1 day ago",
-    unread: false,
-  },
-  {
-    id: "5",
-    buyerName: "Grace Nyambura",
-    buyerAvatar: null,
-    product: "Organic Coconut & Shea Body Butter",
-    lastMessage: "Sure, I'll place the order now.",
-    time: "2 days ago",
-    unread: false,
-  },
-]
-
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-  "1": [
-    { id: "m1", sender: "buyer", text: "Hi, I'm interested in the Kitenge Luxury Maxi Dress.", time: "10:30 AM", read: true },
-    { id: "m2", sender: "seller", text: "Hello! Yes, it's still available. What size are you looking for?", time: "10:32 AM", read: true },
-    { id: "m3", sender: "buyer", text: "Is this available in size L?", time: "10:35 AM", read: false },
-  ],
-  "2": [
-    { id: "m4", sender: "buyer", text: "Hi, I just received my Beaded Sandals!", time: "9:00 AM", read: true },
-    { id: "m5", sender: "seller", text: "That's great! Hope you love them.", time: "9:05 AM", read: true },
-    { id: "m6", sender: "buyer", text: "Thank you! I received the package.", time: "9:10 AM", read: true },
-  ],
-  "3": [
-    { id: "m7", sender: "buyer", text: "I run a boutique and would like to order 10 Ankara Blazers.", time: "2:00 PM", read: true },
-    { id: "m8", sender: "seller", text: "We offer bulk pricing for orders of 5 or more!", time: "2:05 PM", read: true },
-    { id: "m9", sender: "buyer", text: "Can I get a discount on bulk order?", time: "2:10 PM", read: false },
-  ],
-  "4": [
-    { id: "m10", sender: "buyer", text: "Hello, I want to purchase the Satin Hair Bonnet set.", time: "Yesterday", read: true },
-    { id: "m11", sender: "seller", text: "Hi Amina! We have Rose Gold and Midnight Black in stock.", time: "Yesterday", read: true },
-    { id: "m12", sender: "buyer", text: "What colors are available?", time: "Yesterday", read: true },
-  ],
-  "5": [
-    { id: "m13", sender: "buyer", text: "Is the Coconut & Shea body butter good for dry skin?", time: "2 days ago", read: true },
-    { id: "m14", sender: "seller", text: "Yes it is! It provides 24-hour deep moisturization.", time: "2 days ago", read: true },
-    { id: "m15", sender: "buyer", text: "Sure, I'll place the order now.", time: "2 days ago", read: true },
-  ],
-}
-
-// Custom mock replies pool based on buyer questions
-const BUYER_AUTOREPLIES: Record<string, string[]> = {
-  "Jane Muthoni": [
-    "Perfect! I will submit my order now. Do you ship to Westlands?",
-    "Okay, let me know when you ship the dress. Thank you!",
-  ],
-  "Akinyi Ochieng": [
-    "Awesome! I'll order another pair for my sister soon.",
-    "Do you have a physical shop in Nairobi where I can visit?",
-  ],
-  "Wanjiku Kimani": [
-    "Thank you for the discount. Let me make the M-Pesa payment right away.",
-    "Please send me the catalog of other blazers if you have them.",
-  ],
-  "Amina Hassan": [
-    "I will go with the Rose Gold set. Should I pay the seller number directly?",
-    "Thanks for confirming. I'll make the order now.",
-  ],
-  "Grace Nyambura": [
-    "Just sent the M-Pesa code. Please check and verify.",
-    "Thank you for the quick confirmation!",
-  ],
-  "default": [
-    "Okay, sounds good! I will order right now.",
-    "Thanks for the details. I will pay via M-Pesa.",
-    "Perfect! Please ship it as soon as possible.",
-  ]
-}
-
-const NEW_CONTACTS = [
-  { name: "Brenda Wambui", product: "Velvet Matte Lipstick" },
-  { name: "Mercy Chebet", product: "Handwoven Sisal & Leather Tote" },
-  { name: "Halima Omar", product: "Vitamin C & Hyaluronic Glow Serum" }
-]
 
 export default function MessagesPage() {
-  const [conversationsList, setConversationsList] = useState<Conversation[]>([])
-  const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>({})
-  const [selectedId, setSelectedId] = useState<string>("1")
+  const [conversations, setConversations] = useState<ConversationItem[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [reply, setReply] = useState("")
   const [search, setSearch] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
-  const [composeOpen, setComposeOpen] = useState(false)
+  const [loadingConvs, setLoadingConvs] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Initialize from LocalStorage or constants
-  useEffect(() => {
-    const storedConv = localStorage.getItem("seller_conversations")
-    const storedMsg = localStorage.getItem("seller_messages")
-
-    if (storedConv && storedMsg) {
-      try {
-        setConversationsList(JSON.parse(storedConv))
-        setMessagesMap(JSON.parse(storedMsg))
-      } catch (e) {
-        setConversationsList(INITIAL_CONVERSATIONS)
-        setMessagesMap(INITIAL_MESSAGES)
-      }
-    } else {
-      setConversationsList(INITIAL_CONVERSATIONS)
-      setMessagesMap(INITIAL_MESSAGES)
-      localStorage.setItem("seller_conversations", JSON.stringify(INITIAL_CONVERSATIONS))
-      localStorage.setItem("seller_messages", JSON.stringify(INITIAL_MESSAGES))
+  const fetchConversations = useCallback(async () => {
+    try {
+      setLoadingConvs(true)
+      const res = await fetch("/api/messaging/conversations?role=seller")
+      if (!res.ok) throw new Error("Failed to load conversations")
+      const data = await res.json()
+      setConversations(data.items ?? [])
+    } catch {
+      setConversations([])
+    } finally {
+      setLoadingConvs(false)
     }
   }, [])
 
-  // Mark active conversation as read
   useEffect(() => {
-    if (!selectedId || conversationsList.length === 0) return
+    fetchConversations()
+  }, [fetchConversations])
 
-    const selectedConv = conversationsList.find((c) => c.id === selectedId)
-    if (selectedConv && selectedConv.unread) {
-      const updated = conversationsList.map((c) =>
-        c.id === selectedId ? { ...c, unread: false } : c
-      )
-      setConversationsList(updated)
-      localStorage.setItem("seller_conversations", JSON.stringify(updated))
+  useEffect(() => {
+    fetch("/api/messaging/conversations")
+      .then((r) => r.json())
+      .then(() => {})
+      .catch(() => {})
+  }, [])
+
+  const fetchMessages = useCallback(async (convId: string) => {
+    try {
+      setLoadingMessages(true)
+      const res = await fetch(`/api/messaging/conversations/${convId}/messages?limit=50`)
+      if (!res.ok) throw new Error("Failed to load messages")
+      const data = await res.json()
+      setMessages(data.items ?? [])
+    } catch {
+      setMessages([])
+    } finally {
+      setLoadingMessages(false)
     }
-  }, [selectedId, conversationsList])
+  }, [])
 
-  const saveState = (updatedList: Conversation[], updatedMap: Record<string, ChatMessage[]>) => {
-    setConversationsList(updatedList)
-    setMessagesMap(updatedMap)
-    localStorage.setItem("seller_conversations", JSON.stringify(updatedList))
-    localStorage.setItem("seller_messages", JSON.stringify(updatedMap))
-  }
+  useEffect(() => {
+    if (selectedId) {
+      fetchMessages(selectedId)
+    }
+  }, [selectedId, fetchMessages])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.id) setCurrentUserId(d.user.id)
+      })
+      .catch(() => {})
+  }, [])
 
   function handleSend() {
-    if (!reply.trim()) return
-
-    const activeMessages = messagesMap[selectedId] ?? []
-    const newMsg: ChatMessage = {
-      id: `m-seller-${Date.now()}`,
-      sender: "seller",
-      text: reply.trim(),
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      read: false,
-    }
-
-    const updatedMap = {
-      ...messagesMap,
-      [selectedId]: [...activeMessages, newMsg],
-    }
-
-    const activeConv = conversationsList.find((c) => c.id === selectedId)
-    const updatedList = conversationsList.map((c) => {
-      if (c.id === selectedId) {
-        return {
-          ...c,
-          lastMessage: reply.trim(),
-          time: "Just now",
-        }
-      }
-      return c
-    })
-
-    saveState(updatedList, updatedMap)
+    if (!reply.trim() || !selectedId || sending) return
+    const body = reply.trim()
     setReply("")
+    setSending(true)
 
-    // Trigger simulated buyer typing and reply
-    setIsTyping(true)
-    setTimeout(() => {
-      setIsTyping(false)
-      const currentConv = conversationsList.find((c) => c.id === selectedId)
-      const buyerName = currentConv?.buyerName ?? "default"
-      const pool = (BUYER_AUTOREPLIES[buyerName] ?? BUYER_AUTOREPLIES["default"]) as string[]
-      const randomText = pool[Math.floor(Math.random() * pool.length)] || "Okay, thanks!"
-
-      const replyMsg: ChatMessage = {
-        id: `m-buyer-${Date.now()}`,
-        sender: "buyer",
-        text: randomText,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        read: false,
-      }
-
-      const postReplyMap = {
-        ...updatedMap,
-        [selectedId]: [...(updatedMap[selectedId] ?? []), replyMsg],
-      }
-
-      const postReplyList = updatedList.map((c) => {
-        if (c.id === selectedId) {
-          return {
-            ...c,
-            lastMessage: randomText,
-            time: "Just now",
-            unread: true,
-          }
-        }
-        return c
+    fetch(`/api/messaging/conversations/${selectedId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("Send failed")
+        return r.json()
       })
-
-      saveState(postReplyList, postReplyMap)
-    }, 2000)
+      .then((msg) => {
+        setMessages((prev) => [...prev, msg])
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === selectedId
+              ? { ...c, lastMessage: body, lastMessageAt: new Date().toISOString() }
+              : c
+          )
+        )
+      })
+      .catch(() => {
+        setReply(body)
+      })
+      .finally(() => setSending(false))
   }
 
-  function handleCompose(contact: typeof NEW_CONTACTS[number]) {
-    const existing = conversationsList.find(
-      (c) => c.buyerName === contact.name && c.product === contact.product
-    )
-
-    if (existing) {
-      setSelectedId(existing.id)
-      setComposeOpen(false)
-      return
-    }
-
-    const newId = `conv-${Date.now()}`
-    const newConv: Conversation = {
-      id: newId,
-      buyerName: contact.name,
-      buyerAvatar: null,
-      product: contact.product,
-      lastMessage: "Conversation started",
-      time: "Just now",
-      unread: false,
-    }
-
-    const initialGreeting: ChatMessage = {
-      id: `m-init-${Date.now()}`,
-      sender: "buyer",
-      text: `Hi, I am interested in the ${contact.product}. Is it available?`,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      read: false,
-    }
-
-    const updatedList = [newConv, ...conversationsList]
-    const updatedMap = {
-      ...messagesMap,
-      [newId]: [initialGreeting],
-    }
-
-    saveState(updatedList, updatedMap)
-    setSelectedId(newId)
-    setComposeOpen(false)
+  function formatTime(iso: string) {
+    const d = new Date(iso)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffMin = Math.floor(diffMs / 60000)
+    if (diffMin < 1) return "Just now"
+    if (diffMin < 60) return `${diffMin}m ago`
+    const diffHr = Math.floor(diffMin / 60)
+    if (diffHr < 24) return `${diffHr}h ago`
+    const diffDay = Math.floor(diffHr / 24)
+    if (diffDay < 7) return `${diffDay}d ago`
+    return d.toLocaleDateString()
   }
 
-  const filtered = conversationsList.filter(
+  const filtered = conversations.filter(
     (c) =>
-      c.buyerName.toLowerCase().includes(search.toLowerCase()) ||
-      c.product.toLowerCase().includes(search.toLowerCase())
+      c.otherParty.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.lastMessage ?? "").toLowerCase().includes(search.toLowerCase())
   )
 
-  const activeConversation = conversationsList.find((c) => c.id === selectedId)
-  const activeMessages = messagesMap[selectedId] ?? []
+  const activeConversation = conversations.find((c) => c.id === selectedId)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
-          <p className="text-sm text-muted-foreground">
-            Communicate with your buyers directly
-          </p>
-        </div>
-        
-        <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Compose
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Start Conversation</DialogTitle>
-              <DialogDescription>
-                Choose a customer inquiring about your items to begin messaging.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 py-4">
-              {NEW_CONTACTS.map((contact, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleCompose(contact)}
-                  className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition hover:bg-accent"
-                >
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback>
-                      {contact.name.split(" ").map((n) => n[0]).join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{contact.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{contact.product}</p>
-                  </div>
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
+        <p className="text-sm text-muted-foreground">
+          Communicate with your buyers directly
+        </p>
       </div>
 
       <Card className="overflow-hidden">
         <div className="flex h-[600px] divide-x">
-          {/* Sidebar */}
           <div className="flex w-80 flex-col bg-white">
             <div className="border-b p-3">
               <div className="relative">
@@ -390,121 +185,135 @@ export default function MessagesPage() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {filtered.map((conv) => (
-                <button
-                  key={conv.id}
-                  type="button"
-                  onClick={() => setSelectedId(conv.id)}
-                  className={cn(
-                    "flex w-full gap-3 border-b p-3 text-left transition-colors hover:bg-accent/50",
-                    selectedId === conv.id && "bg-accent/80"
-                  )}
-                >
-                  <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {conv.buyerName.split(" ").map((n) => n[0]).join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="truncate text-sm font-medium">
-                        {conv.buyerName}
-                      </span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
-                        {conv.time}
-                      </span>
-                    </div>
-                    <p className="truncate text-xs font-semibold text-[#1C5C56]">
-                      {conv.product}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground mt-0.5">
-                      {conv.lastMessage}
-                    </p>
-                  </div>
-                  {conv.unread && (
-                    <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                  )}
-                </button>
-              ))}
-              {filtered.length === 0 && (
+              {loadingConvs ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-sm">
                   No conversations found
                 </div>
+              ) : (
+                filtered.map((conv) => (
+                  <button
+                    key={conv.id}
+                    type="button"
+                    onClick={() => setSelectedId(conv.id)}
+                    className={cn(
+                      "flex w-full gap-3 border-b p-3 text-left transition-colors hover:bg-accent/50",
+                      selectedId === conv.id && "bg-accent/80"
+                    )}
+                  >
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {conv.otherParty.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="truncate text-sm font-medium">
+                          {conv.otherParty.name}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {formatTime(conv.lastMessageAt)}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground mt-0.5">
+                        {conv.lastMessage ?? "No messages yet"}
+                      </p>
+                    </div>
+                    {conv.unread > 0 && (
+                      <div className="mt-1.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-white">
+                        {conv.unread}
+                      </div>
+                    )}
+                  </button>
+                ))
               )}
             </div>
           </div>
 
-          {/* Active Chat Section */}
           <div className="flex flex-1 flex-col bg-muted/20">
             {activeConversation ? (
               <>
                 <div className="flex items-center gap-3 border-b bg-white p-3">
                   <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {activeConversation.buyerName.split(" ").map((n) => n[0]).join("")}
+                      {activeConversation.otherParty.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="text-sm font-semibold">
-                      {activeConversation.buyerName}
-                    </p>
-                    <p className="text-xs font-medium text-[#1C5C56]">
-                      Inquiring: {activeConversation.product}
+                      {activeConversation.otherParty.name}
                     </p>
                   </div>
                 </div>
 
-                {/* Messages List */}
                 <div className="flex-1 space-y-3 overflow-y-auto p-4">
-                  {activeMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={cn(
-                        "flex",
-                        msg.sender === "seller" ? "justify-end" : "justify-start"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[70%] rounded-xl px-4 py-2.5 text-sm shadow-sm",
-                          msg.sender === "seller"
-                            ? "bg-[#341327] text-white rounded-tr-none"
-                            : "bg-white text-foreground border rounded-tl-none"
-                        )}
-                      >
-                        <p className="leading-relaxed">{msg.text}</p>
+                  {loadingMessages ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex items-center justify-center py-12">
+                      <p className="text-sm text-muted-foreground">
+                        No messages yet. Say hello!
+                      </p>
+                    </div>
+                  ) : (
+                    messages.map((msg) => {
+                      const isMine = currentUserId
+                        ? msg.senderId === currentUserId
+                        : false
+                      return (
                         <div
+                          key={msg.id}
                           className={cn(
-                            "mt-1 flex items-center justify-end gap-1 text-[9px]",
-                            msg.sender === "seller"
-                              ? "text-white/70"
-                              : "text-muted-foreground"
+                            "flex",
+                            isMine ? "justify-end" : "justify-start"
                           )}
                         >
-                          <span>{msg.time}</span>
-                          {msg.sender === "seller" && (
-                            <CheckCheck className="h-3 w-3" />
-                          )}
+                          <div
+                            className={cn(
+                              "max-w-[70%] rounded-xl px-4 py-2.5 text-sm shadow-sm",
+                              isMine
+                                ? "bg-[#341327] text-white rounded-tr-none"
+                                : "bg-white text-foreground border rounded-tl-none"
+                            )}
+                          >
+                            <p className="leading-relaxed">{msg.body}</p>
+                            <div
+                              className={cn(
+                                "mt-1 flex items-center justify-end gap-1 text-[9px]",
+                                isMine
+                                  ? "text-white/70"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              <span>{formatTime(msg.createdAt)}</span>
+                              {isMine && (
+                                <CheckCheck
+                                  className={cn(
+                                    "h-3 w-3",
+                                    msg.readAt ? "text-blue-300" : "text-white/50"
+                                  )}
+                                />
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Typing Indicator */}
-                  {isTyping && (
-                    <div className="flex justify-start">
-                      <div className="rounded-xl px-4 py-3 bg-white border shadow-sm rounded-tl-none">
-                        <div className="flex items-center gap-1.5">
-                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60" style={{ animationDelay: "0ms" }} />
-                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60" style={{ animationDelay: "150ms" }} />
-                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60" style={{ animationDelay: "300ms" }} />
-                        </div>
-                      </div>
-                    </div>
+                      )
+                    })
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
-                {/* Textarea Reply Input */}
                 <div className="border-t bg-white p-3">
                   <div className="flex gap-2">
                     <Textarea
@@ -523,10 +332,14 @@ export default function MessagesPage() {
                     <Button
                       size="icon"
                       onClick={handleSend}
-                      disabled={!reply.trim() || isTyping}
+                      disabled={!reply.trim() || sending}
                       className="shrink-0 rounded-full h-10 w-10 bg-[#1C5C56] hover:bg-[#1C5C56]/90"
                     >
-                      <Send className="h-4 w-4" />
+                      {sending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>

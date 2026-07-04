@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   TrendingUp,
   ShoppingCart,
@@ -23,7 +23,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import {
@@ -33,47 +32,110 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/ui/select"
+import { Skeleton } from "../../../components/ui/skeleton"
 
-const revenueData = Array.from({ length: 30 }, (_, i) => {
-  const date = new Date()
-  date.setDate(date.getDate() - (29 - i))
-  return {
-    date: date.toLocaleDateString("en-KE", { month: "short", day: "numeric" }),
-    revenue: Math.floor(Math.random() * 80000 + 20000),
+interface AnalyticsData {
+  metrics: {
+    revenue: number
+    orders: number
+    averageOrderValue: number
+    conversionRate: string
+    activeUsers: number
   }
-})
+  revenueOverTime: Array<{ date: string; revenue: number }>
+  ordersByStatus: Array<{ name: string; value: number; color: string }>
+  categoryData: Array<{ name: string; revenue: number }>
+  userGrowthData: Array<{ month: string; users: number }>
+}
 
-const ordersByStatus = [
-  { name: "Delivered", value: 5840, color: "hsl(var(--primary))" },
-  { name: "Processing", value: 1230, color: "#f59e0b" },
-  { name: "Shipped", value: 890, color: "#3b82f6" },
-  { name: "Pending", value: 456, color: "#8b5cf6" },
-  { name: "Cancelled", value: 234, color: "#ef4444" },
-]
+function formatKES(minorUnits: number): string {
+  const kes = minorUnits / 100
+  if (kes >= 1_000_000) return `KES ${(kes / 1_000_000).toFixed(1)}M`
+  if (kes >= 1_000) return `KES ${(kes / 1_000).toFixed(1)}K`
+  return `KES ${kes.toLocaleString("en-KE")}`
+}
 
-const categoryData = [
-  { name: "Fashion", revenue: 1250000 },
-  { name: "Beauty", revenue: 890000 },
-  { name: "Accessories", revenue: 560000 },
-  { name: "Skincare", revenue: 430000 },
-  { name: "Wellness", revenue: 280000 },
-]
-
-const userGrowthData = Array.from({ length: 12 }, (_, i) => ({
-  month: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i],
-  users: Math.floor(Math.random() * 2000 + 500),
-}))
-
-const metrics = [
-  { label: "Revenue", value: "KES 3.2M", change: "+18%", icon: DollarSign },
-  { label: "Orders", value: "12,456", change: "+22%", icon: ShoppingCart },
-  { label: "AOV", value: "KES 2,450", change: "+5%", icon: TrendingUp },
-  { label: "Conversion Rate", value: "3.2%", change: "+0.4%", icon: Activity },
-  { label: "Active Users", value: "8,234", change: "+12%", icon: Users },
-]
+function formatNumber(n: number): string {
+  return n.toLocaleString("en-KE")
+}
 
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState("30d")
+  const [data, setData] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchAnalytics() {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch("/api/admin/analytics")
+        if (!res.ok) throw new Error("Failed to fetch analytics")
+        const json = await res.json()
+        setData(json)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Unknown error")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAnalytics()
+  }, [dateRange])
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-3 w-16 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
+              <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Failed to load analytics: {error ?? "No data"}</p>
+      </div>
+    )
+  }
+
+  const { metrics, revenueOverTime, ordersByStatus, categoryData, userGrowthData } = data
+
+  const metricCards = [
+    { label: "Revenue", value: formatKES(metrics.revenue), icon: DollarSign },
+    { label: "Orders", value: formatNumber(metrics.orders), icon: ShoppingCart },
+    { label: "AOV", value: formatKES(metrics.averageOrderValue), icon: TrendingUp },
+    { label: "Conversion Rate", value: metrics.conversionRate, icon: Activity },
+    { label: "Active Users", value: formatNumber(metrics.activeUsers), icon: Users },
+  ]
 
   return (
     <div className="space-y-6">
@@ -96,7 +158,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {metrics.map((m) => {
+        {metricCards.map((m) => {
           const Icon = m.icon
           return (
             <Card key={m.label}>
@@ -106,7 +168,6 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{m.value}</div>
-                <p className="text-xs text-green-600">{m.change}</p>
               </CardContent>
             </Card>
           )
@@ -121,7 +182,7 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
+                <AreaChart data={revenueOverTime}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -131,7 +192,7 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" />
                   <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
-                  <Tooltip />
+                  <Tooltip formatter={(value: number) => formatKES(value)} />
                   <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="url(#revGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -197,31 +258,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Platform Fees Collected</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="feesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" />
-                <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
-                <Tooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#f59e0b" fill="url(#feesGrad)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

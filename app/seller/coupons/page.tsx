@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, TicketPercent, Copy, Trash2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -28,9 +28,6 @@ import {
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "../../../components/ui/card"
 import {
   Dialog,
@@ -63,65 +60,27 @@ type CouponFormData = z.infer<typeof couponSchema>
 interface Coupon {
   id: string
   code: string
-  discountType: "percentage" | "fixed"
+  type: "percentage" | "fixed"
   value: number
-  minPurchase: number
-  maxUses: number | null
-  used: number
-  expiresAt: string
-  status: "Active" | "Expired" | "Disabled"
+  min_subtotal_minor: number
+  usage_limit: number | null
+  used_count: number
+  ends_at: string | null
+  is_active: boolean
+  created_at: string
 }
 
-const mockCoupons: Coupon[] = [
-  {
-    id: "1",
-    code: "WELCOME20",
-    discountType: "percentage",
-    value: 20,
-    minPurchase: 2000,
-    maxUses: 100,
-    used: 45,
-    expiresAt: "2025-03-01",
-    status: "Active",
-  },
-  {
-    id: "2",
-    code: "FLAT500",
-    discountType: "fixed",
-    value: 500,
-    minPurchase: 3000,
-    maxUses: 50,
-    used: 12,
-    expiresAt: "2025-02-15",
-    status: "Active",
-  },
-  {
-    id: "3",
-    code: "SUMMER15",
-    discountType: "percentage",
-    value: 15,
-    minPurchase: 1500,
-    maxUses: null,
-    used: 78,
-    expiresAt: "2024-12-31",
-    status: "Expired",
-  },
-  {
-    id: "4",
-    code: "VIP1000",
-    discountType: "fixed",
-    value: 1000,
-    minPurchase: 8000,
-    maxUses: 20,
-    used: 20,
-    expiresAt: "2025-06-01",
-    status: "Disabled",
-  },
-]
+function getCouponStatus(coupon: Coupon): "Active" | "Expired" | "Disabled" {
+  if (!coupon.is_active) return "Disabled"
+  if (coupon.ends_at && new Date(coupon.ends_at) < new Date()) return "Expired"
+  return "Active"
+}
 
 export default function CouponsPage() {
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons)
+  const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   const {
     register,
@@ -137,21 +96,88 @@ export default function CouponsPage() {
     },
   })
 
-  function onSubmit(data: CouponFormData) {
-    const newCoupon: Coupon = {
-      id: crypto.randomUUID(),
-      code: data.code,
-      discountType: data.discountType,
-      value: data.value,
-      minPurchase: data.minPurchase ?? 0,
-      maxUses: data.maxUses ?? null,
-      used: 0,
-      expiresAt: data.expiresAt,
-      status: "Active",
+  const fetchCoupons = useCallback(async () => {
+    try {
+      const res = await fetch("/api/seller/coupons")
+      if (res.ok) {
+        const data = await res.json()
+        setCoupons(data.coupons || [])
+      }
+    } catch (err) {
+      console.error("Failed to fetch coupons:", err)
+    } finally {
+      setLoading(false)
     }
-    setCoupons((prev) => [newCoupon, ...prev])
-    reset()
-    setOpen(false)
+  }, [])
+
+  useEffect(() => {
+    fetchCoupons()
+  }, [fetchCoupons])
+
+  async function onSubmit(data: CouponFormData) {
+    setCreating(true)
+    try {
+      const res = await fetch("/api/seller/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: data.code,
+          type: data.discountType,
+          value: data.discountType === "percentage" ? data.value : data.value * 100,
+          min_subtotal_minor: (data.minPurchase || 0) * 100,
+          usage_limit: data.maxUses || null,
+          ends_at: data.expiresAt || null,
+        }),
+      })
+      if (res.ok) {
+        const coupon = await res.json()
+        setCoupons((prev) => [coupon, ...prev])
+        reset()
+        setOpen(false)
+      }
+    } catch (err) {
+      console.error("Failed to create coupon:", err)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const res = await fetch(`/api/seller/coupons/${id}`, { method: "DELETE" })
+    if (res.ok) {
+      setCoupons((prev) => prev.filter((c) => c.id !== id))
+    }
+  }
+
+  async function handleDuplicate(coupon: Coupon) {
+    const res = await fetch("/api/seller/coupons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: `${coupon.code}-COPY`,
+        type: coupon.type,
+        value: coupon.type === "fixed" ? coupon.value / 100 : coupon.value,
+        min_subtotal_minor: coupon.min_subtotal_minor,
+        usage_limit: coupon.usage_limit,
+        ends_at: coupon.ends_at,
+      }),
+    })
+    if (res.ok) {
+      const newCoupon = await res.json()
+      setCoupons((prev) => [newCoupon, ...prev])
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div><div className="h-8 w-32 bg-muted rounded animate-pulse" /><div className="h-4 w-48 bg-muted rounded animate-pulse mt-2" /></div>
+          <div className="h-10 w-36 bg-muted rounded animate-pulse" />
+        </div>
+        <Card><CardContent className="p-0">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-14 border-b animate-pulse" />)}</CardContent></Card>
+      </div>
+    )
   }
 
   return (
@@ -159,44 +185,28 @@ export default function CouponsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Coupons</h1>
-          <p className="text-sm text-muted-foreground">
-            Create and manage discount coupons.
-          </p>
+          <p className="text-sm text-muted-foreground">Create and manage discount coupons.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Coupon
-            </Button>
+            <Button><Plus className="mr-2 h-4 w-4" />Create Coupon</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Create Coupon</DialogTitle>
-              <DialogDescription>
-                Set up a new discount coupon for your customers.
-              </DialogDescription>
+              <DialogDescription>Set up a new discount coupon for your customers.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Coupon Code</Label>
                 <Input id="code" {...register("code")} placeholder="e.g. SAVE20" />
-                {errors.code && (
-                  <p className="text-xs text-destructive">{errors.code.message}</p>
-                )}
+                {errors.code && <p className="text-xs text-destructive">{errors.code.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Discount Type</Label>
-                  <Select
-                    defaultValue="percentage"
-                    onValueChange={(v) =>
-                      setValue("discountType", v as "percentage" | "fixed")
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select defaultValue="percentage" onValueChange={(v) => setValue("discountType", v as "percentage" | "fixed")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percentage">Percentage</SelectItem>
                       <SelectItem value="fixed">Fixed (KES)</SelectItem>
@@ -206,40 +216,26 @@ export default function CouponsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="value">Value</Label>
                   <Input id="value" type="number" {...register("value")} placeholder="0" />
-                  {errors.value && (
-                    <p className="text-xs text-destructive">{errors.value.message}</p>
-                  )}
+                  {errors.value && <p className="text-xs text-destructive">{errors.value.message}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="minPurchase">Min. Purchase (KES)</Label>
-                  <Input
-                    id="minPurchase"
-                    type="number"
-                    {...register("minPurchase")}
-                    placeholder="0"
-                  />
+                  <Input id="minPurchase" type="number" {...register("minPurchase")} placeholder="0" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maxUses">Max Uses</Label>
-                  <Input
-                    id="maxUses"
-                    type="number"
-                    {...register("maxUses")}
-                    placeholder="Unlimited"
-                  />
+                  <Input id="maxUses" type="number" {...register("maxUses")} placeholder="Unlimited" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expiresAt">Expiry Date</Label>
                 <Input id="expiresAt" type="date" {...register("expiresAt")} />
-                {errors.expiresAt && (
-                  <p className="text-xs text-destructive">{errors.expiresAt.message}</p>
-                )}
+                {errors.expiresAt && <p className="text-xs text-destructive">{errors.expiresAt.message}</p>}
               </div>
               <DialogFooter>
-                <Button type="submit">Create Coupon</Button>
+                <Button type="submit" disabled={creating}>{creating ? "Creating..." : "Create Coupon"}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -262,69 +258,48 @@ export default function CouponsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {coupons.map((coupon) => (
-                <TableRow key={coupon.id}>
-                  <TableCell className="font-mono font-medium">
-                    {coupon.code}
-                  </TableCell>
-                  <TableCell>
-                    {coupon.discountType === "percentage"
-                      ? `${coupon.value}%`
-                      : `KES ${coupon.value.toLocaleString()}`}
-                  </TableCell>
-                  <TableCell>
-                    {coupon.minPurchase > 0
-                      ? `KES ${coupon.minPurchase.toLocaleString()}`
-                      : "None"}
-                  </TableCell>
-                  <TableCell>
-                    {coupon.maxUses ?? "Unlimited"}
-                  </TableCell>
-                  <TableCell>{coupon.used}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {coupon.expiresAt}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        coupon.status === "Active"
-                          ? "default"
-                          : coupon.status === "Expired"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {coupon.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {coupons.map((coupon) => {
+                const status = getCouponStatus(coupon)
+                return (
+                  <TableRow key={coupon.id}>
+                    <TableCell className="font-mono font-medium">{coupon.code}</TableCell>
+                    <TableCell>
+                      {coupon.type === "percentage" ? `${coupon.value}%` : `KES ${(coupon.value / 100).toLocaleString()}`}
+                    </TableCell>
+                    <TableCell>
+                      {coupon.min_subtotal_minor > 0 ? `KES ${(coupon.min_subtotal_minor / 100).toLocaleString()}` : "None"}
+                    </TableCell>
+                    <TableCell>{coupon.usage_limit ?? "Unlimited"}</TableCell>
+                    <TableCell>{coupon.used_count}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {coupon.ends_at ? new Date(coupon.ends_at).toLocaleDateString() : "No expiry"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={status === "Active" ? "default" : status === "Expired" ? "secondary" : "destructive"}>
+                        {status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions</span></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDuplicate(coupon)}>
+                            <Copy className="mr-2 h-4 w-4" />Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(coupon.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
               {coupons.length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={8}
-                    className="py-12 text-center text-muted-foreground"
-                  >
+                  <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
                     <TicketPercent className="mx-auto mb-2 h-8 w-8" />
                     No coupons created yet
                   </TableCell>
