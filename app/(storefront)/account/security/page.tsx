@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Shield, Smartphone, Save, Loader2, AlertCircle, CheckCircle, Copy, QrCode, X } from "lucide-react"
+import QRCode from "qrcode"
+import { Shield, Smartphone, Save, Loader2, AlertCircle, CheckCircle, Copy, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "../../../../components/ui/button"
@@ -49,6 +50,8 @@ export default function SecurityPage() {
   const [twoFactorSecret, setTwoFactorSecret] = useState("")
   const [twoFactorUri, setTwoFactorUri] = useState("")
   const [verifyCode, setVerifyCode] = useState("")
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("")
+  const qrCodeGenerated = useRef(false)
 
   const {
     register,
@@ -72,6 +75,27 @@ export default function SecurityPage() {
       })
       .catch(() => {})
   }, [])
+
+  // Generate QR code when URI changes
+  useEffect(() => {
+    if (twoFactorUri && showTwoFactorSetup && !qrCodeGenerated.current) {
+      qrCodeGenerated.current = true
+      QRCode.toDataURL(twoFactorUri, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      })
+        .then((url) => {
+          setQrCodeDataUrl(url)
+        })
+        .catch(() => {
+          toast.error("Failed to generate QR code")
+        })
+    }
+  }, [twoFactorUri, showTwoFactorSetup])
 
   const onSubmit = async (data: PasswordFormData) => {
     setIsSaving(true)
@@ -333,6 +357,8 @@ export default function SecurityPage() {
                   onClick={() => {
                     setShowTwoFactorSetup(false)
                     setVerifyCode("")
+                    setQrCodeDataUrl("")
+                    qrCodeGenerated.current = false
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -345,10 +371,17 @@ export default function SecurityPage() {
                 
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-white p-2">
-                    {/* Simple text-based representation - in production use a QR code library */}
-                    <div className="flex h-32 w-32 items-center justify-center bg-gray-100 text-xs text-gray-500">
-                      <QrCode className="h-16 w-16 text-gray-300" />
-                    </div>
+                    {qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="QR Code for 2FA setup"
+                        className="h-[200px] w-[200px]"
+                      />
+                    ) : (
+                      <div className="flex h-[200px] w-[200px] items-center justify-center bg-gray-100">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 space-y-2">
                     <p className="text-xs text-muted-foreground">Secret key:</p>
