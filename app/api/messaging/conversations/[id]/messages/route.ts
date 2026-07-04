@@ -3,6 +3,7 @@ import { createSupabaseClient } from "../../../../../../lib/supabase/server";
 import { createSupabaseConversationRepository } from "../../../../../../lib/messaging/supabase-conversation-repository";
 import { createSupabaseMessageRepository } from "../../../../../../lib/messaging/supabase-message-repository";
 import { createMessageService } from "../../../../../../lib/messaging/message-service";
+import { canActAsSeller } from "../../../../../../lib/messaging/seller-identity";
 
 export async function GET(
   request: NextRequest,
@@ -32,14 +33,15 @@ export async function GET(
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
-    if (conversation.buyerId !== user.id && conversation.sellerId !== user.id) {
+    const isSeller = conversation.buyerId !== user.id && (await canActAsSeller(supabase, conversation.sellerId, user.id));
+    if (conversation.buyerId !== user.id && !isSeller) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const result = await service.listByConversation(
       id,
       user.id,
-      conversation.sellerId === user.id,
+      isSeller,
       cursor,
       limit
     );
@@ -83,7 +85,7 @@ export async function POST(
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
-    const isSeller = conversation.sellerId === user.id;
+    const isSeller = conversation.buyerId !== user.id && (await canActAsSeller(supabase, conversation.sellerId, user.id));
     if (conversation.buyerId !== user.id && !isSeller) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

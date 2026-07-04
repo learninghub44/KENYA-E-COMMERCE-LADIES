@@ -4,7 +4,34 @@ import { createSupabaseConversationRepository } from "../../../../lib/messaging/
 import { createSupabaseMessageRepository } from "../../../../lib/messaging/supabase-message-repository";
 import { createConversationService } from "../../../../lib/messaging/conversation-service";
 import { createMessageService } from "../../../../lib/messaging/message-service";
-import type { ConversationRecord } from "../../../../lib/messaging/types";
+import { resolveManagedSellerIds } from "../../../../lib/messaging/seller-identity";
+import type { ConversationRecord, CursorPage, MessagingResult } from "../../../../lib/messaging/types";
+
+/**
+ * Merges one or more cursor pages of conversations (e.g. one per seller
+ * account a user manages) into a single sorted, deduped, re-paginated page.
+ */
+function mergeConversationPages(
+  pages: MessagingResult<CursorPage<ConversationRecord>>[],
+  limit: number
+): CursorPage<ConversationRecord> {
+  const all = pages.flatMap((page) => (page.ok ? page.data.items : []));
+
+  all.sort((a, b) => {
+    const aTime = a.lastMessageAt ?? a.createdAt;
+    const bTime = b.lastMessageAt ?? b.createdAt;
+    return bTime.localeCompare(aTime);
+  });
+
+  const deduped = all.filter((item, index, self) => self.findIndex((i) => i.id === item.id) === index);
+  const sliced = deduped.slice(0, limit);
+
+  const nextCursor = deduped.length > limit && sliced.length > 0
+    ? Buffer.from(sliced[sliced.length - 1]!.lastMessageAt ?? sliced[sliced.length - 1]!.createdAt).toString("base64")
+    : null;
+
+  return { items: sliced, nextCursor };
+}
 
 /**
  * Shapes a raw ConversationRecord into what the storefront inbox UI renders:
@@ -89,41 +116,29 @@ export async function GET(request: NextRequest) {
     }
 
     if (role === "seller") {
-      const result = await service.listForSeller(user.id, cursor, limit);
-      if (!result.ok) {
-        return NextResponse.json({ error: result.message }, { status: result.status });
+      const sellerIds = await resolveManagedSellerIds(supabase, user.id);
+      if (sellerIds.length === 0) {
+        return NextResponse.json({ items: [], nextCursor: null });
       }
-      const items = await enrichConversations(supabase, result.data.items, user.id);
-      return NextResponse.json({ items, nextCursor: result.data.nextCursor });
+
+      const sellerPages = await Promise.all(
+        sellerIds.map((sellerId) => service.listForSeller(sellerId, cursor, limit))
+      );
+      const merged = mergeConversationPages(sellerPages, limit);
+      const items = await enrichConversations(supabase, merged.items, user.id);
+      return NextResponse.json({ items, nextCursor: merged.nextCursor });
     }
 
-    const [buyerResult, sellerResult] = await Promise.all([
+    const sellerIds = await resolveManagedSellerIds(supabase, user.id);
+    const [buyerResult, ...sellerResults] = await Promise.all([
       service.listForBuyer(user.id, undefined, limit),
-      service.listForSeller(user.id, undefined, limit)
+      ...sellerIds.map((sellerId) => service.listForSeller(sellerId, undefined, limit))
     ]);
 
-    const all = [
-      ...(buyerResult.ok ? buyerResult.data.items : []),
-      ...(sellerResult.ok ? sellerResult.data.items : [])
-    ];
+    const merged = mergeConversationPages([buyerResult, ...sellerResults], limit);
+    const items = await enrichConversations(supabase, merged.items, user.id);
 
-    all.sort((a, b) => {
-      const aTime = a.lastMessageAt ?? a.createdAt;
-      const bTime = b.lastMessageAt ?? b.createdAt;
-      return bTime.localeCompare(aTime);
-    });
-
-    const deduped = all.filter((item, index, self) => self.findIndex((i) => i.id === item.id) === index);
-    const sliced = cursor && deduped.length > limit ? deduped.slice(0, limit) : deduped;
-
-    const items = await enrichConversations(supabase, sliced, user.id);
-
-    return NextResponse.json({
-      items,
-      nextCursor: sliced.length >= limit && sliced.length < deduped.length
-        ? Buffer.from(sliced[sliced.length - 1]!.lastMessageAt ?? sliced[sliced.length - 1]!.createdAt).toString("base64")
-        : null
-    });
+    return NextResponse.json({ items, nextCursor: merged.nextCursor });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
