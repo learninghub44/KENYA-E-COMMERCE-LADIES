@@ -57,6 +57,25 @@ export function createReportService(deps: ReportServiceDependencies) {
       return { ok: true, data: updated };
     },
 
+    async dismiss(actor: AdminActor, reportId: string, resolution: string): Promise<ReportResult<ReportRecord>> {
+      if (!canModerate(actor)) return failure("AUTHORIZATION_DENIED", "Actor cannot dismiss reports.", 403);
+      const existing = await deps.reports.findById(reportId);
+      if (!existing) return failure("REPORT_NOT_FOUND", "Report was not found.", 404);
+      const updated = await deps.reports.update({
+        reportId,
+        values: { status: "dismissed", resolution, resolvedAt: new Date().toISOString() }
+      });
+      await deps.audit.writeAdminAudit({
+        actor,
+        action: "report.dismissed",
+        entityType: "report",
+        entityId: reportId,
+        oldValues: { status: existing.status },
+        newValues: { status: "dismissed", resolution }
+      });
+      return { ok: true, data: updated };
+    },
+
     async resolve(actor: AdminActor, reportId: string, resolution: string): Promise<ReportResult<ReportRecord>> {
       if (!canModerate(actor)) return failure("AUTHORIZATION_DENIED", "Actor cannot resolve reports.", 403);
       const existing = await deps.reports.findById(reportId);
