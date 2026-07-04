@@ -23,7 +23,7 @@ function PwaInstallPrompt() {
           <Download className="h-5 w-5 text-primary" aria-hidden="true" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium">Install KEC Ladies</p>
+          <p className="text-sm font-medium">Install Zuri Market</p>
           <p className="text-xs text-muted-foreground">Add to your home screen for the best experience</p>
         </div>
         <Button

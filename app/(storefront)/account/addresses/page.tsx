@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { MapPin, Plus, Pencil, Trash2, Star } from "lucide-react"
+import { MapPin, Plus, Pencil, Trash2, Star, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "../../../../components/ui/button"
 import { Input } from "../../../../components/ui/input"
@@ -12,11 +13,8 @@ import { Label } from "../../../../components/ui/label"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "../../../../components/ui/card"
 import { Badge } from "../../../../components/ui/badge"
-import { Separator } from "../../../../components/ui/separator"
 import {
   Dialog,
   DialogContent,
@@ -25,56 +23,45 @@ import {
   DialogTrigger,
 } from "../../../../components/ui/dialog"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
+import { useAuth } from "../../../../lib/auth/auth-context"
 
 const addressSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  recipient_name: z.string().min(1, "Name is required"),
   phone: z.string().min(10, "Valid phone number required"),
-  street: z.string().min(5, "Street address is required"),
+  line1: z.string().min(5, "Street address is required"),
+  line2: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zip: z.string().min(3, "ZIP code is required"),
+  region: z.string().min(1, "State is required"),
+  postal_code: z.string().min(3, "ZIP code is required"),
+  label: z.string().optional(),
 })
 
 type AddressFormData = z.infer<typeof addressSchema>
 
 interface Address {
   id: string
-  name: string
+  recipient_name: string
   phone: string
-  street: string
+  line1: string
+  line2: string | null
   city: string
-  state: string
-  zip: string
-  isDefault: boolean
+  region: string | null
+  postal_code: string | null
+  label: string | null
+  country_code: string
+  is_default_shipping: boolean
+  is_default_billing: boolean
+  created_at: string
+  updated_at: string
 }
 
-const MOCK_ADDRESSES: Address[] = [
-  {
-    id: "1",
-    name: "Grace Akinyi",
-    phone: "+254 712 345 678",
-    street: "45 Moi Avenue, Westlands",
-    city: "Nairobi",
-    state: "Nairobi County",
-    zip: "00100",
-    isDefault: true,
-  },
-  {
-    id: "2",
-    name: "Grace Akinyi",
-    phone: "+254 723 456 789",
-    street: "12 Kenyatta Road",
-    city: "Kisumu",
-    state: "Kisumu County",
-    zip: "40100",
-    isDefault: false,
-  },
-]
-
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>(MOCK_ADDRESSES)
+  const { user } = useAuth()
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   const {
     register,
@@ -85,55 +72,119 @@ export default function AddressesPage() {
     resolver: zodResolver(addressSchema),
   })
 
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const res = await fetch("/api/account/addresses")
+      if (!res.ok) throw new Error("Failed to load addresses")
+      const data = await res.json()
+      setAddresses(data)
+    } catch {
+      toast.error("Failed to load addresses")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (user) fetchAddresses()
+  }, [user, fetchAddresses])
+
   const openAddDialog = () => {
     setEditingId(null)
-    reset({ name: "", phone: "", street: "", city: "", state: "", zip: "" })
+    reset({
+      recipient_name: "",
+      phone: "",
+      line1: "",
+      line2: "",
+      city: "",
+      region: "",
+      postal_code: "",
+      label: "",
+    })
     setIsDialogOpen(true)
   }
 
   const openEditDialog = (address: Address) => {
     setEditingId(address.id)
     reset({
-      name: address.name,
+      recipient_name: address.recipient_name,
       phone: address.phone,
-      street: address.street,
+      line1: address.line1,
+      line2: address.line2 ?? "",
       city: address.city,
-      state: address.state,
-      zip: address.zip,
+      region: address.region ?? "",
+      postal_code: address.postal_code ?? "",
+      label: address.label ?? "",
     })
     setIsDialogOpen(true)
   }
 
-  const onSubmit = (data: AddressFormData) => {
-    if (editingId) {
-      setAddresses((prev) =>
-        prev.map((a) => (a.id === editingId ? { ...a, ...data } : a))
-      )
-    } else {
-      const newAddress: Address = {
-        id: String(Date.now()),
-        ...data,
-        isDefault: addresses.length === 0,
+  const onSubmit = async (data: AddressFormData) => {
+    setIsSaving(true)
+    try {
+      if (editingId) {
+        const res = await fetch(`/api/account/addresses/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error("Failed to update address")
+        toast.success("Address updated")
+      } else {
+        const res = await fetch("/api/account/addresses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            is_default_shipping: addresses.length === 0,
+            is_default_billing: addresses.length === 0,
+          }),
+        })
+        if (!res.ok) throw new Error("Failed to add address")
+        toast.success("Address added")
       }
-      setAddresses((prev) => [...prev, newAddress])
+      await fetchAddresses()
+      setIsDialogOpen(false)
+    } catch {
+      toast.error(editingId ? "Failed to update address" : "Failed to add address")
+    } finally {
+      setIsSaving(false)
     }
-    setIsDialogOpen(false)
   }
 
-  const deleteAddress = (id: string) => {
-    setAddresses((prev) => {
-      const filtered = prev.filter((a) => a.id !== id)
-      const deleted = prev.find((a) => a.id === id)
-      if (deleted?.isDefault && filtered.length > 0 && filtered[0]) {
-        filtered[0].isDefault = true
-      }
-      return filtered
-    })
+  const deleteAddress = async (id: string) => {
+    try {
+      const res = await fetch(`/api/account/addresses/${id}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) throw new Error("Failed to delete address")
+      toast.success("Address deleted")
+      await fetchAddresses()
+    } catch {
+      toast.error("Failed to delete address")
+    }
   }
 
-  const setAsDefault = (id: string) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === id }))
+  const setAsDefault = async (id: string) => {
+    try {
+      const res = await fetch(`/api/account/addresses/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_default_shipping: true }),
+      })
+      if (!res.ok) throw new Error("Failed to set default")
+      toast.success("Default address updated")
+      await fetchAddresses()
+    } catch {
+      toast.error("Failed to set default address")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex max-w-3xl items-center justify-center px-4 py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 
@@ -164,11 +215,11 @@ export default function AddressesPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" {...register("name")} />
-                {errors.name && (
+                <Label htmlFor="recipient_name">Full Name</Label>
+                <Input id="recipient_name" {...register("recipient_name")} />
+                {errors.recipient_name && (
                   <p className="text-xs text-destructive">
-                    {errors.name.message}
+                    {errors.recipient_name.message}
                   </p>
                 )}
               </div>
@@ -182,13 +233,17 @@ export default function AddressesPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="street">Street Address</Label>
-                <Input id="street" {...register("street")} />
-                {errors.street && (
+                <Label htmlFor="line1">Street Address</Label>
+                <Input id="line1" {...register("line1")} />
+                {errors.line1 && (
                   <p className="text-xs text-destructive">
-                    {errors.street.message}
+                    {errors.line1.message}
                   </p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="line2">Apartment, Suite, etc. (optional)</Label>
+                <Input id="line2" {...register("line2")} />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -201,23 +256,27 @@ export default function AddressesPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input id="state" {...register("state")} />
-                  {errors.state && (
+                  <Label htmlFor="region">State</Label>
+                  <Input id="region" {...register("region")} />
+                  {errors.region && (
                     <p className="text-xs text-destructive">
-                      {errors.state.message}
+                      {errors.region.message}
                     </p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="zip">ZIP</Label>
-                  <Input id="zip" {...register("zip")} />
-                  {errors.zip && (
+                  <Label htmlFor="postal_code">ZIP</Label>
+                  <Input id="postal_code" {...register("postal_code")} />
+                  {errors.postal_code && (
                     <p className="text-xs text-destructive">
-                      {errors.zip.message}
+                      {errors.postal_code.message}
                     </p>
                   )}
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="label">Label (optional)</Label>
+                <Input id="label" placeholder="e.g. Home, Work" {...register("label")} />
               </div>
               <div className="flex justify-end gap-2">
                 <Button
@@ -227,8 +286,8 @@ export default function AddressesPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingId ? "Save Changes" : "Add Address"}
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving..." : editingId ? "Save Changes" : "Add Address"}
                 </Button>
               </div>
             </form>
@@ -256,9 +315,11 @@ export default function AddressesPage() {
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{address.name}</span>
+                    <span className="font-medium">
+                      {address.label || address.recipient_name}
+                    </span>
                   </div>
-                  {address.isDefault && (
+                  {address.is_default_shipping && (
                     <Badge variant="secondary" className="text-xs">
                       <Star className="mr-1 h-3 w-3 fill-current" />
                       Default
@@ -266,9 +327,13 @@ export default function AddressesPage() {
                   )}
                 </div>
                 <div className="mb-4 space-y-1 text-sm text-muted-foreground">
-                  <p>{address.street}</p>
+                  <p>{address.recipient_name}</p>
+                  <p>{address.line1}</p>
+                  {address.line2 && <p>{address.line2}</p>}
                   <p>
-                    {address.city}, {address.state} {address.zip}
+                    {address.city}
+                    {address.region ? `, ${address.region}` : ""}
+                    {address.postal_code ? ` ${address.postal_code}` : ""}
                   </p>
                   <p>{address.phone}</p>
                 </div>
@@ -289,7 +354,7 @@ export default function AddressesPage() {
                     <Trash2 className="mr-1 h-3 w-3" />
                     Delete
                   </Button>
-                  {!address.isDefault && (
+                  {!address.is_default_shipping && (
                     <Button
                       variant="ghost"
                       size="sm"

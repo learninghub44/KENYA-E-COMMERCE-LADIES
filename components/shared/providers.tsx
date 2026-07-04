@@ -7,6 +7,7 @@ import { Toaster } from "sonner"
 import { ThemeProvider } from "./theme-provider"
 import { PwaInstallPrompt } from "./pwa-install-prompt"
 import { PwaUpdateNotification } from "./pwa-update-notification"
+import { AuthProvider } from "../../lib/auth/auth-context"
 
 interface ProvidersProps {
   children: ReactNode
@@ -27,12 +28,14 @@ function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        {children}
-        <Toaster richColors closeButton position="top-right" />
-        <PwaInstallPrompt />
-        <PwaUpdateNotification />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          {children}
+          <Toaster richColors closeButton position="top-right" />
+          <PwaInstallPrompt />
+          <PwaUpdateNotification />
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

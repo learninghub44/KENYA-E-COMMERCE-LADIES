@@ -93,6 +93,7 @@ export function createSellerService(deps: SellerServiceDependencies) {
         businessCategory: parsed.data.businessCategory ?? seller.metadata.businessCategory,
         businessAddress: parsed.data.businessAddress ?? seller.metadata.businessAddress,
         storePolicies: parsed.data.storePolicies ?? seller.metadata.storePolicies,
+        socialLinks: parsed.data.socialLinks ?? seller.metadata.socialLinks,
         businessHours: parsed.data.businessHours ?? seller.metadata.businessHours,
         visibility: parsed.data.visibility ?? seller.metadata.visibility
       });
@@ -144,6 +145,12 @@ export function createSellerService(deps: SellerServiceDependencies) {
       }
 
       return { ok: true, data: updated };
+    },
+
+    async getBySlug(slug: string): Promise<SellerResult<SellerRecord>> {
+      const seller = await deps.sellers.findBySlug(slug);
+      if (!seller) return failure("SELLER_NOT_FOUND", "Seller not found.", 404);
+      return { ok: true, data: seller };
     },
 
     async getDashboard(sellerId: string, actorUserId: string): Promise<SellerResult<SellerDashboard>> {

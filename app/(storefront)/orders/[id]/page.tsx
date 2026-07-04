@@ -1,17 +1,19 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import {
   Package,
   Truck,
   CheckCircle2,
-  Clock,
   MapPin,
-  CreditCard,
   MessageSquare,
-  ChevronRight,
+  Loader2,
+  ImageOff,
+  XCircle,
 } from "lucide-react"
 
 import { cn } from "../../../../lib/utils"
@@ -31,65 +33,40 @@ interface OrderPageProps {
   params: Promise<{ id: string }>
 }
 
-const MOCK_ORDER: {
+interface OrderItemView {
+  id: string
+  productId: string | null
+  name: string
+  variant: string | null
+  quantity: number
+  unitPriceMinor: number
+  totalMinor: number
+  imageUrl: string | null
+}
+
+interface OrderDetail {
   id: string
   orderNumber: string
-  date: string
+  createdAt: string
   status: string
-  items: { id: string; name: string; variant: string; price: number; quantity: number; image: string }[]
-  shippingAddress: { name: string; street: string; city: string; state: string; zip: string; country: string; phone: string }
-  paymentMethod: string
-  subtotal: number
-  shipping: number
-  tax: number
-  total: number
-  estimatedDelivery: string
-} = {
-  id: "1",
-  orderNumber: "ORD-2024-001",
-  date: "2024-12-15",
-  status: "shipped",
-  items: [
-    {
-      id: "1",
-      name: "Premium Ankara Maxi Dress",
-      variant: "Size M / Red",
-      price: 4500,
-      quantity: 1,
-      image: "/placeholder.svg",
-    },
-    {
-      id: "2",
-      name: "Handwoven Kente Blazer",
-      variant: "Size L / Gold",
-      price: 8900,
-      quantity: 2,
-      image: "/placeholder.svg",
-    },
-    {
-      id: "3",
-      name: "Beaded Evening Gown",
-      variant: "Size S / Black",
-      price: 12500,
-      quantity: 1,
-      image: "/placeholder.svg",
-    },
-  ],
+  sellerId: string | null
+  items: OrderItemView[]
   shippingAddress: {
-    name: "Jane Akinyi",
-    street: "45 Moi Avenue",
-    city: "Nairobi",
-    state: "Nairobi County",
-    zip: "00100",
-    country: "Kenya",
-    phone: "+254 712 345 678",
-  },
-  paymentMethod: "Credit Card (VISA ending in 4242)",
-  subtotal: 30400,
-  shipping: 500,
-  tax: 2472,
-  total: 33372,
-  estimatedDelivery: "2024-12-22",
+    recipientName: string
+    phone: string
+    line1: string
+    line2?: string | null
+    city: string
+    region?: string | null
+    postalCode?: string | null
+    countryCode: string
+  }
+  subtotalMinor: number
+  discountMinor: number
+  shippingMinor: number
+  taxMinor: number
+  totalMinor: number
+  currency: string
 }
 
 const STEPS = [
@@ -100,10 +77,19 @@ const STEPS = [
 ]
 
 const STATUS_STEP_MAP: Record<string, number> = {
+  draft: 0,
+  pending_payment: 0,
+  pending: 0,
+  paid: 1,
+  confirmed: 1,
   processing: 1,
+  ready_for_shipment: 1,
   shipped: 2,
   delivered: 3,
+  completed: 3,
   cancelled: -1,
+  refunded: -1,
+  returned: -1,
 }
 
 function formatDate(dateStr: string) {
@@ -116,8 +102,132 @@ function formatDate(dateStr: string) {
 
 export default function OrderDetailPage({ params }: OrderPageProps) {
   const { id } = use(params)
-  const order = MOCK_ORDER
+  const router = useRouter()
+  const [order, setOrder] = useState<OrderDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [isContactingSeller, setIsContactingSeller] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      setNotFound(false)
+      try {
+        const res = await fetch(`/api/orders/${id}`)
+        if (res.status === 404 || res.status === 403) {
+          setNotFound(true)
+          return
+        }
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(body.error ?? "Failed to load order.")
+        }
+        const data = await res.json()
+        setOrder({
+          id: data.id,
+          orderNumber: data.orderNumber,
+          createdAt: data.placedAt ?? data.createdAt,
+          status: data.status,
+          sellerId: data.sellerId ?? null,
+          items: (data.items ?? []).map((item: any) => ({
+            id: item.id,
+            productId: item.productId ?? null,
+            name: item.productName,
+            variant: item.variantTitle,
+            quantity: item.quantity,
+            unitPriceMinor: item.unitPriceMinor,
+            totalMinor: item.totalMinor,
+            imageUrl: item.productSnapshot?.imageUrl ?? null,
+          })),
+          shippingAddress: data.shippingAddress,
+          subtotalMinor: data.subtotalMinor,
+          discountMinor: data.discountMinor,
+          shippingMinor: data.shippingMinor,
+          taxMinor: data.taxMinor,
+          totalMinor: data.totalMinor,
+          currency: data.currency,
+        })
+        setError(null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load order.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [id])
+
+  async function cancelOrder() {
+    if (!order) return
+    setCancelling(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not cancel order.")
+      const data = await res.json()
+      setOrder((prev) => (prev ? { ...prev, status: data.status } : prev))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not cancel order.")
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  async function handleContactSeller() {
+    if (!order || !order.sellerId) {
+      toast.error("This order has no seller to contact.")
+      return
+    }
+    setIsContactingSeller(true)
+    try {
+      const firstItem = order.items[0]
+      const res = await fetch("/api/messaging/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId: order.sellerId,
+          productId: firstItem?.productId ?? undefined,
+          orderId: order.id,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? "Could not start a conversation with this seller.")
+      router.push(`/messages?conversationId=${body.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start a conversation with this seller.")
+    } finally {
+      setIsContactingSeller(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto flex max-w-4xl items-center justify-center px-4 py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (notFound || !order) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Order not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">This order could not be loaded.</p>
+        <Button asChild className="mt-6">
+          <Link href="/orders">Back to Orders</Link>
+        </Button>
+      </div>
+    )
+  }
+
   const currentStep = STATUS_STEP_MAP[order.status] ?? 0
+  const canCancel = ["draft", "pending_payment", "pending", "paid", "confirmed"].includes(order.status)
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -129,6 +239,12 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
         ]}
       />
 
+      {error && (
+        <div className="mb-6 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
@@ -137,9 +253,9 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
             </h1>
             <Badge
               variant={
-                order.status === "cancelled"
+                currentStep === -1
                   ? "destructive"
-                  : order.status === "delivered"
+                  : order.status === "delivered" || order.status === "completed"
                   ? "outline"
                   : order.status === "shipped"
                   ? "secondary"
@@ -147,23 +263,32 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
               }
               className="capitalize"
             >
-              {order.status}
+              {order.status.replace(/_/g, " ")}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Placed on {formatDate(order.date)}
+            Placed on {formatDate(order.createdAt)}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => {}}>
-            <Truck className="mr-2 h-4 w-4" />
-            Track Package
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/messages">
+          {canCancel && (
+            <Button variant="outline" size="sm" onClick={cancelOrder} disabled={cancelling}>
+              <XCircle className="mr-2 h-4 w-4" />
+              {cancelling ? "Cancelling..." : "Cancel Order"}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleContactSeller}
+            disabled={isContactingSeller || !order.sellerId}
+          >
+            {isContactingSeller ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
               <MessageSquare className="mr-2 h-4 w-4" />
-              Contact Seller
-            </Link>
+            )}
+            Contact Seller
           </Button>
         </div>
       </div>
@@ -229,26 +354,26 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
               {order.items.map((item) => (
                 <div key={item.id}>
                   <div className="flex gap-4">
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
+                    <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                      {item.imageUrl ? (
+                        <Image src={item.imageUrl} alt={item.name} fill sizes="80px" className="object-cover" />
+                      ) : (
+                        <ImageOff className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
                     <div className="flex flex-1 items-center justify-between">
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.variant}
-                        </p>
+                        {item.variant && (
+                          <p className="text-sm text-muted-foreground">
+                            {item.variant}
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           Qty: {item.quantity}
                         </p>
                       </div>
-                      <Price amount={item.price * item.quantity} size="sm" />
+                      <Price amount={item.totalMinor / 100} currency={order.currency} size="sm" />
                     </div>
                   </div>
                   <Separator className="mt-4" />
@@ -265,16 +390,18 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-medium">{order.shippingAddress.name}</p>
+              <p className="font-medium">{order.shippingAddress.recipientName}</p>
               <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.street}
+                {order.shippingAddress.line1}
+                {order.shippingAddress.line2 ? `, ${order.shippingAddress.line2}` : ""}
               </p>
               <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                {order.shippingAddress.zip}
+                {order.shippingAddress.city}
+                {order.shippingAddress.region ? `, ${order.shippingAddress.region}` : ""}{" "}
+                {order.shippingAddress.postalCode ?? ""}
               </p>
               <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.country}
+                {order.shippingAddress.countryCode}
               </p>
               <p className="text-sm text-muted-foreground">
                 {order.shippingAddress.phone}
@@ -286,30 +413,27 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
         <div className="w-full lg:w-80">
           <Card className="sticky top-24">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <CreditCard className="h-5 w-5" />
-                Payment
-              </CardTitle>
+              <CardTitle className="text-lg">Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {order.paymentMethod}
-              </p>
-
-              <Separator />
-
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <Price amount={order.subtotal} size="sm" />
+                  <Price amount={order.subtotalMinor / 100} currency={order.currency} size="sm" />
                 </div>
+                {order.discountMinor > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <Price amount={-(order.discountMinor / 100)} currency={order.currency} size="sm" />
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <Price amount={order.shipping} size="sm" />
+                  <Price amount={order.shippingMinor / 100} currency={order.currency} size="sm" />
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
-                  <Price amount={order.tax} size="sm" />
+                  <Price amount={order.taxMinor / 100} currency={order.currency} size="sm" />
                 </div>
               </div>
 
@@ -317,17 +441,7 @@ export default function OrderDetailPage({ params }: OrderPageProps) {
 
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Total</span>
-                <Price amount={order.total} size="md" className="font-bold" />
-              </div>
-
-              <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  Estimated delivery:{" "}
-                  <span className="font-medium text-foreground">
-                    {formatDate(order.estimatedDelivery)}
-                  </span>
-                </span>
+                <Price amount={order.totalMinor / 100} currency={order.currency} size="md" className="font-bold" />
               </div>
             </CardContent>
           </Card>

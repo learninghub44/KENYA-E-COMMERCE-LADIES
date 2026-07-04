@@ -5,6 +5,5 @@ coverage/
 .env
 .env.local
 dist-test/
-package-lock.json
 .next/
 *.tsbuildinfo

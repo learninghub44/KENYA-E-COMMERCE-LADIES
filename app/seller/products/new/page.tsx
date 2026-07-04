@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,6 +11,9 @@ import {
   Upload,
   Save,
   Send,
+  Loader2,
+  X,
+  ImageIcon,
 } from "lucide-react"
 
 import { Button } from "../../../../components/ui/button"
@@ -31,7 +34,6 @@ import {
   CardTitle,
   CardDescription,
 } from "../../../../components/ui/card"
-import { Separator } from "../../../../components/ui/separator"
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -50,6 +52,12 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
+
 interface Variant {
   id: string
   size: string
@@ -59,6 +67,11 @@ interface Variant {
 export default function NewProductPage() {
   const router = useRouter()
   const [variants, setVariants] = useState<Variant[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [uploadedImages, setUploadedImages] = useState<{ url: string; altText: string }[]>([])
+  const [isUploading, setIsUploading] = useState(false)
 
   const {
     register,
@@ -72,6 +85,19 @@ export default function NewProductPage() {
       stockQuantity: 0,
     },
   })
+
+  useEffect(() => {
+    fetch("/api/catalog/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCategories(data)
+        } else if (data?.categories) {
+          setCategories(data.categories)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   function addVariant() {
     setVariants((prev) => [
@@ -90,10 +116,109 @@ export default function NewProductPage() {
     )
   }
 
+<<<<<<< HEAD
   function onSave(status: "draft" | "published") {
     handleSubmit((data) => {
       router.push("/products")
     })()
+=======
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("category", "product")
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setUploadedImages((prev) => [
+            ...prev,
+            { url: data.url, altText: file.name.replace(/\.[^/.]+$/, "") },
+          ])
+        }
+      }
+    } catch {
+      setError("Failed to upload image. Please try again.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  function removeImage(index: number) {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function onSave(status: "draft" | "published") {
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await handleSubmit(async (data) => {
+        const body: Record<string, unknown> = {
+          name: data.name,
+          description: data.description,
+          categoryId: data.category || undefined,
+          basePriceMinor: Math.round(data.regularPrice * 100),
+          compareAtPriceMinor: data.salePrice ? Math.round(data.salePrice * 100) : undefined,
+          sku: data.sku,
+          stockQuantity: data.stockQuantity,
+          lowStockThreshold: data.lowStockThreshold,
+          seoTitle: data.metaTitle || undefined,
+          seoDescription: data.metaDescription || undefined,
+          images: uploadedImages.length > 0
+            ? uploadedImages.map((img, i) => ({
+                url: img.url,
+                altText: img.altText || data.name,
+                isPrimary: i === 0,
+              }))
+            : [{ url: "/placeholder.svg", altText: data.name, isPrimary: true }],
+          variants: variants
+            .filter((v) => v.size || v.color)
+            .map((v) => ({
+              title: `${v.size} / ${v.color}`.trim(),
+              sku: `${data.sku}-${v.size || "v"}-${v.color || "c"}`,
+              options: {
+                ...(v.size && { size: v.size }),
+                ...(v.color && { color: v.color }),
+              },
+              priceMinor: Math.round(data.regularPrice * 100),
+            })),
+        }
+
+        const res = await fetch("/api/seller/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+
+        if (!res.ok) {
+          const errData = await res.json()
+          throw new Error(errData.error || "Failed to create product")
+        }
+
+        if (status === "published") {
+          const product = await res.json()
+          await fetch(`/api/seller/products/${product.id}/submit`, {
+            method: "POST",
+          })
+        }
+
+        router.push("/seller/products")
+      })()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setIsSubmitting(false)
+    }
+>>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
   }
 
   return (
@@ -106,16 +231,22 @@ export default function NewProductPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => onSave("draft")}>
-            <Save className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={() => onSave("draft")} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Save Draft
           </Button>
-          <Button onClick={() => onSave("published")}>
-            <Send className="mr-2 h-4 w-4" />
+          <Button onClick={() => onSave("published")} disabled={isSubmitting} className="bg-[#1C5C56] hover:bg-[#164a45]">
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Publish
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -154,11 +285,23 @@ export default function NewProductPage() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dresses">Dresses</SelectItem>
-                      <SelectItem value="tops">Tops</SelectItem>
-                      <SelectItem value="bottoms">Bottoms</SelectItem>
-                      <SelectItem value="accessories">Accessories</SelectItem>
-                      <SelectItem value="shoes">Shoes</SelectItem>
+                      {categories.length > 0
+                        ? categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))
+                        : (
+                            <>
+                              <SelectItem value="Fashion">Fashion</SelectItem>
+                              <SelectItem value="Beauty">Beauty</SelectItem>
+                              <SelectItem value="Skincare">Skincare</SelectItem>
+                              <SelectItem value="Accessories">Accessories</SelectItem>
+                              <SelectItem value="Footwear">Footwear</SelectItem>
+                              <SelectItem value="Jewelry">Jewelry</SelectItem>
+                            </>
+                          )
+                      }
                     </SelectContent>
                   </Select>
                   {errors.category && (
@@ -170,6 +313,68 @@ export default function NewProductPage() {
                   <Input id="tags" {...register("tags")} placeholder="e.g. kitenge, summer, dress" />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Images</CardTitle>
+              <CardDescription>Upload images for your product. The first image will be the primary display image.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <label
+                  htmlFor="image-upload"
+                  className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground hover:bg-muted"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {isUploading ? "Uploading..." : "Upload Images"}
+                </label>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                />
+              </div>
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {uploadedImages.map((img, index) => (
+                    <div key={index} className="group relative">
+                      <img
+                        src={img.url}
+                        alt={img.altText}
+                        className="h-24 w-full rounded-md object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -right-1 -top-1 hidden rounded-full bg-destructive p-1 text-white group-hover:block"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      {index === 0 && (
+                        <span className="absolute bottom-1 left-1 rounded bg-[#1C5C56] px-1.5 py-0.5 text-xs text-white">
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {uploadedImages.length === 0 && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" />
+                  No images uploaded yet. Click the button above to add product images.
+                </div>
+              )}
             </CardContent>
           </Card>
 

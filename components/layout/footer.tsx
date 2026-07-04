@@ -5,26 +5,30 @@ import Link from "next/link"
 import { Instagram, Twitter, Facebook, Youtube } from "lucide-react"
 
 import { cn } from "../../lib/utils"
+import type { CategoryNode } from "../../lib/marketplace/types"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
+import { Logo } from "./logo"
 
 interface FooterColumn {
   title: string
   links: { name: string; href: string }[]
 }
 
-const columns: FooterColumn[] = [
-  {
+function buildShopColumn(categories: CategoryNode[]): FooterColumn {
+  const topLevel = categories.filter((c) => !c.parentId).slice(0, 3)
+  return {
     title: "Shop",
     links: [
-      { name: "All Products", href: "/shop" },
-      { name: "New Arrivals", href: "/new-arrivals" },
-      { name: "Best Sellers", href: "/best-sellers" },
-      { name: "Sale", href: "/sale" },
-      { name: "Collections", href: "/collections" },
+      { name: "All Products", href: "/search" },
+      { name: "New Arrivals", href: "/search?sort=newest" },
+      ...topLevel.map((c) => ({ name: c.name, href: `/categories/${c.slug}` })),
     ],
-  },
+  }
+}
+
+const staticColumns: FooterColumn[] = [
   {
     title: "About",
     links: [
@@ -64,10 +68,15 @@ const socialLinks = [
 
 interface FooterProps {
   className?: string
+  categories?: CategoryNode[]
 }
 
-function Footer({ className }: FooterProps) {
+function Footer({ className, categories = [] }: FooterProps) {
   const [email, setEmail] = React.useState("")
+  const columns = React.useMemo(
+    () => [buildShopColumn(categories), ...staticColumns],
+    [categories]
+  )
 
   function handleNewsletterSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -79,12 +88,10 @@ function Footer({ className }: FooterProps) {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
-            <Link href="/" className="text-xl font-bold tracking-tight">
-              KENYA LUXE
-            </Link>
+            <Logo />
             <p className="mt-3 text-sm text-muted-foreground">
-              Discover curated luxury fashion from African designers. Premium
-              quality, authentic craftsmanship, delivered worldwide.
+              Kenya's marketplace for women's fashion, beauty, wellness, and
+              lifestyle products from verified sellers. Discover. Shop. Empower.
             </p>
             <form
               onSubmit={handleNewsletterSubmit}
@@ -147,7 +154,7 @@ function Footer({ className }: FooterProps) {
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Kenya Luxe. All rights reserved.
+            &copy; {new Date().getFullYear()} Zuri Market. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

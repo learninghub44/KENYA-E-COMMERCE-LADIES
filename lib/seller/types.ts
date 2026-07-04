@@ -66,6 +66,7 @@ export type StoreProfileInput = {
   supportPhone?: string | null;
   businessAddress?: StoreAddress;
   storePolicies?: StorePolicies;
+  socialLinks?: SocialLinks;
   businessHours?: BusinessHours;
   visibility?: StoreVisibility;
 };
@@ -90,6 +91,13 @@ export type StorePolicies = {
   shipping?: string;
   privacy?: string;
   terms?: string;
+};
+
+export type SocialLinks = {
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  whatsapp?: string;
 };
 
 export type BusinessHours = Record<string, { opens: string; closes: string; closed?: boolean }>;
@@ -134,6 +142,7 @@ export type SellerResult<T> =
 export type SellerRepository = {
   findByOwnerId(userId: string): Promise<SellerRecord | null>;
   findById(sellerId: string): Promise<SellerRecord | null>;
+  findBySlug(slug: string): Promise<SellerRecord | null>;
   createSeller(input: {
     ownerId: string;
     storeName: string;

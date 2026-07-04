@@ -1,17 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { SkipNav } from "../components/shared/skip-nav";
 import { Providers } from "../components/shared/providers";
 import { JsonLd } from "../components/shared/json-ld";
 import { organizationJsonLd, websiteJsonLd } from "../lib/seo";
 
 export const metadata: Metadata = {
   title: {
-    default: "Kenya E-Commerce Ladies | Premium Fashion & Beauty Marketplace",
-    template: "%s | Kenya E-Commerce Ladies",
+    default: "Zuri Market | Kenya's Marketplace for Women",
+    template: "%s | Zuri Market",
   },
   description:
-    "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+    "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
   keywords: [
     "fashion",
     "beauty",
@@ -21,22 +20,32 @@ export const metadata: Metadata = {
     "Kenya",
     "marketplace",
     "women fashion",
+    "Zuri Market",
   ],
+<<<<<<< HEAD
   authors: [{ name: "Kenya E-Commerce Ladies" }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+=======
+  authors: [{ name: "Zuri Market" }],
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim() !== ""
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : "https://zurimarket.dev"
+  ),
+>>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
   openGraph: {
     type: "website",
     locale: "en_KE",
-    siteName: "Kenya E-Commerce Ladies",
-    title: "Kenya E-Commerce Ladies",
+    siteName: "Zuri Market",
+    title: "Zuri Market",
     description:
-      "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+      "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kenya E-Commerce Ladies",
+    title: "Zuri Market",
     description:
-      "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+      "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
   },
   icons: {
     icon: "/favicon.ico",
@@ -50,7 +59,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: dark)", color: "#2D0A42" },
   ],
 };
 
@@ -73,7 +82,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <SkipNav />
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
         <Providers>{children}</Providers>

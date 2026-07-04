@@ -49,6 +49,16 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "notification.read.own",
     "notification.preferences.manage"
   ],
+  kyc_reviewer: [
+    "auth.session.read",
+    "auth.session.revoke",
+    "auth.password.update",
+    "auth.email.update",
+    "admin.access",
+    "kyc.review",
+    "notification.read.own",
+    "notification.preferences.manage"
+  ],
   support: [
     "auth.session.read",
     "auth.session.revoke",
@@ -70,6 +80,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "admin.moderate",
     "admin.support",
     "admin.role.manage",
+    "kyc.review",
     "product.read",
     "order.manage",
     "user.read.support",
@@ -92,6 +103,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "admin.moderate",
     "admin.support",
     "admin.role.manage",
+    "kyc.review",
     "product.read",
     "order.manage",
     "user.read.support",

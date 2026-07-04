@@ -1,5 +1,17 @@
 import type { AdminActor, AdminResult, CursorPage } from "../audit/types";
-import type { PlatformEventType } from "../notifications/types";
+
+export type PlatformEventType =
+  | "order.created"
+  | "order.status_changed"
+  | "message.created"
+  | "message.read"
+  | "seller.approved"
+  | "seller.rejected"
+  | "product.approved"
+  | "product.rejected"
+  | "review.created"
+  | "account.status_changed"
+  | "admin.announcement";
 
 export type ReviewResult<T> =
   | { ok: true; data: T }

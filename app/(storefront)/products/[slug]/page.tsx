@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { motion } from "framer-motion"
+import { useParams, useRouter } from "next/navigation"
+import { toast } from "sonner"
 import {
   Heart,
   Share2,
@@ -17,7 +17,9 @@ import {
   X,
   Star,
   Check,
+  Loader2,
   MessageCircle,
+  MessageSquare,
   Twitter,
   Facebook,
 } from "lucide-react"
@@ -26,6 +28,7 @@ import { cn } from "../../../../lib/utils"
 import { Button } from "../../../../components/ui/button"
 import { Badge } from "../../../../components/ui/badge"
 import { Input } from "../../../../components/ui/input"
+import { Textarea } from "../../../../components/ui/textarea"
 import { Separator } from "../../../../components/ui/separator"
 import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../../components/ui/tabs"
@@ -37,77 +40,339 @@ import {
   TooltipProvider,
 } from "../../../../components/ui/tooltip"
 import { Breadcrumbs } from "../../../../components/shared/breadcrumbs"
-import { ProductCard } from "../../../../components/shared/product-card"
+import { ProductCard, type Product } from "../../../../components/shared/product-card"
 import { Rating } from "../../../../components/shared/rating"
 import { Price } from "../../../../components/shared/price"
+import { useAuth } from "../../../../lib/auth/auth-context"
+import { emitCartUpdated } from "../../../../lib/cart/use-cart-count"
 
-const product = {
-  id: "1",
-  name: "Premium African Print Maxi Dress",
-  slug: "premium-african-print-maxi-dress",
-  price: 8500,
-  comparePrice: 12000,
-  description: "Make a statement with this stunning premium African print maxi dress. Crafted from high-quality Ankara fabric, featuring an elegant floor-length silhouette with a flattering fit-and-flare design. Perfect for weddings, galas, and special occasions. Features a flattering V-neckline, adjustable waist tie, and flowy skirt. Each piece is uniquely patterned, ensuring you stand out from the crowd.",
-  images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
-  rating: 4.8,
-  reviewCount: 124,
-  discount: 29,
-  isNew: true,
-  seller: {
-    name: "Nairobi Styles",
-    slug: "nairobi-styles",
-    avatar: "/placeholder.svg",
-    rating: 4.9,
-    productCount: 48,
-    memberSince: "2023",
-  },
-  variants: {
-    colors: ["Gold", "Emerald", "Ruby Red", "Royal Blue", "Ivory"],
-    sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL"],
-  },
-  category: { name: "Fashion", slug: "fashion" },
-  tags: ["Dresses", "African Print", "Maxi", "Formal Wear"],
+interface ProductVariant {
+  id: string
+  sku: string | null
+  title: string | null
+  priceMinor: number | null
+  compareAtPriceMinor: number | null
+  currency: string
+  options: { color?: string; size?: string; [key: string]: string | undefined }
 }
 
-const reviews = [
-  { id: "1", author: "Grace W.", avatar: "/placeholder.svg", rating: 5, date: "2 weeks ago", text: "Absolutely stunning dress! The fabric is high quality and the fit is perfect. Received so many compliments at the wedding I attended." },
-  { id: "2", author: "Faith M.", avatar: "/placeholder.svg", rating: 5, date: "1 month ago", text: "Beautiful craftsmanship and vibrant colors. True to size. Will definitely be ordering more from this seller." },
-  { id: "3", author: "Amina K.", avatar: "/placeholder.svg", rating: 4, date: "2 months ago", text: "Lovely dress! The pattern is even more beautiful in person. Slightly longer than expected but still works perfectly with heels." },
-]
+interface ProductData {
+  id: string
+  sellerId?: string
+  name: string
+  slug: string
+  price: number
+  comparePrice?: number | null
+  description: string
+  images: string[]
+  rating: number
+  reviewCount: number
+  discount?: number | null
+  isNew?: boolean
+  seller: { id: string; name: string; slug: string; avatar: string; rating: number; productCount: number; memberSince: string }
+  variants: { colors: string[]; sizes: string[]; list: ProductVariant[] }
+  category: { name: string; slug: string }
+  tags: string[]
+}
 
-const relatedProducts = [
-  { id: "2", name: "Handcrafted Beaded Statement Necklace", price: 3200, comparePrice: null, images: [], rating: 4.6, reviewCount: 89, isNew: true, discount: null, sellerName: "Makena Accessories", slug: "handcrafted-beaded-statement-necklace" },
-  { id: "3", name: "Kente Print Wrap Skirt", price: 4800, comparePrice: null, images: [], rating: 4.8, reviewCount: 98, isNew: true, discount: null, sellerName: "Accra Threads", slug: "kente-print-wrap-skirt" },
-  { id: "4", name: "Linen Blend Tailored Blazer", price: 9500, comparePrice: null, images: [], rating: 4.7, reviewCount: 67, isNew: true, discount: null, sellerName: "Safari Chic", slug: "linen-blend-tailored-blazer" },
-  { id: "5", name: "Leather Crossbody Bag", price: 6200, comparePrice: 7800, images: [], rating: 4.5, reviewCount: 143, isNew: false, discount: 21, sellerName: "Urban Leather Co.", slug: "leather-crossbody-bag" },
-]
+interface ReviewData {
+  id: string
+  author: string
+  avatar: string
+  rating: number
+  date: string
+  text: string
+}
 
 export default function ProductDetailPage() {
   const params = useParams()
   const slug = params.slug as string
+  const { user } = useAuth()
+  const router = useRouter()
 
-  const [selectedColor, setSelectedColor] = useState(product.variants.colors[0] ?? product.variants.colors[0])
-  const [selectedSize, setSelectedSize] = useState(product.variants.sizes[2] ?? product.variants.sizes[2])
+  const [product, setProduct] = useState<ProductData | null>(null)
+  const [isContactingSeller, setIsContactingSeller] = useState(false)
+  const [reviews, setReviews] = useState<ReviewData[]>([])
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+  const [selectedColor, setSelectedColor] = useState("")
+  const [selectedSize, setSelectedSize] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [reviewableOrderItems, setReviewableOrderItems] = useState<{ orderItemId: string; productId: string }[]>([])
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewTitle, setReviewTitle] = useState("")
+  const [reviewBody, setReviewBody] = useState("")
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+
+  const loadProduct = useCallback(async () => {
+    setIsLoading(true)
+    setNotFound(false)
+    try {
+      const res = await fetch(`/api/products/${slug}`)
+      if (res.status === 404) {
+        setProduct(null)
+        setNotFound(true)
+        return
+      }
+      if (!res.ok) throw new Error("Failed to load product.")
+      const data = await res.json()
+      setProduct({
+        id: data.id,
+        sellerId: data.seller?.id,
+        name: data.name,
+        slug: data.slug,
+        price: data.price,
+        comparePrice: data.comparePrice,
+        description: data.description,
+        images: data.images,
+        rating: data.rating,
+        reviewCount: data.reviewCount,
+        discount: data.discount,
+        isNew: data.isNew,
+        seller: data.seller,
+        variants: data.variants,
+        category: data.category,
+        tags: data.tags ?? [],
+      })
+      setReviews(data.reviews ?? [])
+      setRelatedProducts(data.relatedProducts ?? [])
+      setSelectedColor(data.variants?.colors?.[0] ?? "")
+      setSelectedSize(data.variants?.sizes?.[0] ?? "")
+      setQuantity(1)
+      setSelectedImageIndex(0)
+    } catch (err) {
+      setNotFound(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [slug])
+
+  useEffect(() => {
+    loadProduct()
+  }, [loadProduct])
+
+  useEffect(() => {
+    if (!product || !user) {
+      setIsWishlisted(false)
+      return
+    }
+    let cancelled = false
+    fetch("/api/wishlist")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((items: Array<{ id: string }>) => {
+        if (!cancelled) setIsWishlisted(items.some((item) => item.id === product.id))
+      })
+      .catch(() => {
+        if (!cancelled) setIsWishlisted(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [product, user])
+
+  useEffect(() => {
+    if (!product || !user) {
+      setReviewableOrderItems([])
+      return
+    }
+    let cancelled = false
+    fetch("/api/reviews/eligibility")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((items: { orderItemId: string; productId: string }[]) => {
+        if (!cancelled) setReviewableOrderItems(items.filter((item) => item.productId === product.id))
+      })
+      .catch(() => {
+        if (!cancelled) setReviewableOrderItems([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [product, user])
 
   function handleQuantityChange(delta: number) {
     setQuantity((prev) => Math.max(1, prev + delta))
   }
 
-  function handleAddToCart() {
-    // placeholder
+  function resolveSelectedVariant(): ProductVariant | null {
+    if (!product) return null
+    const list = product.variants.list ?? []
+    if (list.length === 0) return null
+    const match = list.find((v) => {
+      const colorOk = !product.variants.colors.length || v.options?.color === selectedColor
+      const sizeOk = !product.variants.sizes.length || v.options?.size === selectedSize
+      return colorOk && sizeOk
+    })
+    return match ?? list[0] ?? null
+  }
+
+  async function handleAddToCart() {
+    if (!product) return
+    if (!user) {
+      toast.error("Please sign in to add items to your cart.")
+      return
+    }
+    const variant = resolveSelectedVariant()
+    setIsAddingToCart(true)
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          variantId: variant?.id ?? undefined,
+          quantity,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not add item to cart.")
+      }
+      emitCartUpdated()
+      toast.success("Added to cart")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add item to cart.")
+    } finally {
+      setIsAddingToCart(false)
+    }
+  }
+
+  async function handleToggleWishlist() {
+    if (!product) return
+    if (!user) {
+      toast.error("Please sign in to use your wishlist.")
+      return
+    }
+    setIsTogglingWishlist(true)
+    const wasWishlisted = isWishlisted
+    try {
+      const res = wasWishlisted
+        ? await fetch(`/api/wishlist/${product.id}`, { method: "DELETE" })
+        : await fetch("/api/wishlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: product.id }),
+          })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not update your wishlist.")
+      }
+      setIsWishlisted(!wasWishlisted)
+      toast.success(wasWishlisted ? "Removed from wishlist" : "Added to wishlist")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update your wishlist.")
+    } finally {
+      setIsTogglingWishlist(false)
+    }
+  }
+
+  async function handleSubmitReview() {
+    if (!product || !user) return
+    const orderItem = reviewableOrderItems[0]
+    if (!orderItem) return
+    if (reviewRating < 1) {
+      toast.error("Please select a star rating.")
+      return
+    }
+    if (reviewTitle.trim().length < 3 || reviewBody.trim().length < 10) {
+      toast.error("Please add a title (3+ characters) and a review (10+ characters).")
+      return
+    }
+    setIsSubmittingReview(true)
+    try {
+      const res = await fetch("/api/reviews/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderItemId: orderItem.orderItemId,
+          rating: reviewRating,
+          title: reviewTitle.trim(),
+          body: reviewBody.trim(),
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not submit your review.")
+      }
+      toast.success("Review submitted")
+      setReviewableOrderItems((prev) => prev.filter((item) => item.orderItemId !== orderItem.orderItemId))
+      setIsReviewFormOpen(false)
+      setReviewRating(0)
+      setReviewTitle("")
+      setReviewBody("")
+      loadProduct()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit your review.")
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
+
+  async function handleContactSeller() {
+    if (!product) return
+    if (!user) {
+      toast.error("Please sign in to message the seller.")
+      return
+    }
+    setIsContactingSeller(true)
+    try {
+      const variant = resolveSelectedVariant()
+      const res = await fetch("/api/messaging/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId: product.seller.id,
+          productId: product.id,
+          variantId: variant?.id ?? undefined,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not start a conversation with this seller.")
+      }
+      router.push(`/messages?conversationId=${body.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start a conversation with this seller.")
+    } finally {
+      setIsContactingSeller(false)
+    }
   }
 
   function handleImageNav(direction: -1 | 1) {
     setSelectedImageIndex((prev) => {
+      const images = product?.images ?? []
       const next = prev + direction
-      if (next < 0) return product.images.length - 1
-      if (next >= product.images.length) return 0
+      if (next < 0) return images.length - 1
+      if (next >= images.length) return 0
       return next
     })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+        <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Product not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">This product could not be loaded.</p>
+        <Button asChild className="mt-6">
+          <Link href="/">Browse Products</Link>
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -206,7 +471,7 @@ export default function ProductDetailPage() {
                 </Link>
               </div>
               <div className="mt-4">
-                <Price amount={product.price} compareAt={product.comparePrice} variant="sale" size="lg" />
+                <Price amount={product.price} compareAt={product.comparePrice ?? undefined} variant="sale" size="lg" />
               </div>
             </div>
 
@@ -302,8 +567,18 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button size="lg" className="flex-1 gap-2" onClick={handleAddToCart} aria-label="Add to cart">
-                <ShoppingCart className="h-5 w-5" />
+              <Button
+                size="lg"
+                className="flex-1 gap-2"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+                aria-label="Add to cart"
+              >
+                {isAddingToCart ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-5 w-5" />
+                )}
                 Add to Cart
               </Button>
               <TooltipProvider>
@@ -313,11 +588,16 @@ export default function ProductDetailPage() {
                       variant="outline"
                       size="icon"
                       className="h-12 w-12 flex-shrink-0"
-                      onClick={() => setIsWishlisted(!isWishlisted)}
+                      onClick={handleToggleWishlist}
+                      disabled={isTogglingWishlist}
                       aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
                       aria-pressed={isWishlisted}
                     >
-                      <Heart className={cn("h-5 w-5 transition-colors", isWishlisted && "fill-red-500 text-red-500")} />
+                      {isTogglingWishlist ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Heart className={cn("h-5 w-5 transition-colors", isWishlisted && "fill-red-500 text-red-500")} />
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -344,9 +624,24 @@ export default function ProductDetailPage() {
                     <span>Since {product.seller.memberSince}</span>
                   </div>
                 </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/sellers/${product.seller.slug}`}>Visit Store</Link>
-                </Button>
+                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleContactSeller}
+                    disabled={isContactingSeller}
+                  >
+                    {isContactingSeller ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                    )}
+                    Message Seller
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/sellers/${product.seller.slug}`}>Visit Store</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -430,6 +725,57 @@ export default function ProductDetailPage() {
                   <p className="mt-1 text-xs text-muted-foreground">{product.reviewCount} reviews</p>
                 </div>
               </div>
+              {reviewableOrderItems.length > 0 && (
+                <div className="rounded-lg border p-4">
+                  {!isReviewFormOpen ? (
+                    <Button variant="outline" onClick={() => setIsReviewFormOpen(true)}>
+                      Write a review
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium">Write a review</h4>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setReviewRating(i + 1)}
+                            aria-label={`Rate ${i + 1} out of 5 stars`}
+                          >
+                            <Star
+                              className={cn(
+                                "h-6 w-6 transition-colors",
+                                i < reviewRating ? "fill-yellow-400 text-yellow-400" : "fill-none text-muted-foreground/30"
+                              )}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Review title"
+                        value={reviewTitle}
+                        onChange={(e) => setReviewTitle(e.target.value)}
+                        maxLength={120}
+                      />
+                      <Textarea
+                        placeholder="Share details about your experience with this product"
+                        value={reviewBody}
+                        onChange={(e) => setReviewBody(e.target.value)}
+                        rows={4}
+                        maxLength={5000}
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={handleSubmitReview} disabled={isSubmittingReview}>
+                          {isSubmittingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit review"}
+                        </Button>
+                        <Button variant="ghost" onClick={() => setIsReviewFormOpen(false)} disabled={isSubmittingReview}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <Separator />
               <div className="space-y-6">
                 {reviews.map((review) => (

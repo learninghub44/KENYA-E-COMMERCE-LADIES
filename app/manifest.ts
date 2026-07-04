@@ -2,14 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Kenya E-Commerce Ladies",
-    short_name: "KEC Ladies",
+    name: "Zuri Market",
+    short_name: "Zuri Market",
     description:
-      "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products.",
+      "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#e11d48",
+    background_color: "#FDFBFB",
+    theme_color: "#6A0E7D",
     orientation: "portrait-primary",
     icons: [
       { src: "/icons/icon-48.png", sizes: "48x48", type: "image/png" },

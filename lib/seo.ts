@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://kenya-ecommerce-ladies.com"
-const siteName = "Kenya E-Commerce Ladies"
-const siteDescription = "Africa's premier multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products."
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://zurimarket.dev"
+const siteName = "Zuri Market"
+const siteDescription = "Zuri Market is Kenya's multi-vendor marketplace for women's fashion, beauty, skincare, wellness, accessories, and lifestyle products from verified sellers."
 
 interface SeoOptions {
   title: string
@@ -102,13 +102,14 @@ function organizationJsonLd() {
     description: siteDescription,
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+254-XXX-XXXX",
+      telephone: "+254-701-059-192",
       contactType: "customer service",
+      email: "hello@zurimarket.co.ke",
     },
     sameAs: [
-      "https://facebook.com/kenyaecoladies",
-      "https://instagram.com/kenyaecoladies",
-      "https://twitter.com/kenyaecoladies",
+      "https://facebook.com/zurimarket",
+      "https://instagram.com/zurimarket",
+      "https://twitter.com/zurimarket",
     ],
   }
 }

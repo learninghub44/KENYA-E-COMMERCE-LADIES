@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, Settings2, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card"
 import { Button } from "../../../../components/ui/button"
@@ -28,18 +28,9 @@ interface FeatureFlag {
   rolloutPercentage: number
 }
 
-const initialFlags: FeatureFlag[] = [
-  { id: "f1", key: "new_checkout_flow", description: "Enable the new streamlined checkout experience", enabled: true, defaultValue: false, rolloutPercentage: 100 },
-  { id: "f2", key: "seller_analytics_dashboard", description: "Show analytics dashboard for sellers", enabled: true, defaultValue: false, rolloutPercentage: 80 },
-  { id: "f3", key: "ai_product_recommendations", description: "AI-powered product recommendations on homepage", enabled: false, defaultValue: false, rolloutPercentage: 0 },
-  { id: "f4", key: "social_login", description: "Enable social media login (Google, Facebook)", enabled: true, defaultValue: true, rolloutPercentage: 50 },
-  { id: "f5", key: "live_chat_support", description: "Real-time chat support for customers", enabled: false, defaultValue: false, rolloutPercentage: 0 },
-  { id: "f6", key: "dark_mode_toggle", description: "Allow users to switch to dark mode", enabled: true, defaultValue: true, rolloutPercentage: 100 },
-  { id: "f7", key: "flash_sale_module", description: "Enable flash sale event functionality", enabled: false, defaultValue: false, rolloutPercentage: 0 },
-]
-
 export default function FeatureFlagsPage() {
-  const [flags, setFlags] = useState(initialFlags)
+  const [flags, setFlags] = useState<FeatureFlag[]>([])
+  const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null)
@@ -47,21 +38,59 @@ export default function FeatureFlagsPage() {
   const [newDescription, setNewDescription] = useState("")
   const [newDefaultValue, setNewDefaultValue] = useState(false)
 
-  const toggleFlag = (id: string) => {
-    setFlags((prev) => prev.map((f) => (f.id === id ? { ...f, enabled: !f.enabled } : f)))
+  const fetchFlags = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/admin/feature-flags")
+      if (res.ok) {
+        const data = await res.json()
+        setFlags(data.flags)
+      }
+    } catch {
+      // Ignore fetch errors
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchFlags()
+  }, [fetchFlags])
+
+  const toggleFlag = async (flag: FeatureFlag) => {
+    const updated = { ...flag, enabled: !flag.enabled }
+    setFlags((prev) => prev.map((f) => (f.id === flag.id ? updated : f)))
+    try {
+      await fetch("/api/admin/feature-flags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: flag.key, description: flag.description, enabled: updated.enabled }),
+      })
+    } catch {
+      setFlags((prev) => prev.map((f) => (f.id === flag.id ? flag : f)))
+    }
   }
 
-  const createFlag = () => {
+  const createFlag = async () => {
     if (!newKey) return
-    const flag: FeatureFlag = {
-      id: `f${Date.now()}`,
-      key: newKey,
-      description: newDescription,
-      enabled: false,
-      defaultValue: newDefaultValue,
-      rolloutPercentage: 0,
+    try {
+      const res = await fetch("/api/admin/feature-flags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: newKey,
+          description: newDescription,
+          enabled: false,
+          defaultValue: newDefaultValue,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setFlags((prev) => [...prev, data.flag])
+      }
+    } catch {
+      // Ignore
     }
-    setFlags((prev) => [...prev, flag])
     setNewKey("")
     setNewDescription("")
     setNewDefaultValue(false)
@@ -73,9 +102,23 @@ export default function FeatureFlagsPage() {
     setEditDialogOpen(true)
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingFlag) return
     setFlags((prev) => prev.map((f) => (f.id === editingFlag.id ? editingFlag : f)))
+    try {
+      await fetch("/api/admin/feature-flags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: editingFlag.key,
+          description: editingFlag.description,
+          enabled: editingFlag.enabled,
+          defaultValue: editingFlag.defaultValue,
+        }),
+      })
+    } catch {
+      // Ignore
+    }
     setEditDialogOpen(false)
     setEditingFlag(null)
   }
@@ -126,6 +169,17 @@ export default function FeatureFlagsPage() {
           <CardTitle>All Flags</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {loading && (
+            <p className="text-sm text-muted-foreground">Loading feature flags...</p>
+          )}
+          {!loading && flags.length === 0 && (
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">No feature flags configured</p>
+                <p className="text-xs text-muted-foreground">Create a flag to get started</p>
+              </div>
+            </div>
+          )}
           {flags.map((flag) => (
             <div key={flag.id}>
               <div className="flex items-center justify-between py-3">
@@ -146,7 +200,7 @@ export default function FeatureFlagsPage() {
                       {flag.rolloutPercentage}%
                     </span>
                   )}
-                  <Switch checked={flag.enabled} onCheckedChange={() => toggleFlag(flag.id)} />
+                  <Switch checked={flag.enabled} onCheckedChange={() => toggleFlag(flag)} />
                   <Button variant="ghost" size="icon" onClick={() => openEdit(flag)}>
                     <Settings2 className="h-4 w-4" />
                   </Button>

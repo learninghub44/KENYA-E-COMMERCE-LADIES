@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import {
   Search,
@@ -11,6 +11,8 @@ import {
   Trash2,
   Edit,
   Package,
+  Send,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from "../../../components/ui/button"
@@ -42,116 +44,142 @@ import { EmptyState } from "../../../components/shared/empty-state"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "../../../components/ui/card"
 
-type ProductStatus = "Active" | "Draft" | "Out of Stock"
+interface ProductImage {
+  id: string
+  url: string
+  is_primary: boolean
+}
 
-const mockProducts = [
-  {
-    id: "1",
-    name: "Kitenge Maxi Dress",
-    sku: "KMD-001",
-    price: 3500,
-    stock: 45,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "2",
-    name: "Beaded Sandals",
-    sku: "BS-002",
-    price: 1800,
-    stock: 22,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "3",
-    name: "Ankara Blazer",
-    sku: "AB-003",
-    price: 5200,
-    stock: 0,
-    status: "Out of Stock" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "4",
-    name: "Kente Scarf Set",
-    sku: "KSS-004",
-    price: 2450,
-    stock: 18,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "5",
-    name: "Dashiki Top",
-    sku: "DT-005",
-    price: 1950,
-    stock: 7,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "6",
-    name: "Maasai Shuka Blanket",
-    sku: "MSB-006",
-    price: 4200,
-    stock: 12,
-    status: "Draft" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "7",
-    name: "Leather Tote Bag",
-    sku: "LTB-007",
-    price: 6800,
-    stock: 9,
-    status: "Active" as ProductStatus,
-    image: null,
-  },
-  {
-    id: "8",
-    name: "Cotton Kimono",
-    sku: "CK-008",
-    price: 2800,
-    stock: 0,
-    status: "Out of Stock" as ProductStatus,
-    image: null,
-  },
-]
+interface ProductVariant {
+  id: string
+  title: string | null
+  options: Record<string, string> | null
+}
 
-const statusFilterOptions = ["All", "Active", "Draft", "Out of Stock"] as const
+interface InventoryItem {
+  id: string
+  quantity_available: number
+}
 
-function StatusBadge({ status }: { status: ProductStatus }) {
-  const variantMap: Record<ProductStatus, "default" | "secondary" | "destructive"> = {
-    Active: "default",
-    Draft: "secondary",
-    "Out of Stock": "destructive",
+interface Product {
+  id: string
+  name: string
+  slug: string
+  status: string
+  base_price_minor: number
+  compare_at_price_minor: number | null
+  sku?: string
+  product_images: ProductImage[]
+  product_variants: ProductVariant[]
+  inventory_items: InventoryItem[]
+  created_at: string
+}
+
+const statusFilterOptions = ["All", "active", "draft", "pending_review", "archived", "rejected"] as const
+
+function StatusBadge({ status }: { status: string }) {
+  const variantMap: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    active: "default",
+    draft: "secondary",
+    pending_review: "outline",
+    archived: "destructive",
+    rejected: "destructive",
   }
-  return <Badge variant={variantMap[status]}>{status}</Badge>
+  const labelMap: Record<string, string> = {
+    active: "Active",
+    draft: "Draft",
+    pending_review: "Pending Review",
+    archived: "Archived",
+    rejected: "Rejected",
+  }
+  return <Badge variant={variantMap[status] || "secondary"}>{labelMap[status] || status}</Badge>
 }
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [total, setTotal] = useState(0)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const limit = 10
 
-  const filtered = mockProducts.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === "All" || p.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const fetchProducts = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (search) params.set("search", search)
+      if (statusFilter !== "All") params.set("status", statusFilter)
+      params.set("page", currentPage.toString())
+      params.set("limit", limit.toString())
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage)
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+      const res = await fetch(`/api/seller/products?${params.toString()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setProducts(data.products || [])
+        setTotal(data.total || 0)
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false)
+    }
+  }, [search, statusFilter, currentPage])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setCurrentPage(1)
+  }
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handleDuplicate = async (id: string) => {
+    setActionLoading(id)
+    try {
+      const res = await fetch(`/api/seller/products/${id}/duplicate`, { method: "POST" })
+      if (res.ok) {
+        fetchProducts()
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    setActionLoading(id)
+    try {
+      const res = await fetch(`/api/seller/products/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        fetchProducts()
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleSubmitForReview = async (id: string) => {
+    setActionLoading(id)
+    try {
+      const res = await fetch(`/api/seller/products/${id}/submit`, { method: "POST" })
+      if (res.ok) {
+        fetchProducts()
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const totalPages = Math.ceil(total / limit)
 
   return (
     <div className="space-y-6">
@@ -162,8 +190,8 @@ export default function ProductsPage() {
             Manage your product catalog
           </p>
         </div>
-        <Button asChild>
-          <Link href="/products/new">
+        <Button asChild className="bg-[#1C5C56] hover:bg-[#164a45]">
+          <Link href="/seller/products/new">
             <Plus className="mr-2 h-4 w-4" />
             New Product
           </Link>
@@ -176,34 +204,46 @@ export default function ProductsPage() {
           <Input
             placeholder="Search products..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select
+          value={statusFilter}
+          onValueChange={handleStatusChange}
+        >
           <SelectTrigger className="w-[160px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {statusFilterOptions.map((opt) => (
               <SelectItem key={opt} value={opt}>
-                {opt}
+                {opt === "All" ? "All Statuses" : opt.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {paginated.length === 0 ? (
+      {loading ? (
         <Card>
-          <CardContent>
+          <CardContent className="py-12">
+            <div className="flex items-center justify-center text-muted-foreground">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Loading products...
+            </div>
+          </CardContent>
+        </Card>
+      ) : products.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
             <EmptyState
               icon={Package}
-              title="No products yet"
-              description="Get started by adding your first product to the catalog."
+              title="No products found"
+              description="Get started by adding your first product to the catalog, or adjust your filters."
               action={
-                <Button asChild>
-                  <Link href="/products/new">
+                <Button asChild className="bg-[#1C5C56] hover:bg-[#164a45]">
+                  <Link href="/seller/products/new">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Product
                   </Link>
@@ -221,70 +261,91 @@ export default function ProductsPage() {
                   <TableRow>
                     <TableHead className="w-[80px]">Image</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>SKU</TableHead>
                     <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[70px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginated.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
-                          <Package className="h-5 w-5" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/products/${product.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {product.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {product.sku}
-                      </TableCell>
-                      <TableCell>KES {product.price.toLocaleString()}</TableCell>
-                      <TableCell>{product.stock}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={product.status} />
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/products/${product.id}/edit`}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Copy className="mr-2 h-4 w-4" />
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {products.map((product) => {
+                    const primaryImage = product.product_images?.find((img) => img.is_primary) || product.product_images?.[0]
+                    return (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="relative h-12 w-12 overflow-hidden rounded-md bg-muted">
+                            {primaryImage ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={primaryImage.url}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                <Package className="h-5 w-5" />
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/seller/products/${product.id}`}
+                            className="font-medium hover:underline text-[#1C5C56]"
+                          >
+                            {product.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>KES {product.base_price_minor.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={product.status} />
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={actionLoading === product.id}>
+                                {actionLoading === product.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreHorizontal className="h-4 w-4" />
+                                )}
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/seller/products/${product.id}/edit`}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicate(product.id)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              {(product.status === "draft" || product.status === "rejected") && (
+                                <DropdownMenuItem onClick={() => handleSubmitForReview(product.id)}>
+                                  <Send className="mr-2 h-4 w-4" />
+                                  Submit for Review
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => handleDelete(product.id)}>
+                                <Archive className="mr-2 h-4 w-4" />
+                                Archive
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDelete(product.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -293,7 +354,7 @@ export default function ProductsPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
+                Page {currentPage} of {totalPages} ({total} products)
               </p>
               <div className="flex gap-2">
                 <Button

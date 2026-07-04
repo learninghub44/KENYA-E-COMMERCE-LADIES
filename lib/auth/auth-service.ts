@@ -8,6 +8,7 @@ import {
   loginSchema,
   passwordResetSchema,
   passwordUpdateSchema,
+  profileUpdateSchema,
   registerSchema
 } from "./schemas";
 import type { ProfileRepository, RoleRepository, SupabaseAuthPort } from "./types";
@@ -244,6 +245,27 @@ export function createAuthService(deps: AuthServiceDependencies) {
         context
       });
       return { ok: true, data: null };
+    },
+
+    async updateProfile(input: unknown, userId: string): Promise<AuthResult<null>> {
+      const parsed = profileUpdateSchema.safeParse(input);
+      if (!parsed.success) return authFailure("VALIDATION_ERROR", "Profile input is invalid.", 400);
+      await deps.profiles.updateProfile({ userId, ...parsed.data });
+      if (parsed.data.email) {
+        await deps.auth.updateUser({ email: parsed.data.email });
+      }
+      return { ok: true, data: null };
+    },
+
+    async getProfile(userId: string): Promise<AuthResult<{
+      id: string;
+      email: string;
+      displayName: string | null;
+      phone: string | null;
+      avatarUrl: string | null;
+    } | null>> {
+      const profile = await deps.profiles.findByUserId(userId);
+      return { ok: true, data: profile };
     },
 
     async requireSession(): Promise<AuthResult<AuthSession>> {

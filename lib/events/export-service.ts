@@ -91,6 +91,7 @@ export function createExportService(): ExportService {
       if (format === "pdf") {
         const mimeType = MIME_TYPES.pdf;
         try {
+          // @ts-ignore - jspdf is optional, may not be installed
           const { default: JsPDF } = await import("jspdf") as { default: new () => { text: (s: string, x: number, y: number) => void; output: (t: string) => ArrayBuffer } };
           const doc = new JsPDF();
           doc.text("Events Export", 10, 10);

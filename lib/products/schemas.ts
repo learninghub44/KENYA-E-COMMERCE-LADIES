@@ -92,17 +92,21 @@ export const productUpdateSchema = z
 export const productSearchSchema = z.object({
   q: z.string().trim().max(200).optional(),
   categoryId: z.string().uuid().optional(),
+  categoryIds: z.array(z.string().uuid()).max(20).optional(),
   brandId: z.string().uuid().optional(),
+  brandIds: z.array(z.string().uuid()).max(20).optional(),
   sellerId: z.string().uuid().optional(),
   collectionId: z.string().uuid().optional(),
   tags: z.array(z.string().trim().max(60)).max(10).optional(),
   minPriceMinor: priceSchema.optional(),
   maxPriceMinor: priceSchema.optional(),
   color: z.string().trim().max(60).optional(),
+  colors: z.array(z.string().trim().max(60)).max(20).optional(),
   size: z.string().trim().max(60).optional(),
   material: z.string().trim().max(60).optional(),
+  minRating: z.number().min(0).max(5).optional(),
   inStockOnly: z.boolean().optional(),
-  sort: z.enum(["relevance", "newest", "price_asc", "price_desc", "featured"]).default("relevance"),
+  sort: z.enum(["relevance", "newest", "price_asc", "price_desc", "featured", "rating"]).default("relevance"),
   cursor: z.string().optional(),
   limit: z.number().int().min(1).max(100).default(24)
 });

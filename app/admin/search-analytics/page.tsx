@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   LineChart,
   Line,
@@ -11,7 +11,6 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Badge } from "../../../components/ui/badge"
 import { Button } from "../../../components/ui/button"
 import {
   Table,
@@ -34,36 +33,39 @@ interface ZeroResultQuery {
   count: number
 }
 
-const topQueries: SearchQuery[] = [
-  { query: "maxi dress", count: 1234, results: 45, clicks: 234 },
-  { query: "shea butter", count: 987, results: 23, clicks: 156 },
-  { query: "beaded sandals", count: 876, results: 12, clicks: 89 },
-  { query: "ankara", count: 765, results: 34, clicks: 198 },
-  { query: "kente scarf", count: 654, results: 18, clicks: 76 },
-  { query: "dashiki", count: 543, results: 15, clicks: 65 },
-  { query: "lipstick", count: 432, results: 28, clicks: 123 },
-  { query: "face mask", count: 321, results: 10, clicks: 45 },
-]
-
-const zeroResultQueries: ZeroResultQuery[] = [
-  { query: "wedding gown", count: 89 },
-  { query: "swimwear", count: 67 },
-  { query: "denim jacket", count: 54 },
-  { query: "leather bag", count: 43 },
-  { query: "sneakers", count: 32 },
-]
-
-const trendData = Array.from({ length: 30 }, (_, i) => {
-  const date = new Date()
-  date.setDate(date.getDate() - (29 - i))
-  return {
-    date: date.toLocaleDateString("en-KE", { month: "short", day: "numeric" }),
-    searches: Math.floor(Math.random() * 1000 + 200),
-  }
-})
+interface SearchAnalyticsResponse {
+  topQueries: SearchQuery[]
+  zeroResultQueries: ZeroResultQuery[]
+  trendData: { date: string; searches: number }[]
+}
 
 export default function SearchAnalyticsPage() {
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null)
+  const [data, setData] = useState<SearchAnalyticsResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/admin/search-analytics")
+      if (res.ok) {
+        const result = await res.json()
+        setData(result)
+      }
+    } catch {
+      // Ignore
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const topQueries = data?.topQueries ?? []
+  const zeroResultQueries = data?.zeroResultQueries ?? []
+  const trendData = data?.trendData ?? []
 
   return (
     <div className="space-y-6">
@@ -77,17 +79,28 @@ export default function SearchAnalyticsPage() {
           <CardTitle>Search Volume Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" />
-                <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
-                <Tooltip />
-                <Line type="monotone" dataKey="searches" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading trend data...</p>
+          ) : trendData.length > 0 ? (
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                  <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="searches" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[250px] rounded-lg border-2 border-dashed">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">No search trend data available</p>
+                <p className="text-xs text-muted-foreground">Search events will appear here once recorded</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -97,32 +110,43 @@ export default function SearchAnalyticsPage() {
             <CardTitle>Top Search Queries</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Query</TableHead>
-                  <TableHead>Searches</TableHead>
-                  <TableHead>Results</TableHead>
-                  <TableHead>Clicks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topQueries.map((sq) => (
-                  <TableRow
-                    key={sq.query}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedQuery(sq.query)}
-                  >
-                    <TableCell className="font-medium">{sq.query}</TableCell>
-                    <TableCell>{sq.count.toLocaleString()}</TableCell>
-                    <TableCell>{sq.results}</TableCell>
-                    <TableCell>
-                      <span className="text-green-600">{sq.clicks}</span>
-                    </TableCell>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : topQueries.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Query</TableHead>
+                    <TableHead>Searches</TableHead>
+                    <TableHead>Results</TableHead>
+                    <TableHead>Clicks</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {topQueries.map((sq) => (
+                    <TableRow
+                      key={sq.query}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedQuery(sq.query)}
+                    >
+                      <TableCell className="font-medium">{sq.query}</TableCell>
+                      <TableCell>{sq.count.toLocaleString()}</TableCell>
+                      <TableCell>{sq.results}</TableCell>
+                      <TableCell>
+                        <span className="text-green-600">{sq.clicks}</span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">No search queries recorded yet</p>
+                  <p className="text-xs text-muted-foreground">Data will populate as users search</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -131,26 +155,37 @@ export default function SearchAnalyticsPage() {
             <CardTitle>Zero-Result Queries</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Query</TableHead>
-                  <TableHead>Attempts</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {zeroResultQueries.map((zq) => (
-                  <TableRow key={zq.query}>
-                    <TableCell className="font-medium text-destructive">{zq.query}</TableCell>
-                    <TableCell>{zq.count}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">Add Product</Button>
-                    </TableCell>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : zeroResultQueries.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Query</TableHead>
+                    <TableHead>Attempts</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {zeroResultQueries.map((zq) => (
+                    <TableRow key={zq.query}>
+                      <TableCell className="font-medium text-destructive">{zq.query}</TableCell>
+                      <TableCell>{zq.count}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm">Add Product</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">No zero-result queries</p>
+                  <p className="text-xs text-muted-foreground">Failed searches will appear here</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

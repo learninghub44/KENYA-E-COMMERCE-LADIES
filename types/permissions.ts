@@ -24,6 +24,7 @@ export const PERMISSIONS = [
   "admin.moderate",
   "admin.support",
   "admin.role.manage",
+  "kyc.review",
   "security.audit.read",
   "security.audit.write",
   "security.lockout.manage",

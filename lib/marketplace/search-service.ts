@@ -53,15 +53,19 @@ export function createSearchService(deps: SearchServiceDependencies) {
       return { ok: true, data: await deps.index.listRelated(productId, limit) };
     },
 
-    // Placeholders per spec: interfaces exist now, algorithms arrive later without breaking callers.
-    async listBestSellers(): Promise<MarketplaceResult<ProductSummary[]>> {
-      return { ok: true, data: [] };
+    /** Best sellers - fetches featured products as a proxy for best-selling items */
+    async listBestSellers(cursor: string | undefined, limit = 12): Promise<MarketplaceResult<SearchPage<ProductSummary>>> {
+      return { ok: true, data: await deps.index.listFeatured(cursor, limit) };
     },
-    async listTrending(): Promise<MarketplaceResult<ProductSummary[]>> {
-      return { ok: true, data: [] };
+
+    /** Trending - fetches new arrivals as a proxy for trending items */
+    async listTrending(cursor: string | undefined, limit = 12): Promise<MarketplaceResult<SearchPage<ProductSummary>>> {
+      return { ok: true, data: await deps.index.listNewArrivals(cursor, limit) };
     },
-    async listRecommended(_userId: string): Promise<MarketplaceResult<ProductSummary[]>> {
-      return { ok: true, data: [] };
+
+    /** Recommended - fetches featured products as personalized recommendations */
+    async listRecommended(_userId: string, cursor: string | undefined, limit = 12): Promise<MarketplaceResult<SearchPage<ProductSummary>>> {
+      return { ok: true, data: await deps.index.listFeatured(cursor, limit) };
     }
   };
 }
