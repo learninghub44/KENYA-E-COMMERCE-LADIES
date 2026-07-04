@@ -47,8 +47,8 @@ const features = [
   },
   {
     icon: ShieldCheck,
-    title: "Secure payments",
-    description: "Pay by M-Pesa, card, or bank transfer — protected end to end",
+    title: "Pay sellers directly",
+    description: "Send M-Pesa straight to the seller — we never hold or collect your money",
   },
   {
     icon: BadgeCheck,

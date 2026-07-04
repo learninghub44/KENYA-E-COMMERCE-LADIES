@@ -18,7 +18,7 @@ const categories = [
     items: [
       {
         q: "How do I place an order?",
-        a: "Browse products, add items to your cart, then proceed to checkout. Enter your shipping details and choose a payment method to confirm your order. You'll receive a confirmation email once the order is placed.",
+        a: "Browse products, add items to your cart, then proceed to checkout and enter your shipping details to confirm your order. Zuri Market doesn't process payments — you'll arrange payment (typically M-Pesa) directly with the seller through your order or the messaging tab. You'll receive a confirmation email once the order is placed.",
       },
       {
         q: "Can I change or cancel my order?",
@@ -68,7 +68,7 @@ const categories = [
       },
       {
         q: "How long do refunds take?",
-        a: "Once the seller receives and inspects the returned item, refunds are processed within 3-5 business days. The refund will be issued to your original payment method and may take additional time to appear depending on your payment provider.",
+        a: "Zuri Market never collects or holds payments, so refunds are arranged directly between you and the seller once they've received and inspected the returned item. Most sellers refund via M-Pesa within 3-5 business days — message the seller through your order page to agree on timing.",
       },
       {
         q: "Can I exchange an item for a different size or colour?",
@@ -80,20 +80,20 @@ const categories = [
     name: "Payments",
     items: [
       {
-        q: "What payment methods do you accept?",
-        a: "We accept M-Pesa (the most popular option), credit/debit cards (Visa, Mastercard), and bank transfers. Available options are shown at checkout.",
+        q: "Does Zuri Market process my payment?",
+        a: "No. Zuri Market is a listings and messaging platform — we never collect, hold, or process payments for buyers or sellers. Once you place an order, you and the seller arrange payment directly (most commonly M-Pesa) through your order or the messaging tab.",
       },
       {
-        q: "Is it safe to pay on Zuri Market?",
-        a: "Yes. All payments are processed through secure, PCI-compliant payment partners. Your payment details are never stored on our servers. We also use encryption (TLS) to protect your data during transmission.",
+        q: "What payment methods can I use?",
+        a: "That's between you and the seller. Most sellers accept M-Pesa sent directly to them; some also accept cash on delivery or bank transfer. Check the seller's store page or ask them via message before you pay.",
       },
       {
-        q: "When will my payment be released to the seller?",
-        a: "Payments are held securely and released to the seller once the order is marked as delivered and the return period has passed. This protects both buyers and sellers.",
+        q: "Is it safe to pay a seller directly?",
+        a: "Every seller on Zuri Market passes KYC identity verification before they can list products, and buyer reviews help you gauge a seller's track record. Even so, only send payment once you've agreed on the details with the seller, and keep the conversation on Zuri Market's messaging so there's a record if you ever need support.",
       },
       {
-        q: "Do you offer layaway or buy-now-pay-later?",
-        a: "Not yet, but we're exploring options to make this available. Check back soon or follow us on social media for updates.",
+        q: "What if a seller doesn't deliver after I've paid them?",
+        a: "Message the seller first to resolve it directly. If you can't reach a resolution, contact Zuri Market support with your order and message history so we can step in and help mediate.",
       },
     ],
   },
@@ -123,11 +123,11 @@ const categories = [
     items: [
       {
         q: "What does it cost to sell on Zuri Market?",
-        a: "Creating a seller account and listing products is free. We charge a commission on each completed sale, which is clearly shown in your seller dashboard before you confirm an order. There are no hidden fees.",
+        a: "Creating a seller account and listing products is free. Because Zuri Market never processes payments, we don't take a commission out of your sales — see our seller terms for any applicable listing fees.",
       },
       {
-        q: "How do I receive payouts?",
-        a: "Payouts are sent to your registered M-Pesa or bank account once an order is confirmed as delivered and the return period has elapsed. You can track your earnings and payout history in your seller dashboard.",
+        q: "How do I get paid by buyers?",
+        a: "Buyers pay you directly — Zuri Market never holds or forwards funds. Keep the M-Pesa number on your seller settings page up to date, agree on payment with the buyer through order messaging, and confirm once you've received it.",
       },
       {
         q: "Can I sell handmade or custom items?",

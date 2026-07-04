@@ -16,7 +16,7 @@ const stats = [
   { label: "Counties Served", value: "50+" },
   { label: "Products Listed", value: "25,000+" },
   { label: "Orders Delivered", value: "100,000+" },
-  { label: "Seller Payouts (KSh)", value: "₦50M+" },
+  { label: "Seller Sales Facilitated (KSh)", value: "KSh 50M+" },
 ];
 
 const values = [
@@ -33,7 +33,7 @@ const values = [
   {
     title: "Seller Empowerment",
     description:
-      "We give small businesses the tools — listings, orders, payments, messaging — to compete with big brands without building their own platform.",
+      "We give small businesses the tools — listings, orders, messaging — to compete with big brands without building their own platform.",
   },
   {
     title: "Sustainability",
