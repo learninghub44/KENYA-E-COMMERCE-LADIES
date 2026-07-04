@@ -1,173 +1,284 @@
-import type { Metadata } from "next";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../../../components/ui/accordion";
+import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "FAQs — Zuri Market",
+  title: "Frequently Asked Questions — Zuri Market",
   description:
-    "Frequently asked questions about shopping, selling, shipping, returns, payments, and managing your account on Zuri Market.",
-};
-
-const categories = [
-  {
-    name: "Orders",
-    items: [
-      {
-        q: "How do I place an order?",
-        a: "Browse products, add items to your cart, then proceed to checkout and enter your shipping details to confirm your order. Zuri Market doesn't process payments — you'll arrange payment (typically M-Pesa) directly with the seller through your order or the messaging tab. You'll receive a confirmation email once the order is placed.",
-      },
-      {
-        q: "Can I change or cancel my order?",
-        a: "You can cancel an order within 1 hour of placing it, provided the seller hasn't yet marked it as processing. Go to your orders page and use the cancel option if available. To change an order, cancel it and place a new one.",
-      },
-      {
-        q: "How do I track my order?",
-        a: "Once your order ships, the seller updates the status and you'll see tracking information on your order page. You'll also receive email updates as the order progresses.",
-      },
-      {
-        q: "What if my order arrives damaged or incorrect?",
-        a: "Message the seller immediately via your order page with photos of the issue. Sellers are responsible for resolving damaged or incorrect items. If you can't reach a resolution, contact Zuri Market support for assistance.",
-      },
-    ],
-  },
-  {
-    name: "Shipping",
-    items: [
-      {
-        q: "How much does shipping cost?",
-        a: "Shipping costs are set by each seller and are displayed at checkout. Costs vary based on the seller's location, your delivery address, and the size of the package.",
-      },
-      {
-        q: "Do you ship to all counties in Kenya?",
-        a: "Yes, we operate across all 47 counties. Delivery times vary by location — urban areas typically receive deliveries within 2-5 business days, while rural areas may take 5-10 business days.",
-      },
-      {
-        q: "Do you offer international shipping?",
-        a: "Currently, Zuri Market focuses on domestic shipping within Kenya. Some sellers may offer international shipping — check the product page or message the seller directly to inquire.",
-      },
-      {
-        q: "Can I collect my order in person?",
-        a: "Some sellers offer local pickup. Check the seller's store page or message them to arrange a pickup if available.",
-      },
-    ],
-  },
-  {
-    name: "Returns & Exchanges",
-    items: [
-      {
-        q: "What is the return policy?",
-        a: "Each seller sets their own return policy, which is displayed on their store page and at checkout. Most sellers accept returns within 7-14 days of delivery for items in original condition. Check the specific seller's policy before purchasing.",
-      },
-      {
-        q: "How do I return an item?",
-        a: "Start by messaging the seller from your order page to initiate the return. The seller will provide instructions and the return address. You're typically responsible for return shipping costs unless the item was incorrect or damaged.",
-      },
-      {
-        q: "How long do refunds take?",
-        a: "Zuri Market never collects or holds payments, so refunds are arranged directly between you and the seller once they've received and inspected the returned item. Most sellers refund via M-Pesa within 3-5 business days — message the seller through your order page to agree on timing.",
-      },
-      {
-        q: "Can I exchange an item for a different size or colour?",
-        a: "Exchanges are handled per the seller's policy. Contact the seller through your order page to check availability. In many cases, it's faster to return the item and place a new order.",
-      },
-    ],
-  },
-  {
-    name: "Payments",
-    items: [
-      {
-        q: "Does Zuri Market process my payment?",
-        a: "No. Zuri Market is a listings and messaging platform — we never collect, hold, or process payments for buyers or sellers. Once you place an order, you and the seller arrange payment directly (most commonly M-Pesa) through your order or the messaging tab.",
-      },
-      {
-        q: "What payment methods can I use?",
-        a: "That's between you and the seller. Most sellers accept M-Pesa sent directly to them; some also accept cash on delivery or bank transfer. Check the seller's store page or ask them via message before you pay.",
-      },
-      {
-        q: "Is it safe to pay a seller directly?",
-        a: "Every seller on Zuri Market passes KYC identity verification before they can list products, and buyer reviews help you gauge a seller's track record. Even so, only send payment once you've agreed on the details with the seller, and keep the conversation on Zuri Market's messaging so there's a record if you ever need support.",
-      },
-      {
-        q: "What if a seller doesn't deliver after I've paid them?",
-        a: "Message the seller first to resolve it directly. If you can't reach a resolution, contact Zuri Market support with your order and message history so we can step in and help mediate.",
-      },
-    ],
-  },
-  {
-    name: "Account",
-    items: [
-      {
-        q: "How do I create an account?",
-        a: "Click the 'Sign Up' button at the top of the page. You can register using your email address and a password, or via Google or Facebook for faster sign-up.",
-      },
-      {
-        q: "I forgot my password — what do I do?",
-        a: "Click 'Forgot Password' on the login page. Enter your registered email, and we'll send you a link to reset your password. The link expires after 1 hour for security.",
-      },
-      {
-        q: "How do I delete my account?",
-        a: "Go to your account settings and select 'Delete Account'. You'll be asked to confirm. Your data will be permanently deleted or anonymised within 30 days, except for records we are legally required to retain.",
-      },
-      {
-        q: "How do I become a seller?",
-        a: "Click 'Sell on Zuri Market' in the footer or navigation. Complete the application form and identity verification (KYC). Once approved, you can set up your store and start listing products.",
-      },
-    ],
-  },
-  {
-    name: "Selling",
-    items: [
-      {
-        q: "What does it cost to sell on Zuri Market?",
-        a: "Creating a seller account and listing products is free. Because Zuri Market never processes payments, we don't take a commission out of your sales — see our seller terms for any applicable listing fees.",
-      },
-      {
-        q: "How do I get paid by buyers?",
-        a: "Buyers pay you directly — Zuri Market never holds or forwards funds. Keep the M-Pesa number on your seller settings page up to date, agree on payment with the buyer through order messaging, and confirm once you've received it.",
-      },
-      {
-        q: "Can I sell handmade or custom items?",
-        a: "Absolutely. Many of our sellers offer handmade, custom, or made-to-order items. Just make sure to accurately describe the product and set realistic delivery expectations in your listing.",
-      },
-    ],
-  },
-];
+    "Answers to common questions from buyers and sellers on the Zuri Market multi-vendor marketplace.",
+}
 
 export default function FaqsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
           Frequently Asked Questions
         </h1>
-        <p className="mt-3 text-muted-foreground">
-          Everything you need to know about shopping and selling on Zuri Market.
+        <p className="mt-3 text-sm text-gray-500">Last Updated: July 4, 2026</p>
+        <p className="mt-4 text-gray-600 leading-relaxed">
+          Welcome to the Zuri Market Help Center. Below are answers to some of the questions we receive most often from buyers and sellers. If you cannot find the information you need, please contact us at{" "}
+          <a href="mailto:hello@zurimarket.co.ke" className="text-[#1C5C56] underline underline-offset-2">
+            hello@zurimarket.co.ke
+          </a>
+          .
         </p>
       </div>
 
-      <div className="space-y-12">
-        {categories.map((category) => (
-          <section key={category.name}>
-            <h2 className="mb-4 text-xl font-semibold">{category.name}</h2>
-            <Accordion type="single" collapsible className="w-full">
-              {category.items.map((item) => (
-                <AccordionItem key={item.q} value={item.q}>
-                  <AccordionTrigger className="text-left">
-                    {item.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {item.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </section>
-        ))}
+      <div className="space-y-12 text-gray-600 leading-relaxed">
+        {/* General Questions */}
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-900">General Questions</h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">What is Zuri Market?</h3>
+              <p>
+                Zuri Market is a multi-vendor online marketplace where independent businesses and individual sellers can showcase and sell their products to customers across Kenya. Our platform makes it easy for buyers to discover products from multiple sellers in one place.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Is Zuri Market a seller?</h3>
+              <p>No. Zuri Market is <strong className="text-gray-800">not</strong> the seller of products listed on the marketplace. Products are offered by independent vendors who manage their own stores. Our role is to provide, maintain, improve, and regulate the marketplace platform.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Does Zuri Market process payments?</h3>
+              <p>No. Zuri Market does not process, receive, or hold payments. Payments are arranged directly between buyers and sellers using payment methods agreed upon by both parties.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Does Zuri Market deliver products?</h3>
+              <p>No. Delivery arrangements are handled by individual vendors. Delivery options, timelines, and charges may vary from one seller to another.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Can I trust sellers on Zuri Market?</h3>
+              <p>
+                We encourage all sellers to provide accurate product information and professional customer service. While we monitor marketplace activity and enforce our policies, buyers should review seller ratings, product descriptions, and communicate with sellers before making a purchase.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-200" />
+
+        {/* Buyer Questions */}
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-900">Buyer Questions</h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Do I need an account to shop?</h3>
+              <p>Some features may be available without an account, but creating an account allows you to:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-6">
+                <li>Save your favourite products.</li>
+                <li>Track your orders where available.</li>
+                <li>Contact sellers more easily.</li>
+                <li>Receive important updates.</li>
+                <li>Manage your profile and preferences.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">How do I place an order?</h3>
+              <ol className="mt-2 list-decimal space-y-1 pl-6">
+                <li>Browse products.</li>
+                <li>Select the product you want.</li>
+                <li>Choose available options such as size or colour.</li>
+                <li>Add the item to your cart.</li>
+                <li>Submit your order.</li>
+                <li>The seller will contact you where necessary to confirm order details, payment arrangements, and delivery.</li>
+              </ol>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">How do I pay for my order?</h3>
+              <p>Payment arrangements are made directly with the seller. Each seller may accept different payment methods. Please confirm payment instructions with the seller before making payment.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Can I cancel my order?</h3>
+              <p>Cancellation depends on whether the seller has already processed or dispatched the order. Contact the seller as soon as possible if you wish to cancel.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Can I return a product?</h3>
+              <p>Yes, if the seller accepts returns under their return policy or where required by applicable law. Please review the seller&apos;s return policy before purchasing.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who handles refunds?</h3>
+              <p>Refunds are handled directly by the seller. Since Zuri Market does not process payments, we cannot issue refunds on behalf of vendors.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">What if I receive the wrong product?</h3>
+              <p>Contact the seller immediately. Provide photos and explain the issue. If communication becomes difficult, you may contact Zuri Market for assistance in facilitating communication.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">What if my order never arrives?</h3>
+              <p>You should first contact the seller for an update. If the issue cannot be resolved, you may contact Zuri Market for further assistance.</p>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-200" />
+
+        {/* Seller Questions */}
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-900">Seller Questions</h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who can become a seller?</h3>
+              <p>Businesses, entrepreneurs, retailers, wholesalers, manufacturers, and individual sellers who comply with our marketplace requirements may apply to sell on Zuri Market.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">How do I register as a seller?</h3>
+              <p>Create an account, complete your seller profile, provide any required business information, and follow the seller registration process available on the platform. Additional verification may be required before your store becomes active.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Is there a registration fee?</h3>
+              <p>Registration requirements and any applicable seller fees are displayed during the seller onboarding process and may change from time to time.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who sets product prices?</h3>
+              <p>Each seller independently determines the prices of their products.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who manages inventory?</h3>
+              <p>Each seller is responsible for updating product availability and maintaining accurate stock information.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who communicates with customers?</h3>
+              <p>Sellers are responsible for responding to customer inquiries, confirming orders, arranging payment, and providing delivery updates.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who handles shipping?</h3>
+              <p>Shipping and delivery are the responsibility of each individual seller.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Who handles returns?</h3>
+              <p>Each seller manages returns and refunds according to their return policy and applicable laws.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Can my seller account be suspended?</h3>
+              <p>Yes. Seller accounts may be suspended or removed if they:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-6">
+                <li>Sell prohibited products.</li>
+                <li>Provide misleading information.</li>
+                <li>Engage in fraudulent activity.</li>
+                <li>Repeatedly fail to fulfil orders.</li>
+                <li>Violate marketplace policies.</li>
+                <li>Abuse customers or other users.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-200" />
+
+        {/* Account Questions */}
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-900">Account Questions</h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">I forgot my password.</h3>
+              <p>
+                Use the &ldquo;Forgot Password&rdquo; option on the login page to reset your password. If you continue to experience difficulties, contact our support team.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">How do I update my account information?</h3>
+              <p>
+                After logging in, go to your account settings where you can update your profile information, password, addresses, and contact details.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">How do I delete my account?</h3>
+              <p>
+                You may request account deletion by contacting us at{" "}
+                <a href="mailto:hello@zurimarket.co.ke" className="text-[#1C5C56] underline underline-offset-2">
+                  hello@zurimarket.co.ke
+                </a>
+                . Some information may be retained where required by law or for legitimate business purposes.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-200" />
+
+        {/* Privacy & Security */}
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-900">Privacy &amp; Security</h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Is my information secure?</h3>
+              <p>
+                We implement reasonable administrative and technical measures to protect user information and improve the security of our marketplace. However, users should also protect their passwords and account credentials.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Does Zuri Market sell my personal information?</h3>
+              <p>No. We do not sell or rent personal information to third parties. Please review our <a href="/privacy" className="text-[#1C5C56] underline underline-offset-2">Privacy Policy</a> for more details.</p>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-200" />
+
+        {/* Marketplace Policies */}
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold text-gray-900">Marketplace Policies</h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">Can prohibited products be sold?</h3>
+              <p>No. Products that violate Kenyan law or our marketplace policies are not permitted. We reserve the right to remove prohibited listings and suspend accounts that violate our policies.</p>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-lg font-medium text-gray-800">How do I report a product or seller?</h3>
+              <p>If you believe a product, listing, or seller violates our policies, please contact us with relevant details. We will review the report and take appropriate action where necessary.</p>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-200" />
+
+        {/* Contact */}
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-gray-900">Contact Us</h2>
+          <p>If your question has not been answered above, our support team is ready to help.</p>
+          <div className="mt-3">
+            <p className="font-medium text-gray-800">Zuri Market</p>
+            <p className="mt-1">
+              Email:{" "}
+              <a href="mailto:hello@zurimarket.co.ke" className="text-[#1C5C56] underline underline-offset-2">
+                hello@zurimarket.co.ke
+              </a>
+            </p>
+          </div>
+          <p className="mt-3 text-sm text-gray-500">
+            We aim to respond to enquiries as promptly as reasonably possible and appreciate your trust in Zuri Market.
+          </p>
+        </section>
       </div>
     </div>
-  );
+  )
 }
