@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   }
 
   const { data: reviews, count, error } = await query.range(offset, offset + limit - 1);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 });
 
   return NextResponse.json({
     reviews: reviews ?? [],

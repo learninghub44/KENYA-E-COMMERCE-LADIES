@@ -18,13 +18,13 @@ export async function GET(_request: NextRequest) {
       .limit(50);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
     }
 
     return NextResponse.json({ notifications: notifications ?? [] });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         .is("read_at", null);
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Failed to update notifications" }, { status: 500 });
       }
       return NextResponse.json({ success: true });
     }
@@ -65,13 +65,13 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to update notification" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

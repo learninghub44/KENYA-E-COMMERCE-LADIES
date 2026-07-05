@@ -50,13 +50,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to update coupon" }, { status: 500 });
     }
 
     return NextResponse.json(coupon);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -76,13 +76,13 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
     const { error } = await supabase.from("coupons").delete().eq("id", id);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to delete coupon" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

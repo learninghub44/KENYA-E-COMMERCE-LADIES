@@ -56,7 +56,7 @@ export async function PATCH(
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
   return NextResponse.json({ product });

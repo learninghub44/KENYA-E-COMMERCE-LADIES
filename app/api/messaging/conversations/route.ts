@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ items, nextCursor: merged.nextCursor });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result.data, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

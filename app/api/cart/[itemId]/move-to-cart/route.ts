@@ -26,6 +26,6 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     }
     return NextResponse.json(result.data);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

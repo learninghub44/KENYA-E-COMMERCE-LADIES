@@ -19,6 +19,6 @@ export async function GET(request: NextRequest) {
     const result = await service.listForBuyer(user.id, cursor, limit);
     return NextResponse.json(result.data);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

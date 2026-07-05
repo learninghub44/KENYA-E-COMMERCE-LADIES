@@ -87,12 +87,12 @@ export async function PUT(request: Request) {
       .from("platform_settings")
       .update(settingsRow)
       .eq("id", existing.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   } else {
     const { error } = await supabase
       .from("platform_settings")
       .insert({ ...settingsRow, id: crypto.randomUUID() });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

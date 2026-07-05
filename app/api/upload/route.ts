@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: result.url, publicId: result.publicId }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

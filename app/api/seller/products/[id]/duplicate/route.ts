@@ -117,7 +117,7 @@ export async function POST(
     return NextResponse.json(fullProduct || newProduct, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

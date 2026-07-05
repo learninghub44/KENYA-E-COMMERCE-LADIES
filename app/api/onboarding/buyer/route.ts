@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       .from("profiles")
       .update(profileUpdates)
       .eq("id", user.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
   }
 
   const { data: current } = await supabase
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     .update({ metadata: updatedMeta, updated_at: new Date().toISOString() })
     .eq("id", user.id)
 
-  if (metaError) return NextResponse.json({ error: metaError.message }, { status: 500 })
+  if (metaError) return NextResponse.json({ error: "Failed to save progress" }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

@@ -44,7 +44,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("Ticket detail API error:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
@@ -100,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("Ticket update API error:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }

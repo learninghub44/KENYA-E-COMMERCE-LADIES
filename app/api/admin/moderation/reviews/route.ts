@@ -26,7 +26,7 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });
 
   const items = (data ?? []).map((row) => ({
     id: row.id as string,
@@ -57,7 +57,7 @@ export async function PATCH(request: Request) {
     .select()
     .single();
 
-  if (error || !data) return NextResponse.json({ error: error?.message ?? "Report not found" }, { status: 404 });
+  if (error || !data) return NextResponse.json({ error: "Report not found" }, { status: 404 });
 
   await guard.supabase.from("audit_logs").insert({
     actor_id: guard.userId,

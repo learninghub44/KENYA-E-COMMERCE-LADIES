@@ -110,11 +110,8 @@ export async function POST(request: Request) {
         .single()
 
       if (error) {
-        const devDetails =
-          process.env.NODE_ENV !== "production"
-            ? { code: error.code, details: error.details, hint: error.hint }
-            : undefined
-        return NextResponse.json({ error: error.message, ...devDetails }, { status: 500 })
+        console.error("Failed to create seller:", error)
+        return NextResponse.json({ error: "Failed to create seller account" }, { status: 500 })
       }
 
       const meta: Record<string, unknown> = { onboarding: { currentStep: step, lastSavedAt: new Date().toISOString() } }
@@ -158,13 +155,10 @@ export async function POST(request: Request) {
       .from("sellers")
       .update(sellerUpdates)
       .eq("id", existingSeller.id)
-    if (error) {
-      const devDetails =
-        process.env.NODE_ENV !== "production"
-          ? { code: error.code, details: error.details, hint: error.hint }
-          : undefined
-      return NextResponse.json({ error: error.message, ...devDetails }, { status: 500 })
-    }
+      if (error) {
+        console.error("Failed to update seller:", error)
+        return NextResponse.json({ error: "Failed to update seller account" }, { status: 500 })
+      }
   }
 
   const existingMeta = (existingSeller.metadata as Record<string, unknown>) ?? {}
@@ -186,7 +180,7 @@ export async function POST(request: Request) {
     .update({ metadata: updatedMeta, updated_at: new Date().toISOString() })
     .eq("id", existingSeller.id)
 
-  if (metaError) return NextResponse.json({ error: metaError.message }, { status: 500 })
+  if (metaError) return NextResponse.json({ error: "Failed to save progress" }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

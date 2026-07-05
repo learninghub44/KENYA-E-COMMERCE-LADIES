@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ data, count, offset, limit });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -153,7 +153,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

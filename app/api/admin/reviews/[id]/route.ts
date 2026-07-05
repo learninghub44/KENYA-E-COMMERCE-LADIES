@@ -34,7 +34,7 @@ export async function PATCH(
       .select("*")
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Failed to update review" }, { status: 500 });
     if (!review) return NextResponse.json({ error: "Review not found" }, { status: 404 });
     return NextResponse.json({ review });
   }
@@ -63,7 +63,7 @@ export async function PATCH(
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to update review" }, { status: 500 });
   if (!review) return NextResponse.json({ error: "Review not found" }, { status: 404 });
 
   return NextResponse.json({ review });

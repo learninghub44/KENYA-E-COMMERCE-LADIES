@@ -33,8 +33,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "email and password are required" }, { status: 400 });
     }
 
-    if (password.length < 8) {
-      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    if (password.length < 12) {
+      return NextResponse.json({ error: "Password must be at least 12 characters" }, { status: 400 });
     }
 
     const validRoles = ["admin", "moderator", "kyc_reviewer", "support"];
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -113,7 +113,7 @@ export async function PATCH(request: Request) {
         .from("profiles")
         .update({ status: "suspended" })
         .eq("id", userId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
       return NextResponse.json({ success: true });
     }
     case "ban": {
@@ -121,7 +121,7 @@ export async function PATCH(request: Request) {
         .from("profiles")
         .update({ status: "deleted" })
         .eq("id", userId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
       return NextResponse.json({ success: true });
     }
     case "unsuspend": {
@@ -129,14 +129,14 @@ export async function PATCH(request: Request) {
         .from("profiles")
         .update({ status: "active" })
         .eq("id", userId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
       return NextResponse.json({ success: true });
     }
     case "promote-seller": {
       const { error: roleError } = await supabase
         .from("user_roles")
         .upsert({ user_id: userId, role: "seller", granted_by: user.id }, { onConflict: "user_id, role" });
-      if (roleError) return NextResponse.json({ error: roleError.message }, { status: 500 });
+      if (roleError) return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
       return NextResponse.json({ success: true });
     }
     case "make-admin": {
@@ -146,7 +146,7 @@ export async function PATCH(request: Request) {
       const { error: roleError } = await supabase
         .from("user_roles")
         .upsert({ user_id: userId, role: "admin", granted_by: user.id }, { onConflict: "user_id, role" });
-      if (roleError) return NextResponse.json({ error: roleError.message }, { status: 500 });
+      if (roleError) return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
       return NextResponse.json({ success: true });
     }
     default:

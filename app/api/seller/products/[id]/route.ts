@@ -51,7 +51,7 @@ export async function GET(
     return NextResponse.json(product);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -134,7 +134,7 @@ export async function PUT(
       updateValues.updated_at = new Date().toISOString();
       const { error } = await supabase.from("products").update(updateValues).eq("id", id);
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
       }
     }
 
@@ -198,7 +198,7 @@ export async function PUT(
     return NextResponse.json(product);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -231,13 +231,13 @@ export async function DELETE(
       .eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
     }
 
     return NextResponse.json({ deleted: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

@@ -42,7 +42,7 @@ export async function GET(
     return NextResponse.json({ seller, rating })
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }

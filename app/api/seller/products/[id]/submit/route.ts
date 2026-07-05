@@ -48,7 +48,7 @@ export async function POST(
       .eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to submit product" }, { status: 500 });
     }
 
     const { data: updated } = await supabase
@@ -60,7 +60,7 @@ export async function POST(
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

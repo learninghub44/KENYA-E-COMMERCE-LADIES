@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to save flag" },
+      { error: "Failed to save flag" },
       { status: 500 },
     );
   }

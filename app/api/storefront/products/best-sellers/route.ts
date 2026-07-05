@@ -13,6 +13,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ products: data ?? [], total: count ?? 0, page, limit });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
