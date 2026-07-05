@@ -15,6 +15,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    if (!body.shippingAddress || typeof body.shippingAddress !== "object") {
+      return NextResponse.json({ error: "shippingAddress is required" }, { status: 400 });
+    }
+    const addr = body.shippingAddress;
+    if (!addr.line1 || !addr.city || !addr.country_code) {
+      return NextResponse.json({ error: "shippingAddress must include line1, city, and country_code" }, { status: 400 });
+    }
     const carts = createSupabaseCartRepository(supabase);
     const cartItems = createSupabaseCartItemRepository(supabase);
     const cart = await carts.findActiveByUser(user.id);

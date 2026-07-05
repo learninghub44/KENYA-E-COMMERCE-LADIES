@@ -38,6 +38,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    if (!body.productId || typeof body.productId !== "string") {
+      return NextResponse.json({ error: "productId is required" }, { status: 400 });
+    }
     const service = buildService(supabase);
     const result = await service.add({
       userId: user.id,

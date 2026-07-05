@@ -40,6 +40,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    if (!body.productId || typeof body.productId !== "string") {
+      return NextResponse.json({ error: "productId is required" }, { status: 400 });
+    }
+    if (body.quantity !== undefined && (typeof body.quantity !== "number" || body.quantity < 1 || body.quantity > 999)) {
+      return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
+    }
     const service = buildService(supabase);
     const result = await service.add({
       userId: user.id,
