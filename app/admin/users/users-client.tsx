@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { MoreHorizontal, Eye, ShieldAlert, Ban, UserPlus, ShieldCheck } from "lucide-react"
+import { MoreHorizontal, Eye, ShieldAlert, Ban, UserPlus, ShieldCheck, Plus } from "lucide-react"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar"
+import { Input } from "../../../components/ui/input"
+import { Label } from "../../../components/ui/label"
 import {
   Table,
   TableBody,
@@ -24,6 +26,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog"
@@ -63,7 +66,11 @@ async function apiAction(userId: string, action: string) {
 export function UsersClient({ initialUsers }: { initialUsers: UserRow[] }) {
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [addAdminOpen, setAddAdminOpen] = useState(false)
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
+  const [addAdminLoading, setAddAdminLoading] = useState(false)
+  const [addAdminError, setAddAdminError] = useState<string | null>(null)
+  const [addAdminForm, setAddAdminForm] = useState({ email: "", password: "", displayName: "", role: "admin" })
 
   const handleAction = async (userId: string, action: string) => {
     setLoadingAction(userId + action)
@@ -74,8 +81,36 @@ export function UsersClient({ initialUsers }: { initialUsers: UserRow[] }) {
     }
   }
 
+  const handleAddAdmin = async () => {
+    setAddAdminLoading(true)
+    setAddAdminError(null)
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addAdminForm),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Failed to create admin")
+      setAddAdminOpen(false)
+      setAddAdminForm({ email: "", password: "", displayName: "", role: "admin" })
+      window.location.reload()
+    } catch (err) {
+      setAddAdminError(err instanceof Error ? err.message : "Failed to create admin")
+    } finally {
+      setAddAdminLoading(false)
+    }
+  }
+
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button onClick={() => setAddAdminOpen(true)} size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Admin
+        </Button>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -211,6 +246,73 @@ export function UsersClient({ initialUsers }: { initialUsers: UserRow[] }) {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={addAdminOpen} onOpenChange={setAddAdminOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Admin User</DialogTitle>
+            <DialogDescription>Create a new admin account with its own email and password.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {addAdminError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {addAdminError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                placeholder="admin@example.com"
+                value={addAdminForm.email}
+                onChange={(e) => setAddAdminForm({ ...addAdminForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                placeholder="Min 8 characters"
+                value={addAdminForm.password}
+                onChange={(e) => setAddAdminForm({ ...addAdminForm, password: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-name">Display Name</Label>
+              <Input
+                id="admin-name"
+                placeholder="Full name"
+                value={addAdminForm.displayName}
+                onChange={(e) => setAddAdminForm({ ...addAdminForm, displayName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-role">Role</Label>
+              <select
+                id="admin-role"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={addAdminForm.role}
+                onChange={(e) => setAddAdminForm({ ...addAdminForm, role: e.target.value })}
+              >
+                <option value="admin">Admin</option>
+                <option value="moderator">Moderator</option>
+                <option value="kyc_reviewer">KYC Reviewer</option>
+                <option value="support">Support</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddAdminOpen(false)} disabled={addAdminLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAdmin} disabled={addAdminLoading || !addAdminForm.email || !addAdminForm.password}>
+              {addAdminLoading ? "Creating..." : "Create Admin"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
