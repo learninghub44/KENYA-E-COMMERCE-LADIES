@@ -1,10 +1,6 @@
 "use client"
 
-<<<<<<< HEAD
 import { useMemo, useState, useCallback, useEffect, useRef } from "react"
-=======
-import { useEffect, useMemo, useState, useCallback } from "react"
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   Search,
@@ -72,6 +68,15 @@ const SORT_OPTIONS = [
 ]
 
 const PAGE_SIZE = 12
+
+interface Filters {
+  categories: string[]
+  minPrice: string
+  maxPrice: string
+  brands: string[]
+  rating: string
+  colors: string[]
+}
 
 interface CatalogOption {
   id: string
@@ -144,7 +149,6 @@ export default function SearchPage() {
   const colorsParam = useMemo(() => searchParams.get("colors")?.split(",").filter(Boolean) ?? [], [searchParams])
 
   const [searchInput, setSearchInput] = useState(query)
-<<<<<<< HEAD
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [filters, setFilters] = useState<Filters>({
     categories: [],
@@ -155,6 +159,17 @@ export default function SearchPage() {
     colors: [],
   })
   const [showMobileFilters, setShowMobileFilters] = useState(false)
+
+  const [categories, setCategories] = useState<CatalogOption[]>([])
+  const [brands, setBrands] = useState<CatalogOption[]>([])
+  const [catalogLoaded, setCatalogLoaded] = useState(false)
+
+  const [products, setProducts] = useState<Product[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchError, setSearchError] = useState<string | null>(null)
+
+  useEffect(() => setSearchInput(query), [query])
 
   useEffect(() => {
     if (debounceTimerRef.current) {
@@ -190,22 +205,8 @@ export default function SearchPage() {
       router.push(`/search${qs ? `?${qs}` : ""}`)
     },
     [query, sortParam, pageParam, router]
-=======
-  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  )
 
-  const [categories, setCategories] = useState<CatalogOption[]>([])
-  const [brands, setBrands] = useState<CatalogOption[]>([])
-  const [catalogLoaded, setCatalogLoaded] = useState(false)
-
-  const [products, setProducts] = useState<Product[]>([])
-  const [totalCount, setTotalCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchError, setSearchError] = useState<string | null>(null)
-
-  useEffect(() => setSearchInput(query), [query])
-
-  // Load filter option lists once. Non-critical: if this fails, filters just render empty and
-  // product search still works.
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -234,7 +235,6 @@ export default function SearchPage() {
   const categoryIds = useMemo(
     () => categorySlugs.map((slug) => categories.find((c) => c.slug === slug)?.id).filter((id): id is string => Boolean(id)),
     [categorySlugs, categories]
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
   )
   const brandIds = useMemo(
     () => brandSlugs.map((slug) => brands.find((b) => b.slug === slug)?.id).filter((id): id is string => Boolean(id)),

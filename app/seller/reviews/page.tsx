@@ -59,6 +59,9 @@ export default function ReviewsPage() {
   const [filterRating, setFilterRating] = useState("all")
   const [filterProduct, setFilterProduct] = useState("all")
 
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState("")
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
@@ -67,11 +70,6 @@ export default function ReviewsPage() {
     if (filterRating !== "all") params.set("rating", filterRating)
     if (filterProduct !== "all") params.set("productId", filterProduct)
 
-<<<<<<< HEAD
-  function handleReply(reviewId: string) {
-    setReplyText("")
-    setReplyingTo(null)
-=======
     fetch(`/api/seller/reviews?${params.toString()}`)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load reviews")
@@ -90,6 +88,11 @@ export default function ReviewsPage() {
     return () => { cancelled = true }
   }, [filterRating, filterProduct])
 
+  function handleReply(reviewId: string) {
+    setReplyText("")
+    setReplyingTo(null)
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -102,7 +105,6 @@ export default function ReviewsPage() {
         </div>
       </div>
     )
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
   }
 
   const reviews = data?.items ?? []

@@ -160,15 +160,7 @@ export default function MessagesPage() {
   )
 
   const activeConversation = conversations.find((c) => c.id === selectedId)
-<<<<<<< HEAD
-  const activeMessages = messagesByConversation[selectedId] ?? []
-
-  function handleSend() {
-    if (!reply.trim()) return
-    setReply("")
-  }
-=======
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
+  const activeMessages = messages
 
   return (
     <div className="space-y-6">

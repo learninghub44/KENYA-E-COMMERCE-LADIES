@@ -1,10 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Eye, MessageSquare, ShoppingCart } from "lucide-react";
+import { Eye, MessageSquare, ShoppingCart, MoreHorizontal } from "lucide-react";
 
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../../components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
 import {
   Table,
   TableBody,
@@ -152,7 +166,6 @@ export default async function SellerOrdersPage({ searchParams }: { searchParams?
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(order.placedAt ?? order.createdAt)}</TableCell>
                   <TableCell>
-<<<<<<< HEAD
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -192,20 +205,6 @@ export default async function SellerOrdersPage({ searchParams }: { searchParams?
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-=======
-                    <div className="flex items-center gap-2">
-                      <Button asChild variant="ghost" size="icon">
-                        <Link href={`/seller/orders/${order.id}`} aria-label={`View ${order.orderNumber}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button asChild variant="ghost" size="icon">
-                        <Link href={`/seller/messages?orderId=${order.id}`} aria-label={`Message buyer for ${order.orderNumber}`}>
-                          <MessageSquare className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
                   </TableCell>
                 </TableRow>
               ))}

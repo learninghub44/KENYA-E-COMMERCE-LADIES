@@ -116,12 +116,6 @@ export default function NewProductPage() {
     )
   }
 
-<<<<<<< HEAD
-  function onSave(status: "draft" | "published") {
-    handleSubmit((data) => {
-      router.push("/products")
-    })()
-=======
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -218,7 +212,6 @@ export default function NewProductPage() {
     } finally {
       setIsSubmitting(false)
     }
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
   }
 
   return (

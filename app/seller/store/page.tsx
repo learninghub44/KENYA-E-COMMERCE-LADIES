@@ -13,13 +13,7 @@ export default async function StoreProfilePage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-<<<<<<< HEAD
-  function onSubmit(data: StoreFormData) {
-    // Store profile saved
-  }
-=======
   if (!user) redirect("/auth/login?redirectTo=/seller/store")
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
 
   const seller = await createSupabaseSellerRepository(supabase as any).findByOwnerId(user.id)
 

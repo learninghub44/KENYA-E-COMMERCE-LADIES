@@ -22,17 +22,8 @@ export const metadata: Metadata = {
     "women fashion",
     "Zuri Market",
   ],
-<<<<<<< HEAD
   authors: [{ name: "Kenya E-Commerce Ladies" }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-=======
-  authors: [{ name: "Zuri Market" }],
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim() !== ""
-      ? process.env.NEXT_PUBLIC_APP_URL
-      : "https://zurimarket.dev"
-  ),
->>>>>>> c6c67738eb28cd2ac7754f4cda6db89a8044443b
   openGraph: {
     type: "website",
     locale: "en_KE",
