@@ -3,6 +3,7 @@ import { createSupabaseClient } from "../../../../lib/supabase/server";
 import { createSupabaseKycRepository } from "../../../../lib/kyc/supabase-kyc-repository";
 import { createKycService } from "../../../../lib/kyc/kyc-service";
 import { createDiditProvider } from "../../../../lib/kyc/didit-provider";
+import { createDiditClient } from "../../../../lib/didit";
 
 export async function POST(request: Request) {
   try {
@@ -17,11 +18,13 @@ export async function POST(request: Request) {
     const submitBody = { ...body, userId: user.id };
 
     const repository = createSupabaseKycRepository(supabase);
-    const provider = createDiditProvider(
-      process.env.DIDIT_API_KEY
-        ? { createSession: async () => { throw new Error("Direct session creation not supported from API route"); } }
-        : null
-    );
+    const diditClient = process.env.DIDIT_API_KEY && process.env.DIDIT_WORKFLOW_ID
+      ? createDiditClient({
+          apiKey: process.env.DIDIT_API_KEY,
+          workflowId: process.env.DIDIT_WORKFLOW_ID,
+        })
+      : null;
+    const provider = createDiditProvider(diditClient);
     const service = createKycService({ repository, provider });
 
     const result = await service.submit(submitBody);

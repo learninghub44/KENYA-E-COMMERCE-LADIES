@@ -108,3 +108,53 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createSupabaseClient();
+    const auth = await requireAdmin(supabase);
+    if ("error" in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const body = await request.json();
+    const { verificationId, action, rejectionReason } = body as {
+      verificationId: string;
+      action: "approve" | "reject";
+      rejectionReason?: string;
+    };
+
+    if (!verificationId || !action) {
+      return NextResponse.json({ error: "verificationId and action are required" }, { status: 400 });
+    }
+
+    if (!["approve", "reject"].includes(action)) {
+      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+
+    if (action === "reject" && !rejectionReason?.trim()) {
+      return NextResponse.json({ error: "rejectionReason is required when rejecting" }, { status: 400 });
+    }
+
+    const status: Exclude<KycStatus, "not_started"> = action === "approve" ? "approved" : "rejected";
+    const repository = createSupabaseKycRepository(supabase);
+
+    const updated = await repository.updateVerification({
+      id: verificationId,
+      status,
+      rejectionReason: action === "reject" ? rejectionReason!.trim() : null,
+    });
+
+    await repository.updateSellerKycStatus({
+      sellerId: updated.sellerId,
+      status,
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

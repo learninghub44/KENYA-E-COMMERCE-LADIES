@@ -53,7 +53,7 @@ export function createSupabaseKycRepository(client: SupabaseClient): KycReposito
 
     async findLatestBySellerId(sellerId: string): Promise<KycVerificationRecord | null> {
       const { data, error } = await client
-        .from("seller_kyc_verifications")
+        .from("kyc_verifications")
         .select("*")
         .eq("seller_id", sellerId)
         .order("submitted_at", { ascending: false })
@@ -66,7 +66,7 @@ export function createSupabaseKycRepository(client: SupabaseClient): KycReposito
 
     async findByProviderReference(providerReference: string): Promise<KycVerificationRecord | null> {
       const { data, error } = await client
-        .from("seller_kyc_verifications")
+        .from("kyc_verifications")
         .select("*")
         .eq("provider_reference", providerReference)
         .maybeSingle();
@@ -77,7 +77,7 @@ export function createSupabaseKycRepository(client: SupabaseClient): KycReposito
 
     async createVerification(input): Promise<KycVerificationRecord> {
       const { data, error } = await client
-        .from("seller_kyc_verifications")
+        .from("kyc_verifications")
         .insert({
           seller_id: input.sellerId,
           provider: input.provider,
@@ -104,7 +104,7 @@ export function createSupabaseKycRepository(client: SupabaseClient): KycReposito
       if (input.metadata !== undefined) updates.metadata = input.metadata;
 
       const { data, error } = await client
-        .from("seller_kyc_verifications")
+        .from("kyc_verifications")
         .update(updates)
         .eq("id", input.id)
         .select()
