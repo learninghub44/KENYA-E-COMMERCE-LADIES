@@ -278,7 +278,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.replace("/auth/login")
+        router.replace("/admin/login")
         return
       }
 
@@ -316,7 +316,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
-    router.push("/auth/login")
+    router.push("/admin/login")
     router.refresh()
   }
 
