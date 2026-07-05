@@ -276,35 +276,68 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const supabase = createSupabaseBrowserClient()
 
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.replace("/admin/login")
+          return
+        }
+
+        const [roleResult, profileResult, notifResult] = await Promise.allSettled([
+          supabase.from("user_roles").select("role").eq("user_id", user.id),
+          // .maybeSingle(), not .single(): a missing profiles row (e.g. an
+          // admin account created before the auto-provision trigger existed)
+          // must not throw here, or this screen hangs on "Loading admin
+          // console…" forever since nothing would ever call setLoading(false).
+          supabase.from("profiles").select("display_name, email").eq("id", user.id).maybeSingle(),
+          supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .eq("status", "unread"),
+        ])
+
+        if (cancelled) return
+
+        const roleRows = roleResult.status === "fulfilled" ? roleResult.value.data : null
+        const profileRow = profileResult.status === "fulfilled" ? profileResult.value.data : null
+        const count = notifResult.status === "fulfilled" ? notifResult.value.count : null
+
+        // Self-heal: if the profile row is missing, create it now instead of
+        // leaving this admin permanently stuck with a blank name every load.
+        if (profileResult.status === "fulfilled" && !profileRow) {
+          await supabase.from("profiles").upsert({
+            id: user.id,
+            email: user.email,
+            display_name: user.email?.split("@")[0] ?? null,
+          })
+        }
+
+        const roles = normalizeRoles((roleRows ?? []).map((row: { role: string }) => row.role))
+        const perms = permissionsForRoles(roles)
+
+        setPermissions(perms)
+        setUnreadCount(count ?? 0)
+        setProfile({
+          displayName: profileRow?.display_name || user.email?.split("@")[0] || "Admin",
+          email: profileRow?.email || user.email || "",
+          roleLabel: roles.map((r) => ROLE_LABELS[r] ?? r).join(", ") || "Admin",
+        })
+
+        if (roles.length === 0) {
+          // Authenticated but no admin role at all -- middleware would also
+          // bounce this request server-side, but if it somehow lands here,
+          // don't leave the user staring at an empty shell with no nav items.
+          router.replace("/")
+          return
+        }
+      } catch (err) {
+        console.error("Failed to load admin session", err)
         router.replace("/admin/login")
         return
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-
-      const [{ data: roleRows }, { data: profileRow }, { count }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", user.id),
-        supabase.from("profiles").select("display_name, email").eq("id", user.id).single(),
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .eq("status", "unread"),
-      ])
-
-      if (cancelled) return
-
-      const roles = normalizeRoles((roleRows ?? []).map((row: { role: string }) => row.role))
-      const perms = permissionsForRoles(roles)
-
-      setPermissions(perms)
-      setUnreadCount(count ?? 0)
-      setProfile({
-        displayName: profileRow?.display_name || user.email?.split("@")[0] || "Admin",
-        email: profileRow?.email || user.email || "",
-        roleLabel: roles.map((r) => ROLE_LABELS[r] ?? r).join(", ") || "Admin",
-      })
-      setLoading(false)
     }
 
     load()
