@@ -1,6 +1,44 @@
 import { NextResponse } from "next/server"
 import { createSupabaseClient } from "../../../../lib/supabase/server"
 
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+}
+
+// Root cause of the seller-registration failure: the "welcome" step of the
+// onboarding wizard never collects a store name (it's a purely informational
+// screen), so the old code did `(stepData.storeName || "store")`, giving
+// every single new seller the identical slug "store". sellers.slug has a
+// unique constraint, so only the very first seller ever created could
+// succeed; every insert after that failed with
+// `duplicate key value violates unique constraint "sellers_slug_key"`.
+// This generates a collision-safe placeholder slug up front, and is also
+// used to re-derive (and de-duplicate) the slug once the user actually
+// provides a store name in the "business" step, since the placeholder
+// should not stick around forever.
+async function generateUniqueSlug(
+  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
+  base: string,
+  excludeSellerId?: string
+): Promise<string> {
+  const cleanBase = slugify(base) || "store"
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const candidate = attempt === 0 ? cleanBase : `${cleanBase}-${Math.random().toString(36).slice(2, 8)}`
+
+    let query = supabase.from("sellers").select("id").eq("slug", candidate)
+    if (excludeSellerId) query = query.neq("id", excludeSellerId)
+    const { data: existing } = await query.maybeSingle()
+
+    if (!existing) return candidate
+  }
+
+  return `${cleanBase}-${Date.now().toString(36)}`
+}
+
 export async function GET() {
   const supabase = await createSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -58,10 +96,7 @@ export async function POST(request: Request) {
 
   if (step === "welcome") {
     if (!existingSeller) {
-      const slug = ((stepData.storeName as string) || "store")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
+      const slug = await generateUniqueSlug(supabase, (stepData.storeName as string) || "store")
 
       const { data: newSeller, error } = await supabase
         .from("sellers")
@@ -74,7 +109,13 @@ export async function POST(request: Request) {
         .select("id")
         .single()
 
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        const devDetails =
+          process.env.NODE_ENV !== "production"
+            ? { code: error.code, details: error.details, hint: error.hint }
+            : undefined
+        return NextResponse.json({ error: error.message, ...devDetails }, { status: 500 })
+      }
 
       const meta: Record<string, unknown> = { onboarding: { currentStep: step, lastSavedAt: new Date().toISOString() } }
       await supabase.from("sellers").update({ metadata: meta }).eq("id", newSeller.id)
@@ -89,7 +130,14 @@ export async function POST(request: Request) {
 
   const sellerUpdates: Record<string, unknown> = {}
   if (step === "business") {
-    if (stepData.storeName) sellerUpdates.store_name = stepData.storeName
+    if (stepData.storeName) {
+      sellerUpdates.store_name = stepData.storeName
+      // The seller row is created on the "welcome" step with a placeholder
+      // slug (before the real store name exists). Now that the user has
+      // provided one, re-derive the public slug from it instead of leaving
+      // the placeholder in place forever.
+      sellerUpdates.slug = await generateUniqueSlug(supabase, stepData.storeName as string, existingSeller.id)
+    }
     if (stepData.description) sellerUpdates.description = stepData.description
     if (stepData.county) sellerUpdates.country_code = stepData.county
     if (stepData.supportEmail) sellerUpdates.support_email = stepData.supportEmail
@@ -110,7 +158,13 @@ export async function POST(request: Request) {
       .from("sellers")
       .update(sellerUpdates)
       .eq("id", existingSeller.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      const devDetails =
+        process.env.NODE_ENV !== "production"
+          ? { code: error.code, details: error.details, hint: error.hint }
+          : undefined
+      return NextResponse.json({ error: error.message, ...devDetails }, { status: 500 })
+    }
   }
 
   const existingMeta = (existingSeller.metadata as Record<string, unknown>) ?? {}

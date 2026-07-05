@@ -35,6 +35,7 @@ function SellerOnboardingInner() {
   const [sellerId, setSellerId] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const { currentStep, nextStep, prevStep, markComplete, steps: wizardSteps } = useWizard()
 
@@ -88,6 +89,7 @@ function SellerOnboardingInner() {
 
   const handleNext = useCallback(async () => {
     setSaving(true)
+    setError(null)
     try {
       const stepId = wizardSteps[currentStep]?.id ?? "unknown"
       const res = await fetch("/api/onboarding/seller", {
@@ -96,6 +98,16 @@ function SellerOnboardingInner() {
         body: JSON.stringify({ step: stepId, data }),
       })
       const result = await res.json()
+
+      if (!res.ok || result.error) {
+        // Previously this was never checked, so a failed save (e.g. the
+        // seller insert erroring under the hood) silently advanced the
+        // wizard anyway, leaving sellerId unset and every later step
+        // failing with a 404 the user never saw. Surface it instead.
+        setError(result.error || "Something went wrong saving this step. Please try again.")
+        return
+      }
+
       if (result.sellerId && !sellerId) {
         setSellerId(result.sellerId)
       }
@@ -105,6 +117,8 @@ function SellerOnboardingInner() {
       } else {
         nextStep()
       }
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.")
     } finally {
       setSaving(false)
     }
@@ -148,7 +162,16 @@ function SellerOnboardingInner() {
   return (
     <WizardShell
       sidebar={<StepSidebar icon={Store} />}
-      currentStepContent={renderStep()}
+      currentStepContent={
+        <>
+          {error && (
+            <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          {renderStep()}
+        </>
+      }
       onNext={handleNext}
       onPrev={prevStep}
       nextLabel={isLast ? "Go to Seller Dashboard" : "Continue"}
