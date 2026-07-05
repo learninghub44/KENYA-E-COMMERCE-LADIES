@@ -53,6 +53,9 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: true });
     }
     case "make-admin": {
+      if (!roles.includes("super_admin")) {
+        return NextResponse.json({ error: "Only super admins can promote users to admin" }, { status: 403 });
+      }
       const { error: roleError } = await supabase
         .from("user_roles")
         .upsert({ user_id: userId, role: "admin", granted_by: user.id }, { onConflict: "user_id, role" });

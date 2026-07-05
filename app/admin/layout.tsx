@@ -329,7 +329,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="hidden w-64 shrink-0 border-r bg-sidebar lg:flex lg:flex-col">
         <div className="flex h-16 items-center gap-2 border-b px-6">
           <Store className="h-6 w-6 text-primary" />
-          <span className="text-lg font-bold">Zuri Market</span>
+          <span className="text-lg font-bold">Kenya E-Commerce</span>
         </div>
         <SidebarNav collapsed={false} permissions={permissions} />
       </aside>
@@ -343,7 +343,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex h-16 items-center gap-2 border-b px-6">
             <Store className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold">Zuri Market</span>
+            <span className="text-lg font-bold">Kenya E-Commerce</span>
           </div>
           <SidebarNav collapsed={false} onNavClick={() => document.body.click()} permissions={permissions} />
         </SheetContent>

@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
 import { createSupabaseClient } from "../../../../lib/supabase/server";
+import { authorizeRoute } from "../../../../middleware/auth-guard";
+import type { AppRole } from "../../../../types/roles";
+
+async function requireAdmin() {
+  const supabase = await createSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { supabase, user: null, roles: [] as AppRole[], auth: { allowed: false as const, status: 401 as const, code: "SESSION_REQUIRED" as const } };
+  const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+  const roles = (roleRows ?? []).map((row: { role: AppRole }) => row.role);
+  const auth = authorizeRoute({ authLevel: "admin", roles });
+  return { supabase, user, roles, auth };
+}
 
 export async function GET() {
-  const supabase = await createSupabaseClient();
+  const { supabase, auth } = await requireAdmin();
+  if (!auth.allowed) return NextResponse.json({ error: "Forbidden" }, { status: auth.status });
 
   try {
     const { data, error } = await supabase
@@ -29,7 +42,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createSupabaseClient();
+  const { supabase, auth } = await requireAdmin();
+  if (!auth.allowed) return NextResponse.json({ error: "Forbidden" }, { status: auth.status });
+
   const body = await request.json();
   const { key, description, enabled, defaultValue } = body;
 
