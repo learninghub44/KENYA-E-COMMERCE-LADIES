@@ -8,7 +8,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
     EXECUTE 'ALTER TABLE public.' || quote_ident(r.tablename) || ' DISABLE ROW LEVEL SECURITY';
   END LOOP;
 END $$;
@@ -18,7 +18,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT triggername, event_object_table, event_object_schema FROM information_schema.triggers WHERE trigger_schema IN ('public', 'auth') LOOP
+  FOR r IN SELECT triggername, event_object_table, event_object_schema FROM information_schema.triggers WHERE trigger_schema IN ('public', 'auth') LOOP
     EXECUTE 'DROP TRIGGER IF EXISTS ' || quote_ident(r.triggername) || ' ON ' || quote_ident(r.event_object_schema) || '.' || quote_ident(r.event_object_table) || ' CASCADE';
   END LOOP;
 END $$;
@@ -28,7 +28,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT oid::regprocedure AS func_sig FROM pg_proc WHERE pronamespace = 'public'::regnamespace LOOP
+  FOR r IN SELECT oid::regprocedure AS func_sig FROM pg_proc WHERE pronamespace = 'public'::regnamespace LOOP
     EXECUTE 'DROP FUNCTION IF EXISTS ' || r.func_sig || ' CASCADE';
   END LOOP;
 END $$;
@@ -38,7 +38,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT viewname FROM pg_views WHERE schemaname = 'public' LOOP
+  FOR r IN SELECT viewname FROM pg_views WHERE schemaname = 'public' LOOP
     EXECUTE 'DROP VIEW IF EXISTS public.' || quote_ident(r.viewname) || ' CASCADE';
   END LOOP;
 END $$;
@@ -48,7 +48,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
     EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
   END LOOP;
 END $$;
@@ -58,7 +58,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT typname FROM pg_type WHERE typnamespace = 'public'::regnamespace AND typtype = 'e' LOOP
+  FOR r IN SELECT typname FROM pg_type WHERE typnamespace = 'public'::regnamespace AND typtype = 'e' LOOP
     EXECUTE 'DROP TYPE IF EXISTS public.' || quote_ident(r.typname) || ' CASCADE';
   END LOOP;
 END $$;
@@ -68,7 +68,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public' LOOP
+  FOR r IN SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public' LOOP
     EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policyname) || ' ON public.' || quote_ident(r.tablename) || ' CASCADE';
   END LOOP;
 END $$;
@@ -78,7 +78,7 @@ DO $$
 DECLARE
   r RECORD;
 BEGIN
-  FOR r SELECT policyname FROM pg_policies WHERE schemaname = 'storage' LOOP
+  FOR r IN SELECT policyname FROM pg_policies WHERE schemaname = 'storage' LOOP
     EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policyname) || ' ON storage.objects CASCADE';
   END LOOP;
 END $$;
