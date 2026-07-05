@@ -60,16 +60,22 @@ export default function RegisterPage() {
     const redirectTo = sanitizeRedirectTarget(searchParams.get("redirectTo"));
 
     // If Supabase returned a live session (email confirmation disabled), the
-    // user is already signed in -- send them straight where they were headed
-    // instead of making them log in again. The buyer role is already granted
-    // by the on_auth_user_created trigger by the time signUp resolves.
+    // user is already signed in -- send them to onboarding to complete their
+    // profile. The buyer role is already granted by the on_auth_user_created
+    // trigger by the time signUp resolves.
     if (signUpData.session && signUpData.user) {
       const { data: roleRows } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", signUpData.user.id);
       const roles: AppRole[] = normalizeRoles((roleRows ?? []).map((row: { role: AppRole }) => row.role));
-      router.push(resolvePostLoginPath(roles, redirectTo));
+
+      // New buyers go to onboarding; sellers and admins use normal redirect
+      if (roles.length === 0 || roles.includes("buyer")) {
+        router.push("/onboarding/buyer");
+      } else {
+        router.push(resolvePostLoginPath(roles, redirectTo));
+      }
       router.refresh();
       return;
     }
