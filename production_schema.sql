@@ -2407,6 +2407,99 @@ CREATE POLICY "Export file upload" ON storage.objects FOR INSERT WITH CHECK (buc
 CREATE POLICY "Export file read" ON storage.objects FOR SELECT USING (bucket_id = 'export-files');
 
 -- ============================================================
+-- API ROLE GRANTS
+-- RLS policies control WHICH rows a role can see, but they are
+-- meaningless without the underlying Postgres GRANT - a role with
+-- zero table privileges gets "permission denied for table X" on
+-- every query regardless of what any RLS policy says. This section
+-- must run before schema lockdown revokes CREATE (order doesn't
+-- matter for these grants specifically, but keeping this immediately
+-- before lockdown makes it clear both are part of "finalize schema").
+-- ============================================================
+
+-- Custom enum/domain types must be usable by API roles, or any
+-- column using them becomes unreadable via PostgREST.
+DO $$
+DECLARE
+  type_record record;
+BEGIN
+  FOR type_record IN
+    SELECT n.nspname, t.typname
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public'
+      AND t.typtype IN ('d', 'e')
+  LOOP
+    EXECUTE format(
+      'grant usage on type %I.%I to anon, authenticated, service_role',
+      type_record.nspname,
+      type_record.typname
+    );
+  END LOOP;
+END $$;
+
+-- Broad catch-all grants for authenticated/service_role. RLS remains
+-- the real access-control layer for `authenticated`; this restores
+-- the base privilege every RLS policy assumes already exists.
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public TO service_role;
+
+-- Explicit anon SELECT grants - only tables/views with intentionally
+-- public-read RLS policies.
+GRANT SELECT ON TABLE
+  public.countries,
+  public.sellers,
+  public.categories,
+  public.brands,
+  public.products,
+  public.product_images,
+  public.product_variants,
+  public.product_attributes,
+  public.collections,
+  public.collection_products,
+  public.reviews,
+  public.feature_flags,
+  public.shipping_profiles,
+  public.shipping_zones,
+  public.coupons,
+  public.promotions,
+  public.banners,
+  public.cms_pages,
+  public.faqs,
+  public.notification_categories,
+  public.admin_broadcasts,
+  public.product_reviews,
+  public.seller_reviews,
+  public.review_media,
+  public.rating_summaries,
+  public.product_search_documents,
+  public.popular_search_terms,
+  public.published_product_reviews,
+  public.published_seller_reviews,
+  public.search_product_catalog
+TO anon;
+
+GRANT SELECT ON TABLE
+  public.product_catalog,
+  public.seller_storefronts
+TO anon, authenticated;
+
+GRANT INSERT ON TABLE public.contact_requests TO anon;
+
+-- RLS-helper functions must be executable, or every policy that
+-- calls them fails closed for anon/authenticated.
+GRANT EXECUTE ON FUNCTION public.current_user_has_role(public.app_role) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.current_user_is_staff() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.current_user_can_manage_seller(uuid) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.storage_folder_uuid(text, integer) TO authenticated, service_role;
+
+-- Any other RPC-callable function (search ranking, seller analytics,
+-- etc.) - broad execute for authenticated/service_role. Add anon-specific
+-- execute grants above on a per-function basis if a specific RPC needs
+-- to be anon-callable; do not widen this blanket grant to anon.
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated, service_role;
+
+-- ============================================================
 -- SCHEMA LOCKDOWN
 -- ============================================================
 
