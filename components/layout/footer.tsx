@@ -90,7 +90,7 @@ function Footer({ className, categories = [] }: FooterProps) {
           <div className="lg:col-span-2">
             <Logo />
             <p className="mt-3 text-sm text-muted-foreground">
-              Kenya's marketplace for women's fashion, beauty, wellness, and
+              Kenya&apos;s marketplace for women&apos;s fashion, beauty, wellness, and
               lifestyle products from verified sellers. Discover. Shop. Empower.
             </p>
             <form

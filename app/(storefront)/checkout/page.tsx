@@ -302,7 +302,7 @@ export default function CheckoutPage() {
                   Payment
                 </CardTitle>
                 <CardDescription>
-                  Payment is collected after your order is confirmed. You'll receive payment instructions by message.
+                  Payment is collected after your order is confirmed. You&apos;ll receive payment instructions by message.
                 </CardDescription>
               </CardHeader>
               <CardContent>

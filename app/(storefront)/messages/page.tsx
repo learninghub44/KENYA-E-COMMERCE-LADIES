@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useEffect, useRef } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import {
   Search,
@@ -77,78 +77,7 @@ function MessagesPageInner() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(createSupabaseBrowserClient())
 
-  useEffect(() => {
-    fetchConversations()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    if (selectedId) {
-      fetchMessages(selectedId)
-    }
-  }, [selectedId])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  // Realtime: refresh the conversation list whenever any conversation the
-  // user can see changes (new message, unread count, etc). RLS scopes rows
-  // to the current user, so no manual filter is needed here.
-  useEffect(() => {
-    const channel = supabaseRef.current
-      .channel("conversations-list")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "conversations" },
-        () => {
-          fetchConversations()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabaseRef.current.removeChannel(channel)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Realtime: subscribe to new messages in the open conversation so replies
-  // show up without a manual reload.
-  useEffect(() => {
-    if (!selectedId) return
-
-    const channel: RealtimeChannel = supabaseRef.current
-      .channel(`conversation-${selectedId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${selectedId}` },
-        (payload) => {
-          const row = payload.new as { id: string; sender_id: string; body: string | null; created_at: string }
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev
-            return [
-              ...prev,
-              {
-                id: row.id,
-                senderId: row.sender_id,
-                body: row.body ?? "",
-                createdAt: row.created_at,
-                isMe: row.sender_id === user?.id,
-              },
-            ]
-          })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabaseRef.current.removeChannel(channel)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, user?.id])
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     setConversationsLoading(true)
     setError(null)
     try {
@@ -169,9 +98,9 @@ function MessagesPageInner() {
     } finally {
       setConversationsLoading(false)
     }
-  }
+  }, [selectedId, deepLinkId])
 
-  const fetchMessages = async (convId: string) => {
+  const fetchMessages = useCallback(async (convId: string) => {
     setMessagesLoading(true)
     setError(null)
     try {
@@ -198,7 +127,84 @@ function MessagesPageInner() {
     } finally {
       setMessagesLoading(false)
     }
-  }
+  }, [user?.id])
+
+  useEffect(() => {
+    fetchConversations()
+    // Intentionally run once on mount only - fetchConversations depends on
+    // selectedId/deepLinkId but re-running on every selection change would
+    // refetch the whole list unnecessarily.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (selectedId) {
+      fetchMessages(selectedId)
+    }
+  }, [selectedId, fetchMessages])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  // Realtime: refresh the conversation list whenever any conversation the
+  // user can see changes (new message, unread count, etc). RLS scopes rows
+  // to the current user, so no manual filter is needed here.
+  useEffect(() => {
+    const supabase = supabaseRef.current
+    const channel = supabase
+      .channel("conversations-list")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "conversations" },
+        () => {
+          fetchConversations()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+    // fetchConversations intentionally omitted: it's re-created each render,
+    // and we only want this subscription set up once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Realtime: subscribe to new messages in the open conversation so replies
+  // show up without a manual reload.
+  useEffect(() => {
+    if (!selectedId) return
+
+    const supabase = supabaseRef.current
+    const channel: RealtimeChannel = supabase
+      .channel(`conversation-${selectedId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${selectedId}` },
+        (payload) => {
+          const row = payload.new as { id: string; sender_id: string; body: string | null; created_at: string }
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === row.id)) return prev
+            return [
+              ...prev,
+              {
+                id: row.id,
+                senderId: row.sender_id,
+                body: row.body ?? "",
+                createdAt: row.created_at,
+                isMe: row.sender_id === user?.id,
+              },
+            ]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedId, user?.id])
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedId || sending) return
